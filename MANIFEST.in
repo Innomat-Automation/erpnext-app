@@ -1,0 +1,18 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include innomat *.css
+recursive-include innomat *.csv
+recursive-include innomat *.html
+recursive-include innomat *.ico
+recursive-include innomat *.js
+recursive-include innomat *.json
+recursive-include innomat *.md
+recursive-include innomat *.png
+recursive-include innomat *.py
+recursive-include innomat *.svg
+recursive-include innomat *.txt
+recursive-exclude innomat *.pyc
