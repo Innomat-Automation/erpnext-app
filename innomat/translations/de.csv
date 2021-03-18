@@ -1,2 +1,5 @@
 Module: Innomat,Tag,Tag
 Module: Innomat,of,von
+DocType: Quotation,Is optional,Optional
+DocType: Quotation,BOM Rate,Stücklistenkostenbasis
+DocType: Quotation,Calculation Margin,Kalkulationsmarge
