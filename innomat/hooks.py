@@ -127,3 +127,7 @@ app_license = "AGPL"
 # 	"Task": "innomat.task.get_dashboard_data"
 # }
 
+# hook for migrate cleanup tasks
+after_migrate = [
+    'innomat.innomat.updater.cleanup_languages'
+]
