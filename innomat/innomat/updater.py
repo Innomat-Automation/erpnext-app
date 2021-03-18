@@ -10,4 +10,4 @@ def cleanup_languages():
     lang = "'de', 'en-US', 'en', 'fr'"
     sql_query = """DELETE FROM `tabLanguage` WHERE `language_code` NOT IN ({lang});""".format(lang=lang)
     frappe.db.sql(sql_query, as_dict=1)
-return
+    return
