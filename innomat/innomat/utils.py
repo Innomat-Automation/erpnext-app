@@ -17,3 +17,20 @@ def get_bom_rate(item_code):
     else:
         return 0
     
+"""
+This function will udate the item description based on a BOM
+"""
+@frappe.whitelist()
+def update_description_from_bom(bom):
+    b = frappe.get_doc("BOM", bom)
+    description = ""
+    for i in b.items:
+        if not "res" in i.uom:
+            if i.uom == "Stk":
+                description += "{qty} Stk {name}<br>".format(qty=i.qty, name=i.item_name)
+            else:
+                description += "{name}<br>".format(name=i.item_name)
+    item = frappe.get_doc("Item", b.item)
+    item.description = description
+    item.save()
+    return
