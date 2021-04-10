@@ -1,6 +1,6 @@
 frappe.ui.form.on('Project', {
     before_save(frm) {
-        if ((frm.doc.__islocal) && (!frm.doc.project_key)) {
+        if (frm.doc.__islocal) {
             get_project_key(frm);
         }
     }
@@ -14,11 +14,10 @@ function get_project_key(frm) {
             cur_frm.set_value('project_key', r.message);
             var company_key = "IN";
             if (frm.doc.company.indexOf('Asprotec') >= 0) {
-                company_key = "AS"
+                company_key = "AS";
             }
             cur_frm.set_value('project_name', company_key + frm.doc.project_type.charAt(0) + r.message);
-            cur_frm.set_value('title', frm.doc.project_name + " " + (frm.doc.title || ""));
-            console.log("done");
+            cur_frm.set_value('title', frm.doc.project_name + " " + (frm.doc.title || ""));s
         }
     });
 }

@@ -3,6 +3,7 @@
 
 import frappe
 from frappe import _
+from datetime import datetime
 
 """
 This function will return the BOM cost/rate for calculations (e.g. quotation)
@@ -43,5 +44,52 @@ def get_project_key():
     data = frappe.db.sql("""SELECT IFNULL(MAX(`project_key`), CONCAT(SUBSTRING(CURDATE(), 3, 2), "0000")) AS `key`
                             FROM `tabProject`
                             WHERE `project_key` LIKE CONCAT(SUBSTRING(CURDATE(), 3, 2), "%");""", as_dict=True)
-    last_id = float(data[0]['key'])
+    last_id = int(data[0]['key'])
     return (last_id + 1)
+
+"""
+Create a new project with tasks from a sales order
+"""
+@frappe.whitelist()
+def create_project(sales_order):
+    key = get_project_key()
+    so = frappe.get_doc("Sales Order", sales_order)
+    company_key = "IN"
+    if "Asprotec" in so.company:
+        company_key = "AS"
+    # create project 
+    new_project = frappe.get_doc({
+        "doctype": "Project",
+        "project_key": key,
+        "project_name": "{0}P{1}".format(company_key, key),
+        "project_type": "Project",
+        "is_active": "Yes",
+        "status": "Open",
+        "expected_start_date": datetime.now(),
+        "expected_end_date": so.delivery_date,
+        "customer": so.customer,
+        "customer_name": so.customer_name,
+        "sales_order": sales_order,
+        "title": "{0}P{1} {2}".format(company_key, key, so.customer_name)
+    })
+    new_project.insert()
+    
+    # create tasks for each item
+    for i in so.items:
+        expected_time = i.qty;
+        boms = frappe.get_all("BOM", 
+                filters={'item': i.item_code, 'is_default': 1}, 
+                fields=['name', 'total_hours'])
+        if boms and len(boms) > 0:
+            expected_time = boms[0]['total_hours']
+        new_task = frappe.get_doc({
+            "doctype": "Task",
+            "subject": i.item_name,
+            "project": new_project.name,
+            "status": "Open",
+            "expected_time": expected_time,
+            "description": i.description
+        })
+        new_task.insert()
+    frappe.db.commit()
+    return new_project.name

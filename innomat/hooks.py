@@ -29,7 +29,9 @@ app_license = "AGPL"
 # doctype_js = {"doctype" : "public/js/doctype.js"}
 doctype_js = {
     "Project" : "public/js/project.js",
-    "Timesheet" : "public/js/timesheet.js"
+    "Timesheet" : "public/js/timesheet.js",
+    "BOM" : "public/js/bom.js",
+    "Sales Order" : "public/js/sales_order.js"
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
