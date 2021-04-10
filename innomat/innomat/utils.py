@@ -34,3 +34,14 @@ def update_description_from_bom(bom):
     item.description = description
     item.save()
     return
+
+"""
+Return the next available project key
+"""
+@frappe.whitelist()
+def get_project_key():
+    data = frappe.db.sql("""SELECT IFNULL(MAX(`project_key`), CONCAT(SUBSTRING(CURDATE(), 3, 2), "0000")) AS `key`
+                            FROM `tabProject`
+                            WHERE `project_key` LIKE CONCAT(SUBSTRING(CURDATE(), 3, 2), "%");""", as_dict=True)
+    last_id = float(data[0]['key'])
+    return (last_id + 1)
