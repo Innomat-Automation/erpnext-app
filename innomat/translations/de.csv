@@ -4,3 +4,8 @@ DocType: Quotation,Is optional,Optional
 DocType: Quotation,BOM Rate,Stücklistenkostenbasis
 DocType: Quotation,Calculation Margin,Kalkulationsmarge
 DocType: BOM,Item updated,Artikel aktualisiert
+DocType: Timesheet,Project required for {0} in row {1},Aktivität {0} benätigt ein Projekt in Zeile {1}
+DocType: Timesheet,Task required for {0} in row {1},Projekt {0} benötigt eine Aufgabe in Zeile {1}
+DocType: Timesheet,Please edit the external remarks in row {0},Bitte die externe Beschreibung in Zeiel {0} bearbeiten
+DocType: Timehseet,Row {0} is before lock date,Zeile {0} ist vor dem Sperrdatum
+DocType: Timesheet,Delivered Material,Material geliefert

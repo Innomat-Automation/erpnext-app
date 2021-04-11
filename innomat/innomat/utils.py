@@ -88,8 +88,34 @@ def create_project(sales_order):
             "project": new_project.name,
             "status": "Open",
             "expected_time": expected_time,
-            "description": i.description
+            "description": i.description,
+            "sales_order": sales_order,
+            "sales_order_item": i.name
         })
         new_task.insert()
     frappe.db.commit()
     return new_project.name
+
+"""
+Get timehseet lock date
+"""
+@frappe.whitelist()
+def get_timesheet_lock_date():
+    return frappe.get_value("Innomat Settings", "Innomat Settings", "lock_timesheets_until") 
+
+""" 
+Shortcut to create delivery notes from timesheet
+"""
+@frappe.whitelist()
+def create_dn(project, item, qty):
+    pj = frappe.get_doc("Project", project)
+    new_dn = frappe.get_doc({
+        "doctype": "Delivery Note",
+        "customer": pj.customer
+    })
+    row = new_dn.append('items', {
+        'item_code': item,
+        'qty': qty
+    })
+    new_dn.insert()
+    return new_dn.name
