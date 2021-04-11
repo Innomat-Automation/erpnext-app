@@ -150,6 +150,12 @@ def get_data():
                        "name": "Item Group",
                        "label": _("Item Group"),
                        "description": _("Item Group")                   
+                   },
+                   {
+                       "type": "doctype",
+                       "name": "Innomat Settings",
+                       "label": _("Innomat Settings"),
+                       "description": _("Innomat Settings")                   
                    }
             ]
         }
