@@ -4,3 +4,4 @@
 *.swp
 tags
 innomat/docs/current
+.vscode
