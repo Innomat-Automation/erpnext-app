@@ -118,11 +118,13 @@ def create_dn(project, item, qty, description, timesheet):
     item_dict = {
         'item_code': item,
         'qty': qty,
-        'against_timesheet': timesheet
+        'against_timesheet': timesheet,
+        'sales_item_group': "Service"
     }
     if description and description != "":
         item_dict['description'] = description
     row = new_dn.append('items', item_dict)
+    row = new_dn.append('sales_item_groups', {'group': 'Service', 'title': 'Service', 'sum_caption': 'Summe Service'})
     new_dn.insert()
     return new_dn.name
 
@@ -143,9 +145,11 @@ def create_on_call_fee(project, date, timesheet):
         'item_code': frappe.get_value("Innomat Settings", "Innomat Settings", "on_call_fee_item"),
         'qty': 1,
         'description': "Pikettpauschale {0}".format(date.strftime("%d.%m.%Y")),
-        'against_timesheet': timesheet
+        'against_timesheet': timesheet,
+        'sales_item_group': "Service"
     }
     row = new_dn.append('items', item_dict)
+    row = new_dn.append('sales_item_groups', {'group': 'Service', 'title': 'Service', 'sum_caption': 'Summe Service'})
     new_dn.insert()
     return new_dn.name
 
@@ -187,7 +191,8 @@ def create_travel_notes(timesheet, travel_key):
                     'qty': value['kilometers'],
                     'description': "Anfahrt {0}".format(value['date'].strftime("%d.%m.%Y")),
                     'against_timesheet': timesheet,
-                    'ts_detail': value['ts_detail']
+                    'ts_detail': value['ts_detail'],
+                    'sales_item_group': "Service"
                 }
             else:
                 item_dict = {
@@ -196,10 +201,12 @@ def create_travel_notes(timesheet, travel_key):
                     'rate': value['travel_fee'],
                     'description': "Anfahrt {0}".format(value['date'].strftime("%d.%m.%Y")),
                     'against_timesheet': timesheet,
-                    'ts_detail': value['ts_detail']
+                    'ts_detail': value['ts_detail'],
+                    'sales_item_group': "Service"
                 }
             
             row = new_dn.append('items', item_dict)
+        row = new_dn.append('sales_item_groups', {'group': 'Service', 'title': 'Service', 'sum_caption': 'Summe Service'})
         new_dn.insert()
         dns.append(new_dn.name)
     return ", ".join(dns)
@@ -256,9 +263,11 @@ def create_sinv_from_project(project, from_date=None, to_date=None):
                 'qty': t['hours'],
                 'description': "{0} ({1})".format(t['from_time'].strftime("%d.%m.%Y"), t['employee_name']),
                 'against_timesheet': t['timesheet'],
-                'ts_detail': t['ts_detail']
+                'ts_detail': t['ts_detail'],
+                'sales_item_group': "Service"
             })
         # create sales invoice
+        row = new_sinv.append('sales_item_groups', {'group': 'Service', 'title': 'Service', 'sum_caption': 'Summe Service'})
         new_sinv.insert()
         return new_sinv.name
     else:
@@ -294,3 +303,47 @@ def create_sinvs_for_date_range(from_date, to_date):
         return ", ".join(invoices)
     else:
         return _("Nothing to invoice")
+
+"""
+Allow to create part delivery from sales order
+"""
+@frappe.whitelist()
+def create_part_delivery(sales_order, percentage):
+    so = frappe.get_doc("Sales Order", sales_order)
+    new_dn = frappe.get_doc({
+            "doctype": "Delivery Note",
+            "customer": so.customer,
+            "project": so.project,
+            "company": so.company,
+            "customer_address": so.customer_address,
+            "contact_person": so.contact_person,
+            "shipping_Address_name": so.shipping_address_name,
+            "currency": so.currency,
+            "selling_price_list": so.selling_price_list,
+            "taxes_and_charges": so.taxes_and_charges,
+            "payment_terms_template": so.payment_terms_template
+        })
+    for item in so.items:
+        new_dn.append("items", {
+            'item_code': item.item_code,
+            'rate': item.rate,
+            'description': item.description,
+            'qty': item.qty * (float(percentage) / 100),
+            'against_sales_order': so.name,
+            'so_detail': item.name
+        })
+    for sig in so.sales_item_groups:
+        new_dn.append("sales_item_groups", {
+            'group': sig.group,
+            'title': sig.title,
+            'sum_caption': sig.sum_caption
+        })
+    for t in so.taxes:
+        new_dn.append("taxes", {
+            'charge_type': t.charge_type,
+            'account_head': t.account_head,
+            'description': t.description,
+            'rate': t.rate
+        })
+    new_dn.insert()
+    return new_dn.name

@@ -25,4 +25,8 @@ DocType: Project,Create Service Invoices,Serviceabrechnungen erstellen
 DocType: Project,Nothing to invoice,Nichts zu verrechnen
 DocType: Expense Claim,Internal rate,Interner Satz
 DocType: Expense Claim,External rate,Externer Satz
+DocType: Sales Order,Create delivery,Lieferung erstellen
+DocType: Sales Order,Create part delivery,Teillieferung erstellen
+DocType: Sales Order,Deliver part,Teillieferung
+DocType: Sales Order,% delivered),% geliefert)
 DocType: Sales Invoice,Always Print,Immer andrucken
