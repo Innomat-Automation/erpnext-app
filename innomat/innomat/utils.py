@@ -76,23 +76,41 @@ def create_project(sales_order):
     
     # create tasks for each item
     for i in so.items:
-        expected_time = i.qty;
         boms = frappe.get_all("BOM", 
                 filters={'item': i.item_code, 'is_default': 1}, 
                 fields=['name', 'total_hours'])
         if boms and len(boms) > 0:
             expected_time = boms[0]['total_hours']
-        new_task = frappe.get_doc({
-            "doctype": "Task",
-            "subject": i.item_name,
-            "project": new_project.name,
-            "status": "Open",
-            "expected_time": expected_time,
-            "description": i.description,
-            "sales_order": sales_order,
-            "sales_order_item": i.name
-        })
-        new_task.insert()
+            # create one task per BOM position
+            bom = frappe.get_doc("BOM", boms[0]['name'])
+            for bom_item in bom.items:
+                new_task = frappe.get_doc({
+                    "doctype": "Task",
+                    "subject": bom_item.item_name,
+                    "project": new_project.name,
+                    "status": "Open",
+                    "expected_time": bom_item.qty,
+                    "description": bom_item.description,
+                    "sales_order": sales_order,
+                    "sales_order_item": i.name,
+                    "item_code": bom_item.item_code,
+                    "by_effort": i.by_effort
+                })
+                new_task.insert()
+        else:
+            new_task = frappe.get_doc({
+                "doctype": "Task",
+                "subject": i.item_name,
+                "project": new_project.name,
+                "status": "Open",
+                "expected_time": i.qty,
+                "description": i.description,
+                "sales_order": sales_order,
+                "sales_order_item": i.name,
+                "item_code": i.item_code,
+                "by_effort": i.by_effort
+            })
+            new_task.insert()
     frappe.db.commit()
     return new_project.name
 
@@ -237,6 +255,7 @@ def get_uninvoiced_service_time_records(project, from_date=None, to_date=None):
            `tabTimesheet`.`docstatus` = 1
            {time_conditions}
            AND `tabTimesheet Detail`.`project` = "{project}"
+           AND `tabTimesheet Detail`.`by_effort` = 1
            AND `tabTimesheet Detail`.`activity_type` != "Reisetätigkeit"
            AND `tabSales Invoice Item`.`ts_detail` IS NULL;
     """.format(project=project, time_conditions=time_conditions)
@@ -247,7 +266,7 @@ def get_uninvoiced_service_time_records(project, from_date=None, to_date=None):
 Create sales invoice when service project completes
 """
 @frappe.whitelist()
-def create_sinv_from_project(project, from_date=None, to_date=None):
+def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_group="Service"):
     time_logs = get_uninvoiced_service_time_records(project, from_date, to_date)
     if len(time_logs) > 0:
         pj = frappe.get_doc("Project", project)
@@ -264,10 +283,13 @@ def create_sinv_from_project(project, from_date=None, to_date=None):
                 'description': "{0} ({1})".format(t['from_time'].strftime("%d.%m.%Y"), t['employee_name']),
                 'against_timesheet': t['timesheet'],
                 'ts_detail': t['ts_detail'],
-                'sales_item_group': "Service"
+                'sales_item_group': sales_item_group
             })
         # create sales invoice
-        row = new_sinv.append('sales_item_groups', {'group': 'Service', 'title': 'Service', 'sum_caption': 'Summe Service'})
+        row = new_sinv.append('sales_item_groups', {
+            'group': sales_item_group, 
+            'title': sales_item_group, 
+            'sum_caption': 'Summe {0}'.format(sales_item_group)})
         new_sinv.insert()
         return new_sinv.name
     else:

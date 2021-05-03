@@ -16,6 +16,7 @@ DocType: Timesheet,Travel type,Reiseart
 DocType: Timesheet,Kilometers,Kilometer
 DocType: Timesheet,Travel fee,Reisekosten
 DocType: Timesheet,Invoicing item,Verrechnungsartikel
+DocType: Task,By Effort,Nach Aufwand
 DocType: Project,Project manager,Projektleiter
 DocType: Project,Project manager name,Name des Projektleiters
 DocType: Project,Project Team,Projektteam

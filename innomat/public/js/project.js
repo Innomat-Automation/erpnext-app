@@ -3,6 +3,12 @@
  * (also refer to Custom Scripts section in system configuration)
  */
 frappe.ui.form.on('Project', {
+    refresh(frm) {
+        // button to create sales invoice
+        frm.add_custom_button(__("Create Invoice"), function() {
+            create_sinv(frm);
+        });
+    },
     before_save(frm) {
         if (frm.doc.__islocal) {
             get_project_key(frm);
@@ -11,16 +17,7 @@ frappe.ui.form.on('Project', {
         
         // invoice completed project
         if ((frm.doc.project_type === "Service") && (frm.doc.status === "Completed") && (frm.doc.is_invoiced === 0)) {
-            frappe.call({
-                method: "innomat.innomat.utils.create_sinv_from_project",
-                args: {
-                    'project': frm.doc.name
-                },
-                callback: function(response) {
-                    frappe.show_alert( response.message );
-                    cur_frm.set_value("is_invoiced", 1);
-                }
-            })
+            create_sinv(frm);
         }
     }
 });
@@ -55,4 +52,20 @@ function set_project_manager(frm) {
             break
         }
     }
+}
+
+function create_sinv(frm) {
+    frappe.call({
+        method: "innomat.innomat.utils.create_sinv_from_project",
+        args: {
+            'project': frm.doc.name,
+            'sales_item_group': frm.doc.project_type
+        },
+        callback: function(response) {
+            frappe.show_alert( response.message );
+            if (frm.doc.status === "Completed") {
+                cur_frm.set_value("is_invoiced", 1);
+            }
+        }
+    })
 }
