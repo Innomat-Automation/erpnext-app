@@ -9,3 +9,6 @@ DocType: Timesheet,Task required for {0} in row {1},Projekt {0} benötigt eine A
 DocType: Timesheet,Please edit the external remarks in row {0},Bitte die externe Beschreibung in Zeiel {0} bearbeiten
 DocType: Timehseet,Row {0} is before lock date,Zeile {0} ist vor dem Sperrdatum
 DocType: Timesheet,Delivered Material,Material geliefert
+DocType: Project,Project manager,Projektleiter
+DocType: Project,Project manager name,Name des Projektleiters
+DocType: Project,Project Team,Projektteam

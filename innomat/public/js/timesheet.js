@@ -142,9 +142,10 @@ function pull_external_text_from_template(frm, cdt, cdn) {
 function create_dn(frm) {
     var d = new frappe.ui.Dialog({
         'fields': [
-            {'fieldname': 'project', 'fieldtype': 'Link', 'label': 'Project', 'options': 'Project', 'reqd': 1},
-            {'fieldname': 'item', 'fieldtype': 'Link', 'label': 'Item', 'options': 'Item', 'reqd': 1},
-            {'fieldname': 'qty', 'fieldtype': 'Float', 'label': 'Qty', 'reqd': 1, 'default': 1}
+            {'fieldname': 'project', 'fieldtype': 'Link', 'label': __('Project'), 'options': 'Project', 'reqd': 1},
+            {'fieldname': 'item', 'fieldtype': 'Link', 'label': __('Item'), 'options': 'Item', 'reqd': 1},
+            {'fieldname': 'qty', 'fieldtype': 'Float', 'label': __('Qty'), 'reqd': 1, 'default': 1},
+            {'fieldname': 'description', 'fieldtype': 'Data', 'label': __('Description')}
         ],
         primary_action: function(){
             d.hide();
@@ -154,7 +155,8 @@ function create_dn(frm) {
                 args: {
                     project: values.project,
                     item: values.item,
-                    qty: values.qty
+                    qty: values.qty,
+                    description: (values.description || "")
                 },
                 "callback": function(response) {
                     frappe.show_alert( response.message );

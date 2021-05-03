@@ -5,7 +5,8 @@
  "engine": "InnoDB",
  "field_order": [
   "employee",
-  "full_name"
+  "full_name",
+  "project_manager"
  ],
  "fields": [
   {
@@ -23,10 +24,17 @@
    "label": "Employee",
    "options": "Employee",
    "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "project_manager",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Manager"
   }
  ],
  "istable": 1,
- "modified": "2021-04-10 17:00:55.173486",
+ "modified": "2021-05-03 07:25:26.228143",
  "modified_by": "Administrator",
  "module": "Innomat",
  "name": "Project Member",

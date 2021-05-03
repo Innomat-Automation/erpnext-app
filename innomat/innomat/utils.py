@@ -107,15 +107,18 @@ def get_timesheet_lock_date():
 Shortcut to create delivery notes from timesheet
 """
 @frappe.whitelist()
-def create_dn(project, item, qty):
+def create_dn(project, item, qty, description):
     pj = frappe.get_doc("Project", project)
     new_dn = frappe.get_doc({
         "doctype": "Delivery Note",
         "customer": pj.customer
     })
-    row = new_dn.append('items', {
+    item_dict = {
         'item_code': item,
         'qty': qty
-    })
+    }
+    if description and description != "":
+        item_dict['description'] = description
+    row = new_dn.append('items', item_dict)
     new_dn.insert()
     return new_dn.name
