@@ -37,7 +37,9 @@ frappe.ui.form.on('Timesheet', {
                 frappe.msgprint( __("Project required for {0} in row {1}").replace("{0}", frm.doc.time_logs[i].activity_type).replace("{1}", (i+1)), __("Validation") );
                 frappe.validated=false;
             } else if ((frm.doc.time_logs[i].with_project === 0) && (frm.doc.time_logs[i].project)) {
-                frm.doc.time_logs[i].project = null;
+                frappe.model.set_value(frm.doc.time_logs[i].doctype, frm.doc.time_logs[i].name, "project", null);
+                frappe.model.set_value(frm.doc.time_logs[i].doctype, frm.doc.time_logs[i].name, "task", null);
+                continue;
             }
             // check that if project type is "Project", task is selected
             if ((frm.doc.time_logs[i].project_type === "Project") && (!frm.doc.time_logs[i].task)) {

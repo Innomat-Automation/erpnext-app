@@ -102,6 +102,12 @@ def get_data():
                        "name": "Timesheet",
                        "label": _("Timesheet"),
                        "description": _("Timesheet")
+                   },
+                   {
+                       "type": "doctype",
+                       "name": "Expense Claim",
+                       "label": _("Expense Claim"),
+                       "description": _("Expense Claim")
                    }
             ]
         },

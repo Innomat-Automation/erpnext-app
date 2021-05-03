@@ -12,3 +12,5 @@ DocType: Timesheet,Delivered Material,Material geliefert
 DocType: Project,Project manager,Projektleiter
 DocType: Project,Project manager name,Name des Projektleiters
 DocType: Project,Project Team,Projektteam
+DocType: Expense Claim,Internal rate,Interner Satz
+DocType: Expense Claim,External rate,Externer Satz
