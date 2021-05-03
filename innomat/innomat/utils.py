@@ -107,18 +107,96 @@ def get_timesheet_lock_date():
 Shortcut to create delivery notes from timesheet
 """
 @frappe.whitelist()
-def create_dn(project, item, qty, description):
+def create_dn(project, item, qty, description, timesheet):
     pj = frappe.get_doc("Project", project)
     new_dn = frappe.get_doc({
         "doctype": "Delivery Note",
-        "customer": pj.customer
+        "customer": pj.customer,
+        "project": project
     })
     item_dict = {
         'item_code': item,
-        'qty': qty
+        'qty': qty,
+        'against_timesheet': timesheet
     }
     if description and description != "":
         item_dict['description'] = description
     row = new_dn.append('items', item_dict)
     new_dn.insert()
     return new_dn.name
+
+""" 
+Shortcut to create on call fees from timesheet
+"""
+@frappe.whitelist()
+def create_on_call_fee(project, date, timesheet):
+    pj = frappe.get_doc("Project", project)
+    date = datetime.strptime(date, "%Y-%m-%d")
+    new_dn = frappe.get_doc({
+        "doctype": "Delivery Note",
+        "customer": pj.customer,
+        "project": project
+    })
+    item_dict = {
+        'item_code': frappe.get_value("Innomat Settings", "Innomat Settings", "on_call_fee_item"),
+        'qty': 1,
+        'description': "Pikettpauschale {0}".format(date.strftime("%d.%m.%Y")),
+        'against_timesheet': timesheet
+    }
+    row = new_dn.append('items', item_dict)
+    new_dn.insert()
+    return new_dn.name
+
+"""
+On submit of timesheet, create delivery notes from travel entries
+"""
+@frappe.whitelist()
+def create_travel_notes(timesheet, travel_key):
+    ts = frappe.get_doc("Timesheet", timesheet)
+    travel = {}
+    for d in ts.time_logs:
+        if d.activity_type == travel_key and d.project:
+            # if project key does not yet exist, create it
+            if d.project not in travel:
+                travel[d.project] = []
+            # insert billing item
+            travel[d.project].append({
+                'date': d.from_time,
+                'travel_type': d.travel_type,
+                'kilometers': d.kilometers,
+                'travel_fee': d.travel_fee,
+                'ts_detail': d.name
+            })
+         
+    # grouped by project, create delivery notes
+    dns = []
+    for k, v in travel.items():
+        pj = frappe.get_doc("Project", k)
+        new_dn = frappe.get_doc({
+            "doctype": "Delivery Note",
+            "customer": pj.customer,
+            "project": k
+        })
+        for value in v:
+            if "wagen" in value['travel_type']:
+                item_dict = {
+                    'item_code': frappe.get_value("Innomat Settings", "Innomat Settings", "mileage_item"),
+                    'qty': value['kilometers'],
+                    'description': "Anfahrt {0}".format(value['date'].strftime("%d.%m.%Y")),
+                    'against_timesheet': timesheet,
+                    'ts_detail': value['ts_detail']
+                }
+            else:
+                item_dict = {
+                    'item_code': frappe.get_value("Innomat Settings", "Innomat Settings", "travel_fee_item"),
+                    'qty': 1,
+                    'rate': value['travel_fee'],
+                    'description': "Anfahrt {0}".format(value['date'].strftime("%d.%m.%Y")),
+                    'against_timesheet': timesheet,
+                    'ts_detail': value['ts_detail']
+                }
+            
+            row = new_dn.append('items', item_dict)
+        new_dn.insert()
+        dns.append(new_dn.name)
+    return ", ".join(dns)

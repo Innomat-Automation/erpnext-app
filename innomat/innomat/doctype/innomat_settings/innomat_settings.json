@@ -5,7 +5,11 @@
  "engine": "InnoDB",
  "field_order": [
   "section_timesheets",
-  "lock_timesheets_until"
+  "lock_timesheets_until",
+  "column_timesheet",
+  "on_call_fee_item",
+  "mileage_item",
+  "travel_fee_item"
  ],
  "fields": [
   {
@@ -17,10 +21,32 @@
    "fieldname": "lock_timesheets_until",
    "fieldtype": "Date",
    "label": "Lock timesheets until"
+  },
+  {
+   "fieldname": "on_call_fee_item",
+   "fieldtype": "Link",
+   "label": "On call fee item",
+   "options": "Item"
+  },
+  {
+   "fieldname": "column_timesheet",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "mileage_item",
+   "fieldtype": "Link",
+   "label": "Mileage item",
+   "options": "Item"
+  },
+  {
+   "fieldname": "travel_fee_item",
+   "fieldtype": "Link",
+   "label": "Travel fee item",
+   "options": "Item"
   }
  ],
  "issingle": 1,
- "modified": "2021-04-11 17:14:03.500700",
+ "modified": "2021-05-03 10:53:28.735819",
  "modified_by": "Administrator",
  "module": "Innomat",
  "name": "Innomat Settings",

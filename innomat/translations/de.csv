@@ -8,9 +8,17 @@ DocType: Timesheet,Project required for {0} in row {1},Aktivität {0} benätigt 
 DocType: Timesheet,Task required for {0} in row {1},Projekt {0} benötigt eine Aufgabe in Zeile {1}
 DocType: Timesheet,Please edit the external remarks in row {0},Bitte die externe Beschreibung in Zeiel {0} bearbeiten
 DocType: Timehseet,Row {0} is before lock date,Zeile {0} ist vor dem Sperrdatum
+DocType: Timesheet,Please set mileage in row {0},Bitte Kilometer in Zeile {0} eintragen
+DocType: Timesheet,Please set travel fee in row {0},Bitte Reisekosten in Zeile {0} eintragen
 DocType: Timesheet,Delivered Material,Material geliefert
+DocType: Timesheet,Travel,Reise
+DocType: Timesheet,Travel type,Reiseart
+DocType: Timesheet,Kilometers,Kilometer
+DocType: Timesheet,Travel fee,Reisekosten
+DocType: Timesheet,Invoicing item,Verrechnungsartikel
 DocType: Project,Project manager,Projektleiter
 DocType: Project,Project manager name,Name des Projektleiters
 DocType: Project,Project Team,Projektteam
+DocType: Project,On Call Fee,Piketpauschale
 DocType: Expense Claim,Internal rate,Interner Satz
 DocType: Expense Claim,External rate,Externer Satz

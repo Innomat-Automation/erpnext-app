@@ -1,3 +1,5 @@
+const travel_key = "Reisetätigkeit";
+         
 frappe.ui.form.on('Timesheet', {
     refresh(frm) {
         // filter projects by employee (team member)
@@ -8,12 +10,21 @@ frappe.ui.form.on('Timesheet', {
                     query: "innomat.innomat.filters.projects_for_employee"
                 };
         };
-        // button to create delivery notes
-        if (frm.doc.docstatus === 0) {
-            frm.add_custom_button(__("Delivered Material"), function() {
-                create_dn(frm);
-            });
-        }
+        if (!frm.doc.__islocal) {
+            // button to create delivery notes
+            if (frm.doc.docstatus === 0) {
+                frm.add_custom_button(__("Delivered Material"), function() {
+                    create_dn(frm);
+                });
+            }
+            // button to add on call fees
+            if (frm.doc.docstatus === 0) {
+                frm.add_custom_button(__("On Call Fee"), function() {
+                    create_on_call_fee(frm);
+                });
+            }
+         }
+         
     },
     validate(frm) {
         // get lock date
@@ -38,7 +49,10 @@ frappe.ui.form.on('Timesheet', {
                 frappe.validated=false;
             } else if ((frm.doc.time_logs[i].with_project === 0) && (frm.doc.time_logs[i].project)) {
                 frappe.model.set_value(frm.doc.time_logs[i].doctype, frm.doc.time_logs[i].name, "project", null);
+                frappe.model.set_value(frm.doc.time_logs[i].doctype, frm.doc.time_logs[i].name, "project_title", null);
+                frappe.model.set_value(frm.doc.time_logs[i].doctype, frm.doc.time_logs[i].name, "project_type", null);
                 frappe.model.set_value(frm.doc.time_logs[i].doctype, frm.doc.time_logs[i].name, "task", null);
+                frappe.model.set_value(frm.doc.time_logs[i].doctype, frm.doc.time_logs[i].name, "task_name", null);
                 continue;
             }
             // check that if project type is "Project", task is selected
@@ -51,7 +65,20 @@ frappe.ui.form.on('Timesheet', {
                 frappe.msgprint( __("Please edit the external remarks in row {0}").replace("{0}", (i+1)), __("Validation") );
                 frappe.validated=false;
             }
+            // check if a this is a travel expense and mileage or fees are recorded
+            if (frm.doc.time_logs[i].activity_type === travel_key) {
+                if ((frm.doc.time_logs[i].travel_type.indexOf("wagen") >= 0) && (!(frm.doc.time_logs[i].kilometers > 0))) {
+                    frappe.msgprint( __("Please set mileage in row {0}").replace("{0}", (i+1)), __("Validation") );
+                    frappe.validated=false;
+                } else if ((frm.doc.time_logs[i].travel_type === "ÖV") && (!(frm.doc.time_logs[i].travel_fee > 0))) {
+                    frappe.msgprint( __("Please set travel fee in row {0}").replace("{0}", (i+1)), __("Validation") );
+                    frappe.validated=false;
+                }
+            }
         }
+    },
+    on_submit(frm) {
+        create_travel_notes(frm);
     }
 });
 
@@ -158,7 +185,8 @@ function create_dn(frm) {
                     project: values.project,
                     item: values.item,
                     qty: values.qty,
-                    description: (values.description || "")
+                    description: (values.description || ""),
+                    timesheet: frm.doc.name
                 },
                 "callback": function(response) {
                     frappe.show_alert( response.message );
@@ -176,4 +204,51 @@ function create_dn(frm) {
             };
         };
     d.show();
+}
+
+function create_on_call_fee(frm) {
+    var d = new frappe.ui.Dialog({
+        'fields': [
+            {'fieldname': 'project', 'fieldtype': 'Link', 'label': __('Project'), 'options': 'Project', 'reqd': 1},
+            {'fieldname': 'date', 'fieldtype': 'Date', 'label': __('Date'), 'default': new Date(), 'reqd': 1}
+        ],
+        primary_action: function(){
+            d.hide();
+            var values = d.get_values();
+            frappe.call({
+                method: 'innomat.innomat.utils.create_on_call_fee',
+                args: {
+                    project: values.project,
+                    date: values.date,
+                    timesheet: frm.doc.name
+                },
+                "callback": function(response) {
+                    frappe.show_alert( response.message );
+                }
+            });
+        },
+        primary_action_label: __('OK'),
+        title: __('On Call Fee')
+    });
+    d.fields_dict['project'].get_query =   
+        function(doc) {    
+            return {
+                filters: {'employee': frm.doc.employee},
+                query: "innomat.innomat.filters.projects_for_employee"
+            };
+        };
+    d.show();
+}
+
+function create_travel_notes(frm) {
+    frappe.call({
+        method: 'innomat.innomat.utils.create_travel_notes',
+        args: {
+            timesheet: frm.doc.name,
+            travel_key: travel_key
+        },
+        "callback": function(response) {
+            frappe.show_alert( response.message );
+        }
+    });
 }
