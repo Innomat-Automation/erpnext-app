@@ -20,5 +20,9 @@ DocType: Project,Project manager,Projektleiter
 DocType: Project,Project manager name,Name des Projektleiters
 DocType: Project,Project Team,Projektteam
 DocType: Project,On Call Fee,Piketpauschale
+DocType: Project,Is Invoiced,Ist verrechnet
+DocType: Project,Create Service Invoices,Serviceabrechnungen erstellen
+DocType: Project,Nothing to invoice,Nichts zu verrechnen
 DocType: Expense Claim,Internal rate,Interner Satz
 DocType: Expense Claim,External rate,Externer Satz
+DocType: Sales Invoice,Always Print,Immer andrucken

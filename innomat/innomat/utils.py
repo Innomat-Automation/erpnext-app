@@ -112,7 +112,8 @@ def create_dn(project, item, qty, description, timesheet):
     new_dn = frappe.get_doc({
         "doctype": "Delivery Note",
         "customer": pj.customer,
-        "project": project
+        "project": project,
+        "company": pj.company
     })
     item_dict = {
         'item_code': item,
@@ -135,7 +136,8 @@ def create_on_call_fee(project, date, timesheet):
     new_dn = frappe.get_doc({
         "doctype": "Delivery Note",
         "customer": pj.customer,
-        "project": project
+        "project": project,
+        "company": pj.company
     })
     item_dict = {
         'item_code': frappe.get_value("Innomat Settings", "Innomat Settings", "on_call_fee_item"),
@@ -175,7 +177,8 @@ def create_travel_notes(timesheet, travel_key):
         new_dn = frappe.get_doc({
             "doctype": "Delivery Note",
             "customer": pj.customer,
-            "project": k
+            "project": k,
+            "company": pj.company
         })
         for value in v:
             if "wagen" in value['travel_type']:
@@ -200,3 +203,94 @@ def create_travel_notes(timesheet, travel_key):
         new_dn.insert()
         dns.append(new_dn.name)
     return ", ".join(dns)
+
+"""
+Get not-invoiced service project time records
+"""
+def get_uninvoiced_service_time_records(project, from_date=None, to_date=None):
+    time_conditions = ""
+    if from_date:
+        time_conditions += """ AND DATE(`tabTimesheet Detail`.`from_time`) >= "{from_date}" """.format(from_date=from_date)
+    if to_date:
+        time_conditions += """ AND DATE(`tabTimesheet Detail`.`from_time`) <= "{to_date}" """.format(to_date=to_date)
+    sql_query = """SELECT 
+           `tabTimesheet Detail`.`activity_type` AS `activity_type`,
+           `tabTimesheet Detail`.`from_time` AS `from_time`,
+           `tabTimesheet`.`employee` AS `employee`,
+           `tabTimesheet`.`employee_name` AS `employee_name`,
+           `tabTimesheet Detail`.`hours` AS `hours`,
+           `tabActivity Type`.`invoicing_item` AS `invoicing_item`,
+           `tabTimesheet`.`name` AS `timesheet`,
+           `tabTimesheet Detail`.`name` AS `ts_detail`
+         FROM `tabTimesheet Detail`
+         LEFT JOIN `tabTimesheet` ON `tabTimesheet Detail`.`parent` = `tabTimesheet`.`name`
+         LEFT JOIN `tabActivity Type` ON `tabTimesheet Detail`.`activity_type` = `tabActivity Type`.`name`
+         LEFT JOIN `tabSales Invoice Item` ON `tabTimesheet Detail`.`name` = `tabSales Invoice Item`.`ts_detail`
+         WHERE 
+           `tabTimesheet`.`docstatus` = 1
+           {time_conditions}
+           AND `tabTimesheet Detail`.`project` = "{project}"
+           AND `tabTimesheet Detail`.`activity_type` != "Reisetätigkeit"
+           AND `tabSales Invoice Item`.`ts_detail` IS NULL;
+    """.format(project=project, time_conditions=time_conditions)
+    time_logs = frappe.db.sql(sql_query, as_dict=True)
+    return time_logs
+    
+"""
+Create sales invoice when service project completes
+"""
+@frappe.whitelist()
+def create_sinv_from_project(project, from_date=None, to_date=None):
+    time_logs = get_uninvoiced_service_time_records(project, from_date, to_date)
+    if len(time_logs) > 0:
+        pj = frappe.get_doc("Project", project)
+        new_sinv = frappe.get_doc({
+            "doctype": "Sales Invoice",
+            "customer": pj.customer,
+            "project": project,
+            "company": pj.company
+        })
+        for t in time_logs:
+            row = new_sinv.append('items', {
+                'item_code': t['invoicing_item'],
+                'qty': t['hours'],
+                'description': "{0} ({1})".format(t['from_time'].strftime("%d.%m.%Y"), t['employee_name']),
+                'against_timesheet': t['timesheet'],
+                'ts_detail': t['ts_detail']
+            })
+        # create sales invoice
+        new_sinv.insert()
+        return new_sinv.name
+    else:
+        return _("Nothing to invoice")
+
+"""
+Bulk create sales invoices for not-invoiced timesheet positions in service projects
+"""
+@frappe.whitelist()
+def create_sinvs_for_date_range(from_date, to_date):
+    # find all service projects in this period
+    sql_query = """
+        SELECT `tabProject`.`name` AS `project`
+        FROM `tabTimesheet Detail` 
+        LEFT JOIN `tabProject` ON `tabTimesheet Detail`.`project` = `tabProject`.`name`
+        LEFT JOIN `tabTimesheet` ON `tabTimesheet Detail`.`parent` = `tabTimesheet`.`name`
+        LEFT JOIN `tabSales Invoice Item` ON `tabTimesheet Detail`.`name` = `tabSales Invoice Item`.`ts_detail`
+        WHERE `tabTimesheet`.`docstatus` = 1
+          AND DATE(`tabTimesheet Detail`.`from_time`) >= "{from_date}"
+          AND DATE(`tabTimesheet Detail`.`from_time`) <= "{to_date}"
+          AND `tabProject`.`project_type` = "Service"
+          AND `tabTimesheet Detail`.`project` IS NOT NULL
+          AND `tabSales Invoice Item`.`ts_detail` IS NULL
+        GROUP BY `tabProject`.`name`;
+    """.format(from_date=from_date, to_date=to_date)
+    projects = frappe.db.sql(sql_query, as_dict=True)
+    invoices = []
+    for p in projects:
+        sales_invoice = create_sinv_from_project(p['project'], from_date, to_date)
+        if "Nothing" not in sales_invoice:
+            invoices.append(sales_invoice)
+    if len(invoices) > 0:
+        return ", ".join(invoices)
+    else:
+        return _("Nothing to invoice")

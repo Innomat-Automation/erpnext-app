@@ -32,9 +32,13 @@ doctype_js = {
     "Timesheet" : "public/js/timesheet.js",
     "BOM" : "public/js/bom.js",
     "Sales Order" : "public/js/sales_order.js",
-    "Expense Claim" : "public/js/expense_claim.js"
+    "Expense Claim" : "public/js/expense_claim.js",
+    "Sales Invoice" : "public/js/sales_invoice.js"
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
+doctype_list_js = {
+    "Project" : "public/js/project_list.js"
+}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
 
