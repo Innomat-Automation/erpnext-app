@@ -108,6 +108,12 @@ def get_data():
                        "name": "Expense Claim",
                        "label": _("Expense Claim"),
                        "description": _("Expense Claim")
+                   },
+                   {
+                       "type": "doctype",
+                       "name": "Equipment",
+                       "label": _("Equipment"),
+                       "description": _("Equipment")
                    }
             ]
         },

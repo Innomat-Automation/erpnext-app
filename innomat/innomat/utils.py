@@ -4,6 +4,7 @@
 import frappe
 from frappe import _
 from datetime import datetime
+from frappe.utils.password import get_decrypted_password
 
 """
 This function will return the BOM cost/rate for calculations (e.g. quotation)
@@ -369,3 +370,11 @@ def create_part_delivery(sales_order, percentage):
         })
     new_dn.insert()
     return new_dn.name
+
+"""
+Decrypt access password
+"""
+@frappe.whitelist()
+def decrypt_access_password(cdn):
+    password = get_decrypted_password("Equipment Access", cdn, "password", False)
+    return password

@@ -1,0 +1,68 @@
+{
+ "creation": "2021-05-03 21:14:29.684973",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "access_name",
+  "host",
+  "user",
+  "password",
+  "protocol",
+  "remarks",
+  "copy_password"
+ ],
+ "fields": [
+  {
+   "fieldname": "access_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Access Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "host",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Host/IP"
+  },
+  {
+   "fieldname": "user",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "User"
+  },
+  {
+   "fieldname": "password",
+   "fieldtype": "Password",
+   "in_list_view": 1,
+   "label": "Password"
+  },
+  {
+   "fieldname": "protocol",
+   "fieldtype": "Data",
+   "label": "Protocol"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "copy_password",
+   "fieldtype": "Button",
+   "label": "Copy Password"
+  }
+ ],
+ "istable": 1,
+ "modified": "2021-05-03 21:14:29.684973",
+ "modified_by": "Administrator",
+ "module": "Innomat",
+ "name": "Equipment Access",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
