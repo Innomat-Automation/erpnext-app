@@ -18,6 +18,8 @@ DocType: Timesheet,Kilometers,Kilometer
 DocType: Timesheet,Travel fee,Reisekosten
 DocType: Timesheet,Invoicing item,Verrechnungsartikel
 DocType: Task,By Effort,Nach Aufwand
+DocType: Task,Please select an item for invoicing,Bitte einen Artikel zur Verrechnung wählen
+DocType: Task,Service projects are invoiced by effort,Serviceprojekte müssen nach Aufwand verrechnet werden
 DocType: Project,Project manager,Projektleiter
 DocType: Project,Project manager name,Name des Projektleiters
 DocType: Project,Project Team,Projektteam
@@ -25,6 +27,7 @@ DocType: Project,On Call Fee,Piketpauschale
 DocType: Project,Is Invoiced,Ist verrechnet
 DocType: Project,Create Service Invoices,Serviceabrechnungen erstellen
 DocType: Project,Nothing to invoice,Nichts zu verrechnen
+DocType: Project,Create Project from Template,Projekt von Vorlage erstellen
 DocType: Expense Claim,Internal rate,Interner Satz
 DocType: Expense Claim,External rate,Externer Satz
 DocType: Sales Order,Create delivery,Lieferung erstellen

@@ -1,3 +1,13 @@
+// extend dashboard
+cur_frm.dashboard.add_transactions([
+    {
+        'items': [
+            'Equipment'
+        ],
+        'label': __('Equipment')
+    }
+]);
+
 /*
  * Form handlers for custom automation
  * (also refer to Custom Scripts section in system configuration)
@@ -8,6 +18,7 @@ frappe.ui.form.on('Project', {
         frm.add_custom_button(__("Create Invoice"), function() {
             create_sinv(frm);
         });
+        
     },
     before_save(frm) {
         if (frm.doc.__islocal) {
@@ -45,11 +56,13 @@ function get_project_key(frm) {
  * This function will set the project manager field from the child table
  */
 function set_project_manager(frm) {
-    for (var i=0; i < frm.doc.project_team.length; i++) {
-        if (frm.doc.project_team[i].project_manager === 1) {
-            cur_frm.set_value("project_manager", frm.doc.project_team[i].employee);
-            cur_frm.set_value("project_manager_name", frm.doc.project_team[i].full_name);
-            break
+    if ((frm.doc.project_team) && (frm.doc.project_team.length > 0)) {
+        for (var i=0; i < frm.doc.project_team.length; i++) {
+            if (frm.doc.project_team[i].project_manager === 1) {
+                cur_frm.set_value("project_manager", frm.doc.project_team[i].employee);
+                cur_frm.set_value("project_manager_name", frm.doc.project_team[i].full_name);
+                break
+            }
         }
     }
 }
@@ -65,6 +78,7 @@ function create_sinv(frm) {
             frappe.show_alert( response.message );
             if (frm.doc.status === "Completed") {
                 cur_frm.set_value("is_invoiced", 1);
+                cur_frm.set_value("is_active", "No");
             }
         }
     })

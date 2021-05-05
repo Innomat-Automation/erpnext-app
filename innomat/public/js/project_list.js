@@ -1,5 +1,8 @@
 frappe.listview_settings['Project'] = {
     onload: function(listview) {
+        listview.page.add_menu_item( __("Create Project from Template"), function() {
+            create_project_from_template();
+        });
         listview.page.add_menu_item( __("Create Service Invoices"), function() {
             create_service_sales_invoices();
         });
@@ -67,4 +70,28 @@ function get_end_last_quarter() {
     }
     
     return end;
+}
+
+function create_project_from_template() {
+    frappe.prompt([
+            {'fieldname': 'template', 'fieldtype': 'Link', 'label': __('Template'), 'reqd': 1, 'options': 'Project Template', 'default': 'Service'},
+            {'fieldname': 'customer', 'fieldtype': 'Link', 'label': __('Customer'), 'reqd': 1, 'options': 'Customer'},
+            {'fieldname': 'company', 'fieldtype': 'Link', 'label': __('Company'), 'reqd': 1, 'options': 'Company', 'default': frappe.defaults.get_default("Company")}            
+        ],
+        function(values){
+            frappe.call({
+                "method": "innomat.innomat.utils.create_project_from_template",
+                "args": {
+                    "template": values.template,
+                    "company": values.company,
+                    "customer": values.customer
+                },
+                "callback": function(response) {
+                    frappe.set_route("Form", "Project", response.message);
+                }
+            });
+        },
+        __('Create Project from Template'),
+        __('Create')
+    );
 }

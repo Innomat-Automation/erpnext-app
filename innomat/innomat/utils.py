@@ -3,7 +3,7 @@
 
 import frappe
 from frappe import _
-from datetime import datetime
+from datetime import datetime, timedelta
 from frappe.utils.password import get_decrypted_password
 
 """
@@ -85,36 +85,81 @@ def create_project(sales_order):
             # create one task per BOM position
             bom = frappe.get_doc("BOM", boms[0]['name'])
             for bom_item in bom.items:
+                if "h" in bom_item.uom:
+                    new_task = frappe.get_doc({
+                        "doctype": "Task",
+                        "subject": bom_item.item_name,
+                        "project": new_project.name,
+                        "status": "Open",
+                        "expected_time": bom_item.qty,
+                        "description": bom_item.description,
+                        "sales_order": sales_order,
+                        "sales_order_item": i.name,
+                        "item_code": bom_item.item_code,
+                        "by_effort": i.by_effort
+                    })
+                    new_task.insert()
+        else:
+            if "h" in i.uom:
                 new_task = frappe.get_doc({
                     "doctype": "Task",
-                    "subject": bom_item.item_name,
+                    "subject": i.item_name,
                     "project": new_project.name,
                     "status": "Open",
-                    "expected_time": bom_item.qty,
-                    "description": bom_item.description,
+                    "expected_time": i.qty,
+                    "description": i.description,
                     "sales_order": sales_order,
                     "sales_order_item": i.name,
-                    "item_code": bom_item.item_code,
+                    "item_code": i.item_code,
                     "by_effort": i.by_effort
                 })
                 new_task.insert()
-        else:
-            new_task = frappe.get_doc({
-                "doctype": "Task",
-                "subject": i.item_name,
-                "project": new_project.name,
-                "status": "Open",
-                "expected_time": i.qty,
-                "description": i.description,
-                "sales_order": sales_order,
-                "sales_order_item": i.name,
-                "item_code": i.item_code,
-                "by_effort": i.by_effort
-            })
-            new_task.insert()
     frappe.db.commit()
     return new_project.name
 
+"""
+Create a project from a project tenplate (not standard way, because of invoicing items!)
+"""
+@frappe.whitelist()
+def create_project_from_template(template, company, customer):
+    key = get_project_key()
+    template = frappe.get_doc("Project Template", template)
+    customer = frappe.get_doc("Customer", customer)
+    company_key = "IN"
+    if "Asprotec" in company:
+        company_key = "AS"
+    # create project 
+    new_project = frappe.get_doc({
+        "doctype": "Project",
+        "project_key": key,
+        "project_name": "{0}{2}{1}".format(company_key, key, template.project_type[0]),
+        "project_type": template.project_type,
+        "is_active": "Yes",
+        "status": "Open",
+        "expected_start_date": datetime.now(),
+        "expected_end_date": (datetime.now() + timedelta(days=+30)),
+        "customer": customer.name,
+        "customer_name": customer.customer_name,
+        "title": "{0}P{1} {2}".format(company_key, key, customer.customer_name)
+    })
+    new_project.insert()
+    
+    # create tasks for each item
+    for t in template.tasks:
+        new_task = frappe.get_doc({
+            "doctype": "Task",
+            "subject": t.subject,
+            "project": new_project.name,
+            "status": "Open",  
+            "expected_time": (8 * t.duration),  # template duration is in hours
+            "description": t.description,
+            "item_code": t.item_code,
+            "by_effort": t.by_effort
+        })
+        new_task.insert()
+    frappe.db.commit()
+    return new_project.name
+     
 """
 Get timehseet lock date
 """
@@ -245,12 +290,12 @@ def get_uninvoiced_service_time_records(project, from_date=None, to_date=None):
            `tabTimesheet`.`employee` AS `employee`,
            `tabTimesheet`.`employee_name` AS `employee_name`,
            `tabTimesheet Detail`.`hours` AS `hours`,
-           `tabActivity Type`.`invoicing_item` AS `invoicing_item`,
+           `tabTask`.`item_code` AS `invoicing_item`,
            `tabTimesheet`.`name` AS `timesheet`,
            `tabTimesheet Detail`.`name` AS `ts_detail`
          FROM `tabTimesheet Detail`
          LEFT JOIN `tabTimesheet` ON `tabTimesheet Detail`.`parent` = `tabTimesheet`.`name`
-         LEFT JOIN `tabActivity Type` ON `tabTimesheet Detail`.`activity_type` = `tabActivity Type`.`name`
+         LEFT JOIN `tabTask` ON `tabTimesheet Detail`.`task` = `tabTask`.`name`
          LEFT JOIN `tabSales Invoice Item` ON `tabTimesheet Detail`.`name` = `tabSales Invoice Item`.`ts_detail`
          WHERE 
            `tabTimesheet`.`docstatus` = 1
@@ -378,3 +423,4 @@ Decrypt access password
 def decrypt_access_password(cdn):
     password = get_decrypted_password("Equipment Access", cdn, "password", False)
     return password
+    
