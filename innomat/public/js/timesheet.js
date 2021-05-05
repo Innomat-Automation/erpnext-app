@@ -23,6 +23,12 @@ frappe.ui.form.on('Timesheet', {
                     create_on_call_fee(frm);
                 });
             }
+            // button to add on call fees
+            if (frm.doc.docstatus === 0) {
+                frm.add_custom_button(__("Service Report"), function() {
+                    create_service_report(frm);
+                });
+            }
          }
          
     },
@@ -97,6 +103,23 @@ frappe.ui.form.on('Timesheet Detail', {
             if (last_time) {
                 frappe.model.set_value(cdt, cdn, 'from_time', last_time);
             }
+        }
+    },
+    task(frm, cdt, cdn) {
+        // fetch by effort
+        var row = locals[cdt][cdn];
+        if (row.task) {
+            frappe.call({
+               method: "frappe.client.get",
+               args: {
+                    "doctype": "Task",
+                    "name": row.task
+               },
+               callback: function(response) {
+                    var task = response.message;
+                    frappe.model.set_value(cdt, cdn, 'by_effort', task.by_effort);
+               }
+            });
         }
     }
 });
@@ -251,4 +274,34 @@ function create_travel_notes(frm) {
             frappe.show_alert( response.message );
         }
     });
+}
+
+function create_service_report(frm) {
+    var projects = [];
+    for (var i = 0; i < frm.doc.time_logs.length; i++) {
+        if ((frm.doc.time_logs[i].project) && (!projects.includes(frm.doc.time_logs[i].project))) {
+            projects.push(frm.doc.time_logs[i].project);
+        }
+    } 
+    frappe.prompt([
+            {'fieldname': 'project', 'fieldtype': 'Select', 'label': __('Project'), 'reqd': 1, 'options': projects.join("\n")},
+            {'fieldname': 'contact', 'fieldtype': 'Data', 'label': __('Contact person'), 'reqd': 1}
+        ],
+        function(values){
+            frappe.call({
+                "method": "innomat.innomat.utils.create_service_report",
+                "args": {
+                    "contact": values.contact,
+                    "timesheet": frm.doc.name,
+                    "project": values.project
+                },
+                "callback": function(response) {
+                    frappe.show_alert( response.message );
+                    window.open("/private/files/" + response.message, '_blank').focus();
+                }
+            });
+        },
+        __('Service Report'),
+        __('Create')
+    );
 }

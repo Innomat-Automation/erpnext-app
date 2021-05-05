@@ -17,6 +17,9 @@ DocType: Timesheet,Travel type,Reiseart
 DocType: Timesheet,Kilometers,Kilometer
 DocType: Timesheet,Travel fee,Reisekosten
 DocType: Timesheet,Invoicing item,Verrechnungsartikel
+DocType: Timesheet,Service Report,Regierapport
+DocType: Timesheet,Contact person,Ansprechpartner
+DocType: Timesheet,Service report print format,Druckformat für Regierapporte
 DocType: Task,By Effort,Nach Aufwand
 DocType: Task,Please select an item for invoicing,Bitte einen Artikel zur Verrechnung wählen
 DocType: Task,Service projects are invoiced by effort,Serviceprojekte müssen nach Aufwand verrechnet werden

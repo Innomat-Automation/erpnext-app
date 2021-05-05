@@ -168,6 +168,12 @@ def get_data():
                        "name": "Innomat Settings",
                        "label": _("Innomat Settings"),
                        "description": _("Innomat Settings")                   
+                   },
+                   {
+                       "type": "doctype",
+                       "name": "Project Template",
+                       "label": _("Project Template"),
+                       "description": _("Project Template")                   
                    }
             ]
         }

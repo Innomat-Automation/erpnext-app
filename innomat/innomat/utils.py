@@ -5,6 +5,9 @@ import frappe
 from frappe import _
 from datetime import datetime, timedelta
 from frappe.utils.password import get_decrypted_password
+from frappe.utils.file_manager import save_file
+from frappe.utils.pdf import get_pdf
+from erpnextswiss.erpnextswiss.common_functions import get_primary_address
 
 """
 This function will return the BOM cost/rate for calculations (e.g. quotation)
@@ -424,3 +427,59 @@ def decrypt_access_password(cdn):
     password = get_decrypted_password("Equipment Access", cdn, "password", False)
     return password
     
+"""
+Create a service report PDF and attach
+"""
+@frappe.whitelist()
+def create_service_report(contact, timesheet, project):
+    # create data record and collect data
+    print_format = frappe.get_value("Innomat Settings", "Innomat Settings", "service_report_print_format")
+    timesheet = frappe.get_doc("Timesheet", timesheet)
+    project = frappe.get_doc("Project", project)
+    data = {
+        'doc': {
+            'name': timesheet.name,
+            'company': project.company,
+            'customer': project.customer,
+            'customer_name': project.customer_name,
+            'address': get_primary_address(target_type="Customer", target_name=project.customer),
+            'contact': contact,
+            'owner': timesheet.owner,
+            'transaction_date': timesheet.start_date,
+            'items': []
+        }
+    }
+    # add timesheet entries
+    for ts in timesheet.time_logs:
+        if ts.project == project.name:
+            data['doc']['items'].append({
+                'item_name': ts.activity_type,
+                'description': ts.external_remarks,
+                'qty': ts.hours,
+                'uom': 'h'
+            })
+    # search for delivered items
+    sql_query = """SELECT `item_name`, `description`, `qty`, `uom`
+                   FROM `tabDelivery Note Item`
+                   LEFT JOIN `tabDelivery Note` ON `tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name`
+                   WHERE `tabDelivery Note Item`.`against_timesheet` = "{timesheet}"
+                     AND `tabDelivery Note`.`project` = "{project}";
+                """.format(timesheet=timesheet.name, project=project.name)
+    materials = frappe.db.sql(sql_query, as_dict=True)
+    for m in materials:
+        data['doc']['items'].append({
+                'item_name': m['item_name'],
+                'description': m['description'],
+                'qty': m['qty'],
+                'uom': m['uom']
+            })
+    # generate print foramt
+    print_format_html = frappe.get_value("Print Format", print_format, "html")
+    html = frappe.render_template(print_format_html, data)
+    pdf = get_pdf(html)
+    # store pdf and attach to project
+    filename = "{0}_{1}.pdf".format(timesheet.name, project.name)
+    save_file(fname=filename, content=pdf, 
+        dt="Project", dn=project.name, is_private=1)
+        
+    return filename
