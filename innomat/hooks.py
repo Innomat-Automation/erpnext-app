@@ -34,7 +34,8 @@ doctype_js = {
     "BOM" : "public/js/bom.js",
     "Sales Order" : "public/js/sales_order.js",
     "Expense Claim" : "public/js/expense_claim.js",
-    "Sales Invoice" : "public/js/sales_invoice.js"
+    "Sales Invoice" : "public/js/sales_invoice.js",
+    "Purchase Order" : "public/js/purchase_order.js"
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 doctype_list_js = {
