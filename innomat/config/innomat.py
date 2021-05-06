@@ -39,6 +39,12 @@ def get_data():
                    },
                    {
                        "type": "doctype",
+                       "name": "Delivery Note",
+                       "label": _("Delivery Note"),
+                       "description": _("Delivery Note")
+                   },
+                   {
+                       "type": "doctype",
                        "name": "Sales Invoice",
                        "label": _("Sales Invoice"),
                        "description": _("Sales Invoice")
@@ -72,6 +78,12 @@ def get_data():
                        "name": "Purchase Order",
                        "label": _("Purchase Order"),
                        "description": _("Purchase Order")
+                   },
+                   {
+                       "type": "doctype",
+                       "name": "Purchase Receipt",
+                       "label": _("Purchase Receipt"),
+                       "description": _("Purchase Receipt")
                    },
                    {
                        "type": "doctype",
@@ -175,6 +187,18 @@ def get_data():
                        "label": _("Project Template"),
                        "description": _("Project Template")                   
                    }
+            ]
+        },
+        {
+            "label": _("Reports"),
+            "icon": "fa fa-money",
+            "items": [
+                    {
+                        "type": "report",
+                        "name": "Prce Analysis",
+                        "doctype": "Item Price",
+                        "is_query_report": True,
+                    }
             ]
         }
     ]

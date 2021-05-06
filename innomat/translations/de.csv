@@ -42,3 +42,4 @@ DocType: Equipment,End Customer,Endkunde
 DocType: Equipment,End Customer Name,Endkundenname
 DocType: Equipment,Copied,Kopiert
 DocType: Equipment,No access,Kein Zugriff
+DocType: Quotation,Sum caption,Summenbeschreibung
