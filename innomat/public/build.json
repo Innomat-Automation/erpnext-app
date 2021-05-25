@@ -1,0 +1,5 @@
+{
+    "js/innomat_min.js": [
+        "public/js/innomat_common.js"
+    ]
+}
