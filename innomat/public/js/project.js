@@ -15,10 +15,11 @@ cur_frm.dashboard.add_transactions([
 frappe.ui.form.on('Project', {
     refresh(frm) {
         // button to create sales invoice
-        frm.add_custom_button(__("Create Invoice"), function() {
-            create_sinv(frm);
-        });
-        
+        if (frappe.user.has_role("Accounts User")) {
+			frm.add_custom_button(__("Create Invoice"), function() {
+				create_sinv(frm);
+			});
+        }
     },
     before_save(frm) {
         if (frm.doc.__islocal) {
