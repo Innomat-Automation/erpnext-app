@@ -43,3 +43,6 @@ DocType: Equipment,End Customer Name,Endkundenname
 DocType: Equipment,Copied,Kopiert
 DocType: Equipment,No access,Kein Zugriff
 DocType: Quotation,Sum caption,Summenbeschreibung
+DocType: Quotation,Object,Objekt
+DocType: Sales Order,Object,Objekt
+DocType: Item,ItemState,Artikel Status
