@@ -295,7 +295,8 @@ def get_uninvoiced_service_time_records(project, from_date=None, to_date=None):
            `tabTimesheet Detail`.`hours` AS `hours`,
            `tabTask`.`item_code` AS `invoicing_item`,
            `tabTimesheet`.`name` AS `timesheet`,
-           `tabTimesheet Detail`.`name` AS `ts_detail`
+           `tabTimesheet Detail`.`name` AS `ts_detail`,
+           `tabTimesheet Detail`.`external_remarks` AS `external_remarks`
          FROM `tabTimesheet Detail`
          LEFT JOIN `tabTimesheet` ON `tabTimesheet Detail`.`parent` = `tabTimesheet`.`name`
          LEFT JOIN `tabTask` ON `tabTimesheet Detail`.`task` = `tabTask`.`name`
@@ -326,10 +327,13 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
             "company": pj.company
         })
         for t in time_logs:
+            description = "{0} ({1})".format(t['from_time'].strftime("%d.%m.%Y"), t['employee_name'])
+            if t['external_remarks']:
+                description += "<br>" + t['external_remarks']
             row = new_sinv.append('items', {
                 'item_code': t['invoicing_item'],
                 'qty': t['hours'],
-                'description': "{0} ({1})".format(t['from_time'].strftime("%d.%m.%Y"), t['employee_name']),
+                'description': description,
                 'against_timesheet': t['timesheet'],
                 'ts_detail': t['ts_detail'],
                 'sales_item_group': sales_item_group
@@ -339,8 +343,21 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
             'group': sales_item_group, 
             'title': sales_item_group, 
             'sum_caption': 'Summe {0}'.format(sales_item_group)})
+        # append open delivery note items if there are any
+        delivery_notes = frappe.get_all("Delivery Note", filters={'project': project, 'docstatus': 1, 'status': 'To Bill'}, fields=['name'])
+        for d in delivery_notes:
+            dn = frappe.get_doc("Delivery Note", d['name'])
+            for dn_pos in dn.items:
+                row = new_sinv.append('items', {
+                    'item_code': dn_pos.item_code,
+                    'qty': dn_pos.qty,
+                    'description': dn_pos.description,
+                    'delivery_note': dn.name,
+                    'dn_detail': dn_pos.name,
+                    'sales_item_group': dn_pos.sales_item_group
+                })
         new_sinv.insert()
-        return new_sinv.name
+        return """<a href="/desk#Form/Sales Invoice/{0}">{0}</a>""".format(new_sinv.name)
     else:
         return _("Nothing to invoice")
 

@@ -16,9 +16,9 @@ frappe.ui.form.on('Project', {
     refresh(frm) {
         // button to create sales invoice
         if (frappe.user.has_role("Accounts User")) {
-			frm.add_custom_button(__("Create Invoice"), function() {
-				create_sinv(frm);
-			});
+            frm.add_custom_button(__("Create Invoice"), function() {
+                create_sinv(frm);
+            });
         }
     },
     before_save(frm) {
