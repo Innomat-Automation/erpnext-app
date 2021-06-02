@@ -315,6 +315,30 @@
  ],
  "custom_perms": [],
  "doctype": "Task",
- "property_setters": [],
+ "property_setters": [
+  {
+   "_assign": null,
+   "_comments": null,
+   "_liked_by": null,
+   "_user_tags": null,
+   "creation": "2021-06-02 10:46:36.913558",
+   "default_value": null,
+   "doc_type": "Task",
+   "docstatus": 0,
+   "doctype_or_field": "DocField",
+   "field_name": "sb_timeline",
+   "idx": 0,
+   "modified": "2021-06-02 10:46:36.913558",
+   "modified_by": "Administrator",
+   "name": "Task-sb_timeline-collapsible",
+   "owner": "Administrator",
+   "parent": null,
+   "parentfield": null,
+   "parenttype": null,
+   "property": "collapsible",
+   "property_type": "Check",
+   "value": "0"
+  }
+ ],
  "sync_on_migrate": 1
 }
