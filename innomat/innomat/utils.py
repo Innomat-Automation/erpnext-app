@@ -512,7 +512,8 @@ def create_akonto(sales_order):
             data = {
                 'doc': sales_order,
                 'date': a.date,
-                'percent': a.percent
+                'percent': a.percent,
+                'idx': a.idx
             }
             template = frappe.get_doc("Print Format", "Akonto")
             html = frappe.render_template(template.html, data)
@@ -525,5 +526,15 @@ def create_akonto(sales_order):
             a.file = file_name
             a.creation_date = datetime.now()
             sales_order.save()
+            break
+    return
+
+@frappe.whitelist()
+def add_akonto_payment_reference(sales_order, payment_entry):
+    sales_order = frappe.get_doc("Sales Order", sales_order)
+    for a in (sales_order.akonto or []):
+        if not a.payment:
+            a.payment = payment_entry
+            a.save()
             break
     return
