@@ -198,6 +198,12 @@ def get_data():
                         "name": "Prce Analysis",
                         "doctype": "Item Price",
                         "is_query_report": True,
+                    },
+                    {
+                        "type": "report",
+                        "name": "Akonto Forecast",
+                        "doctype": "Sales Order",
+                        "is_query_report": True,
                     }
             ]
         }
