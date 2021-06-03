@@ -38,6 +38,7 @@ DocType: Sales Order,Create part delivery,Teillieferung erstellen
 DocType: Sales Order,Deliver part,Teillieferung
 DocType: Sales Order,% delivered),% geliefert)
 DocType: Sales Invoice,Always Print,Immer andrucken
+DocType: Sales Order,Create akonto,Akonto erstellen
 DocType: Equipment,End Customer,Endkunde
 DocType: Equipment,End Customer Name,Endkundenname
 DocType: Equipment,Copied,Kopiert

@@ -5,10 +5,15 @@
  "engine": "InnoDB",
  "field_order": [
   "date",
-  "percent"
+  "percent",
+  "amount",
+  "payment",
+  "file",
+  "creation_date"
  ],
  "fields": [
   {
+   "allow_on_submit": 1,
    "fieldname": "date",
    "fieldtype": "Date",
    "in_list_view": 1,
@@ -16,16 +21,47 @@
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "default": "40",
    "fieldname": "percent",
    "fieldtype": "Percent",
    "in_list_view": 1,
    "label": "Percent",
    "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Amount",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "payment",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Payment",
+   "options": "Payment Entry",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "file",
+   "fieldtype": "Data",
+   "label": "File"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "creation_date",
+   "fieldtype": "Date",
+   "label": "Creation Date",
+   "read_only": 1
   }
  ],
  "istable": 1,
- "modified": "2021-05-06 20:43:55.227047",
+ "modified": "2021-06-03 10:35:20.539880",
  "modified_by": "Administrator",
  "module": "Innomat",
  "name": "Sales Order Akonto",

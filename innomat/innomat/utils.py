@@ -500,3 +500,30 @@ def create_service_report(contact, timesheet, project):
         dt="Project", dn=project.name, is_private=1)
         
     return filename
+
+"""
+This function will create the next akonto invoice and store/attach the pdf
+"""
+@frappe.whitelist()
+def create_akonto(sales_order):
+    sales_order = frappe.get_doc("Sales Order", sales_order)
+    for a in (sales_order.akonto or []):
+        if not a.creation_date:
+            data = {
+                'doc': sales_order,
+                'date': a.date,
+                'percent': a.percent
+            }
+            template = frappe.get_doc("Print Format", "Akonto")
+            html = frappe.render_template(template.html, data)
+            # create pdf
+            pdf = frappe.utils.pdf.get_pdf(html)
+            # save and attach pdf
+            file_name = ("{0}_Akonto_{1}.pdf".format(sales_order.name, a.idx)).replace(" ", "_").replace("/", "_")
+            save_file(file_name, pdf, "Sales Order", sales_order.name, is_private=1)
+            # reference in Akonto table
+            a.file = file_name
+            a.creation_date = datetime.now()
+            sales_order.save()
+            break
+    return

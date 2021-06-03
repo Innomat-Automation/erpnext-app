@@ -18,6 +18,30 @@ frappe.ui.form.on('Sales Order', {
             frm.add_custom_button(__('Create part delivery'), function() {
                 create_part_delivery(frm);
             }).addClass("btn-primary");
+            // create akonto
+            frm.add_custom_button(__('Create akonto'), function() {
+                create_akonto(frm);
+            }).addClass("btn-primary");
+        }
+    },
+    before_save(frm) {
+        // update akonto table
+        var net_amount = 0;
+        for (var i = 0; i < frm.doc.items.length; i++) {
+            if (frm.doc.items[i].by_effort === 0) {
+                net_amount += frm.doc.items[i].amount;
+            }
+        }
+        var tax_rate = 1;
+        if ((frm.doc.taxes) && (frm.doc.taxes.length > 0)) {
+            tax_rate = 1 + (frm.doc.taxes[0].rate / 100);
+        }
+        if (frm.doc.akonto) {
+            for (var a = 0; a < frm.doc.akonto.length; a++) {
+                var fraction  = frappe.model.get_value(frm.doc.akonto[a].doctype, frm.doc.akonto[a].name, 'percent') / 100;
+                var gross_amount = net_amount * tax_rate * fraction;
+                frappe.model.set_value(frm.doc.akonto[a].doctype, frm.doc.akonto[a].name, 'amount', gross_amount);
+            }
         }
     }
 });
@@ -32,22 +56,33 @@ function create_part_delivery(frm) {
     console.log(total_qty);
     console.log(delivered_qty);
     frappe.prompt([
-        {'fieldname': 'deliver_part', 'fieldtype': 'Percent', 'label': __('Deliver part'), 'reqd': 1, 'default': 40}  
-    ],
-    function(values){
-        frappe.call({
-            method:"innomat.innomat.utils.create_part_delivery",
-            args: {
-                'sales_order': frm.doc.name,
-                'percentage': values.deliver_part
-            },
-            callback: function(r) {
-                frappe.set_route("Form", "Delivery Note", r.message);
-            }
-        })
-    },
-    __('Deliver part') + " (" + Math.round(100 * delivered_qty / total_qty) + __("% delivered)"),
-    __('Create')
-    )
+            {'fieldname': 'deliver_part', 'fieldtype': 'Percent', 'label': __('Deliver part'), 'reqd': 1, 'default': 40}  
+        ],
+        function(values){
+            frappe.call({
+                method:"innomat.innomat.utils.create_part_delivery",
+                args: {
+                    'sales_order': frm.doc.name,
+                    'percentage': values.deliver_part
+                },
+                callback: function(r) {
+                    frappe.set_route("Form", "Delivery Note", r.message);
+                }
+            });
+        },
+        __('Deliver part') + " (" + Math.round(100 * delivered_qty / total_qty) + __("% delivered)"),
+        __('Create')
+    );
+}
 
+function create_akonto(frm) {
+    frappe.call({
+        method:"innomat.innomat.utils.create_akonto",
+        args: {
+            'sales_order': frm.doc.name
+        },
+        callback: function(r) {
+            cur_frm.reload_doc();
+        }
+    });
 }
