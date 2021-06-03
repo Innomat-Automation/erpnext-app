@@ -47,3 +47,5 @@ DocType: Quotation,Sum caption,Summenbeschreibung
 DocType: Quotation,Object,Objekt
 DocType: Sales Order,Object,Objekt
 DocType: Item,ItemState,Artikel Status
+Report: Order Planning,Order Planning,Bestellbestand
+Report: Order Planning,To order,Zu bestellen
