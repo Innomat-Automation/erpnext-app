@@ -195,7 +195,7 @@ def get_data():
             "items": [
                     {
                         "type": "report",
-                        "name": "Prce Analysis",
+                        "name": "Price Analysis",
                         "doctype": "Item Price",
                         "is_query_report": True,
                     },
