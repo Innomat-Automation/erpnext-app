@@ -145,7 +145,8 @@ def create_project_from_template(template, company, customer):
         "customer_name": customer.customer_name,
         "title": "{0}P{1} {2}".format(company_key, key, customer.customer_name)
     })
-    new_project.insert()
+    
+    new_project.insert(ignore_permissions=True)         # ignore user permissions, so that a Service member can create a new project
     
     # create tasks for each item
     for t in template.tasks:
