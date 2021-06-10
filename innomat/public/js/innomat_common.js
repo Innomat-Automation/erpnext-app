@@ -15,7 +15,7 @@ window.onload = function () {
 function aggregate_groups(frm) {
     // find all groups and their amount
     var groups = {};
-    frm.doc.items.forEach(function (item) {
+    (frm.doc.items || []).forEach(function (item) {
         var this_group = item.sales_item_group;
         if (this_group === undefined) {
             this_group  = "empty";
@@ -29,7 +29,7 @@ function aggregate_groups(frm) {
         }
     });
     // update child table groups (to keep manual changes)
-    frm.doc.sales_item_groups.forEach(function (group) {
+    (frm.doc.sales_item_groups || []).forEach(function (group) {
         frappe.model.set_value(group.doctype, group.name, "total_amount", 0);
     });
     for (var key in groups) {
