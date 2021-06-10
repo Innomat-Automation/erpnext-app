@@ -67,6 +67,7 @@ def create_project(sales_order):
         "project_key": key,
         "project_name": "{0}P{1}".format(company_key, key),
         "project_type": "Project",
+        "object": so.object,
         "is_active": "Yes",
         "status": "Open",
         "expected_start_date": datetime.now(),
@@ -74,7 +75,7 @@ def create_project(sales_order):
         "customer": so.customer,
         "customer_name": so.customer_name,
         "sales_order": sales_order,
-        "title": "{0}P{1} {2}".format(company_key, key, so.customer_name)
+        "title": "{0}P{1} {2}".format(company_key, key, (so.object or so.customer_name))
     })
     new_project.insert()
     
