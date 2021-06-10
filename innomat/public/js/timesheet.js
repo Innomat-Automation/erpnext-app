@@ -140,6 +140,9 @@ function pull_external_text_from_activity(frm, cdt, cdn) {
             if ((templates) && (templates.length > 0)) {
                 frappe.model.set_value(cdt, cdn, "external_remarks", templates[0].text);
                 frappe.model.set_value(cdt, cdn, "template_character_count", templates[0].text.length);
+            } else {
+                frappe.model.set_value(cdt, cdn, "external_remarks", null);
+                frappe.model.set_value(cdt, cdn, "template_character_count", null);
             }
         }
     });
