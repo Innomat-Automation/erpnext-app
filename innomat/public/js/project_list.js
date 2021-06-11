@@ -7,22 +7,26 @@ frappe.listview_settings['Project'] = {
             create_service_sales_invoices();
         });
         // default filter settings
-        frappe.call({
-            method:"frappe.client.get_list",
-            args:{
-                doctype:"Employee",
-                filters: [
-                    ["user_id","=", frappe.session.user]
-                ],
-                fields: ["name"],
-            },
-            async: false,
-            callback: function(response) {
-                if (response.message.length > 0) {
-                    frappe.route_options = {"employee": response.message[0].name};
+        try {
+            frappe.call({
+                method:"frappe.client.get_list",
+                args:{
+                    doctype:"Employee",
+                    filters: [
+                        ["user_id","=", frappe.session.user]
+                    ],
+                    fields: ["name"],
+                },
+                async: false,
+                callback: function(response) {
+                    if (response.message.length > 0) {
+                        frappe.route_options = {"employee": response.message[0].name};
+                    }
                 }
-            }
-        });
+            });
+        } catch {
+            console.log("Failed to fetch employee");
+        }
     }
 }
 
