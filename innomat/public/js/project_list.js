@@ -6,6 +6,23 @@ frappe.listview_settings['Project'] = {
         listview.page.add_menu_item( __("Create Service Invoices"), function() {
             create_service_sales_invoices();
         });
+        // default filter settings
+        frappe.call({
+            method:"frappe.client.get_list",
+            args:{
+                doctype:"Employee",
+                filters: [
+                    ["user_id","=", frappe.session.user]
+                ],
+                fields: ["name"],
+            },
+            async: false,
+            callback: function(response) {
+                if (response.message.length > 0) {
+                    frappe.route_options = {"employee": response.message[0].name};
+                }
+            }
+        });
     }
 }
 
