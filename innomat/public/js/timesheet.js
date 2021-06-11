@@ -38,8 +38,8 @@ frappe.ui.form.on('Timesheet', {
             }
         }
         // hide salary buttons
-        $('button[data-label="Create%20%Salary%Slip"]').hide();
-         
+        $('button[data-label="Create%20Salary%20Slip"]').hide();
+        $('button[data-label="Gehaltsabrechnung%20erstellen"]').hide(); 
     },
     validate(frm) {
         // get lock date
