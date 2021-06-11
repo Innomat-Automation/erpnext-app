@@ -9,7 +9,14 @@ frappe.ui.form.on('Timesheet', {
                     filters: {'employee': frm.doc.employee},
                     query: "innomat.innomat.filters.projects_for_employee"
                 };
-        };
+            };
+        // filter activity types by prio
+        frm.fields_dict.time_logs.grid.get_field('activity_type').get_query = function(doc, cdt, cdn) {
+            return {
+                filters:{'disabled': 0},
+                order_by: 'prio'
+            }
+        }
         if (!frm.doc.__islocal) {
             // button to create delivery notes
             if (frm.doc.docstatus === 0) {

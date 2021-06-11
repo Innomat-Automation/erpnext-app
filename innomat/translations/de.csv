@@ -26,6 +26,7 @@ DocType: Timesheet,External Remarks,Externe Bemerkungen
 DocType: Timesheet,Resume Timer,Timer aufnehmen
 DocType: Timesheet,On Call Fee,Piketpauschale
 DocType: Timesheet,Project Hours,Projektstunden
+DocType: Activity Type,Lower is shown first (alphanumeric sort),Je kliner desto früher (alphanumerisch, gleiche Anzahl Stellen beachten)
 DocType: Task,By Effort,Nach Aufwand
 DocType: Task,Please select an item for invoicing,Bitte einen Artikel zur Verrechnung wählen
 DocType: Task,Service projects are invoiced by effort,Serviceprojekte müssen nach Aufwand verrechnet werden
