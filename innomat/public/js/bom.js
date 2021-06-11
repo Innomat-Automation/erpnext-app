@@ -42,9 +42,26 @@ function bulk_import(frm) {
                     fields = ["", "0"];
                 }
                 var child = cur_frm.add_child('items');
-                console.log(fields[0]);
                 frappe.model.set_value(child.doctype, child.name, 'item_code', fields[0]);
                 frappe.model.set_value(child.doctype, child.name, 'qty', fields[1]);
+            }
+            cur_frm.refresh_field('items');
+            // clean up uom and rates
+            for (var i = 0; i < frm.doc.items.length; i++) {
+                if (!frm.doc.items[i].uom) {
+                    frappe.call({
+                        "method": "frappe.client.get",
+                        "args": {
+                            "doctype": "Item",
+                            "name": frm.doc.items[i].item_code
+                        },
+                        "async": false,
+                        "callback": function(response) {
+                            var item = response.message;
+                            frappe.model.set_value(frm.doc.items[i].doctype, frm.doc.items[i].name, 'uom', item.stock_uom);
+                        }
+                    });
+                }
             }
             cur_frm.refresh_field('items');
         },
