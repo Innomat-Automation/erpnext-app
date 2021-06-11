@@ -281,6 +281,53 @@ def create_travel_notes(timesheet, travel_key):
     return ", ".join(dns)
 
 """
+On submit of an expense claim, create delivery notes from travel entries
+"""
+@frappe.whitelist()
+def create_expense_notes(expense_claim, expense_key):
+    ts = frappe.get_doc("Expense Claim", expense_claim)
+    travel = {}
+    for d in ts.expenses:
+        if d.expense_type == expense_key and d.project:
+            # if project key does not yet exist, create it
+            if d.project not in travel:
+                travel[d.project] = []
+            # insert billing item
+            travel[d.project].append({
+                'date': d.expense_date,
+                'expense_type': d.expense_type,
+                'amount': d.amount,
+                'ec_detail': d.name
+            })
+         
+    # grouped by project, create delivery notes
+    dns = []
+    for k, v in travel.items():
+        pj = frappe.get_doc("Project", k)
+        new_dn = frappe.get_doc({
+            "doctype": "Delivery Note",
+            "customer": pj.customer,
+            "project": k,
+            "company": pj.company
+        })
+        for value in v:
+            item_dict = {
+                'item_code': frappe.get_value("Innomat Settings", "Innomat Settings", "travel_fee_item"),
+                'qty': 1,
+                'rate': value['amount'],
+                'description': "Spesen {0}".format(value['date'].strftime("%d.%m.%Y")),
+                'against_expense_claim': expense_claim,
+                'ec_detail': value['ec_detail'],
+                'sales_item_group': "Service"
+            }
+            
+            row = new_dn.append('items', item_dict)
+        row = new_dn.append('sales_item_groups', {'group': 'Service', 'title': 'Service', 'sum_caption': 'Summe Service'})
+        new_dn.insert()
+        dns.append(new_dn.name)
+    return ", ".join(dns)
+    
+"""
 Get not-invoiced service project time records
 """
 def get_uninvoiced_service_time_records(project, from_date=None, to_date=None):

@@ -1,3 +1,5 @@
+const expense_key = "Spesen nach Beleg";
+
 frappe.ui.form.on('Expense Claim', {
     refresh(frm) {
         // filter projects by employee (team member)
@@ -8,6 +10,17 @@ frappe.ui.form.on('Expense Claim', {
                     query: "innomat.innomat.filters.projects_for_employee"
                 };
         };
+    },
+    validate(frm) {
+        frm.doc.expenses.forEach(expense) {
+            if ((!expense.project)  && (expense.internal_do_not_invoice === 0)) {
+                frappe.msgprint( (__("Please provide a project or set as interal expense: row {0}") ).format(expense.idx), __("Validation") );
+                frappe.validated=false;
+            }
+        }
+    },
+    on_submit(frm) {
+        create_expense_notes(frm);
     }
 });
 
@@ -30,4 +43,17 @@ function set_amount_from_qty(frm, cdt, cdn) {
     if (new_amount > 0) {
         frappe.model.set_value(cdt, cdn, 'amount', (child.qty * child.internal_rate));
     }
+}
+
+function create_expense_notes(frm) {
+    frappe.call({
+        method: 'innomat.innomat.utils.create_expense_notes',
+        args: {
+            expense_claim: frm.doc.name,
+            expense_key: expense_key
+        },
+        "callback": function(response) {
+            frappe.show_alert( response.message );
+        }
+    });
 }
