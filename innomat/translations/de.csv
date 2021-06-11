@@ -3,6 +3,7 @@ Module: Innomat,of,von
 DocType: Quotation,Is optional,Optional
 DocType: Quotation,BOM Rate,Stücklistenkostenbasis
 DocType: Quotation,Calculation Margin,Kalkulationsmarge
+DocType: Quotation,From BOM,Aus Stückliste
 DocType: BOM,Item updated,Artikel aktualisiert
 DocType: BOM,"Enter semi-colon separated items, one per line","Strichpunkt-getrennt Artikelcode;Menge eingeben, ein Artikel pro Zeile"
 DocType: Timesheet,Project required for {0} in row {1},Aktivität {0} benätigt ein Projekt in Zeile {1}

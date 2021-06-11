@@ -18,9 +18,9 @@ def get_bom_rate(item_code):
            filters={'item': item_code, 'is_active': 1, 'is_default': 1}, 
            fields=['name', 'total_cost'])
     if len(boms) > 0:
-        return boms[0]['total_cost']
+        return {'source': boms[0]['name'], 'rate': boms[0]['total_cost']}
     else:
-        return 0
+        return {'source': None, 'rate': 0}
     
 """
 This function will udate the item description based on a BOM
