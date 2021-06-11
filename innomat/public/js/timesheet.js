@@ -36,7 +36,9 @@ frappe.ui.form.on('Timesheet', {
                     create_service_report(frm);
                 });
             }
-         }
+        }
+        // hide salary buttons
+        $('button[data-label="Create%20%Salary%Slip"]').hide();
          
     },
     validate(frm) {
