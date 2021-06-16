@@ -59,3 +59,18 @@ function aggregate_groups(frm) {
         }
     }
 }
+
+/* this function will check if there are rate changes and write them to the html_price_info */
+function check_rates(frm) {
+    frappe.call({
+        method: "innomat.innomat.utils.check_rates",
+        args: {
+            'doctype': frm.doc.doctype,
+            'docname': frm.doc.name
+        },
+        callback: function(response) {
+            var html = response.message.html || "";
+            cur_frm.set_df_property('html_price_info', 'options', html);
+        }
+    })
+}

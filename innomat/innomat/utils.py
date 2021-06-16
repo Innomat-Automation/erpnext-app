@@ -587,3 +587,37 @@ def add_akonto_payment_reference(sales_order, payment_entry):
             a.save()
             break
     return
+
+"""
+This function checks the rates (price list or BOM) in a quotation or sales order against the current values
+"""
+@frappe.whitelist()
+def check_rates(doctype, docname):
+    doc = frappe.get_doc(doctype, docname)
+    changes = []
+    for i in doc.items:
+        if i.bom_rate:
+            rate = get_bom_rate(i.item_code)
+            if rate['rate'] != i.bom_rate:
+                changes.append({
+                    'idx': i.idx,
+                    'item_code': i.item_code,
+                    'item_name': i.item_name,
+                    'doc_rate': i.bom_rate,
+                    'current_rate': rate['rate'],
+                    'remarks': "{0} &gt; {1}".format(i.from_bom, rate['source'])
+                })
+        elif i.price_list_rate:
+            rates = frappe.get_all("Item Price", filters={'item_code': i.item_code, 'selling': 1}, fields=['name', 'price_list_rate'])
+            if rates and len(rates) > 0:
+                if rates[0]['price_list_rate'] != i.price_list_rate:
+                    changes.append({
+                        'idx': i.idx,
+                        'item_code': i.item_code,
+                        'item_name': i.item_name,
+                        'doc_rate': i.price_list_rate,
+                        'current_rate': rates[0]['price_list_rate'],
+                        'remarks': "{0}".format(rates[0]['name'])
+                    })
+    html = frappe.render_template("innomat/templates/includes/price_info.html", {'changes': changes})
+    return {'html': html}

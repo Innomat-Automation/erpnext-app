@@ -23,6 +23,10 @@ frappe.ui.form.on('Sales Order', {
                 create_akonto(frm);
             }).addClass("btn-primary");
         }
+        if (!frm.doc.__islocal) {
+            // capture price changes (see innomat_common)
+            check_rates(frm);
+        }
     },
     before_save(frm) {
         // update akonto table

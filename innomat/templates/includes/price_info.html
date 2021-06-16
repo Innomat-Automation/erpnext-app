@@ -1,0 +1,24 @@
+{% if changes|len > 0 %}
+<table class="table">
+    <thead>
+    <tr>
+        <th>{{ _("Pos") }}</th>
+        <th>{{ _("Item") }}</th>
+        <th>{{ _("Document") }}</th>
+        <th>{{ _("Current") }}</th>
+        <th>{{ _("Remarks") }}</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for c in changes %}
+    <tr>
+        <td>{{ c['idx'] }}</td>
+        <td>{{ c['item_code'] }}: {{ c['item_name'] }}</td>
+        <td>{{ c['doc_rate'] }}</td>
+        <td>{{ c['current_rate'] }}</td>
+        <td>{{ c['remarks'] }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endif %}
