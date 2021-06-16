@@ -90,6 +90,18 @@ def get_data():
                        "name": "Purchase Invoice",
                        "label": _("Purchase Invoice"),
                        "description": _("Purchase Invoice")
+                   },
+                   {
+                       "type": "doctype",
+                       "name": "OCI Basket",
+                       "label": _("OCI Basket"),
+                       "description": _("OCI Basket")
+                   },
+                   {
+                       "type": "page",
+                       "name": "oci-partners",
+                       "label": _("OCI Partners"),
+                       "description": _("OCI Partners")
                    }
             ]
         },
@@ -186,6 +198,18 @@ def get_data():
                        "name": "Project Template",
                        "label": _("Project Template"),
                        "description": _("Project Template")                   
+                   },
+                   {
+                       "type": "doctype",
+                       "name": "BOM Template",
+                       "label": _("BOM Template"),
+                       "description": _("BOM Template")                   
+                   },
+                   {
+                       "type": "doctype",
+                       "name": "OCI Partners",
+                       "label": _("OCI Partners"),
+                       "description": _("OCI Partners")                   
                    }
             ]
         },

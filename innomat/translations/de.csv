@@ -59,3 +59,6 @@ Report: Order Planning,To order,Zu bestellen
 DocType: Purchase Receipt,Supplier Delivery Note,Lieferantenlieferschein
 DocType: Expense Claim,"Internal do not invoice","Intern, nicht verrechnen"
 DocType: Expense Claim,"Please provide a project or set as interal expense: row {0}","Bitte in Zeile {0} entweder ein Projekt wählen oder als interner Aufwand markieren"
+DocType: BOM,"BOM Template Import","Stücklistenvorlagen import"
+DocType: BOM,"BOM Template","Stücklistenvorlage"
+DocType: BOM Template,"BOM Template","Stücklistenvorlage"

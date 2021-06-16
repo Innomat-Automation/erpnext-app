@@ -5,6 +5,9 @@ frappe.ui.form.on('BOM', {
             frm.add_custom_button(__("Bulk Import"), function() {
                 bulk_import(frm);
             });
+            frm.add_custom_button(__("BOM Template"), function() {
+                import_template_bom(frm);
+            });
         }
     },
     before_save(frm) {
@@ -68,5 +71,36 @@ function bulk_import(frm) {
         primary_action_label: __('OK'),
         title: __('Bulk Import')
     });
+    d.show();
+}
+
+function import_template_bom(frm) {
+    var d = new frappe.ui.Dialog({
+        'fields': [
+            {'fieldname': 'BOM_Template', 'fieldtype': 'Link', 'label': __('BOM Template'), 'options': 'BOM Template', 'reqd': 1}
+        ],
+        primary_action: function() {
+            d.hide();
+            var values = d.get_values();
+            frappe.call({
+                url: "/api/resource/BOM Template/" + values["BOM_Template"],
+                type: "GET",
+                callback: function(response) {
+                    console.log(response.data.items);
+                    if(response.data.items != null && response.data.items.length > 0){
+                        for (var i = 0; i < response.data.items.length; i++) {
+                            var child = cur_frm.add_child('items',response.data.items[i]);
+                            console.log("Add item " + response.data.items[i].item_code);
+                        }
+                    }else{
+                        console.log("no items found");
+                    }
+                    cur_frm.refresh_field('items');
+                }
+            });
+        },
+        primary_action_label: __('OK'),
+        title: __('BOM Template Import')
+        });
     d.show();
 }
