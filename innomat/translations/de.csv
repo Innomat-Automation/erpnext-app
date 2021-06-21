@@ -38,6 +38,7 @@ DocType: Project,Is Invoiced,Ist verrechnet
 DocType: Project,Create Service Invoices,Serviceabrechnungen erstellen
 DocType: Project,Nothing to invoice,Nichts zu verrechnen
 DocType: Project,Create Project from Template,Projekt von Vorlage erstellen
+DocType: Project,Status Light,Ampel
 DocType: Expense Claim,Internal rate,Interner Satz
 DocType: Expense Claim,External rate,Externer Satz
 DocType: Sales Order,Create delivery,Lieferung erstellen
@@ -62,3 +63,4 @@ DocType: Expense Claim,"Please provide a project or set as interal expense: row 
 DocType: BOM,"BOM Template Import","Stücklistenvorlagen import"
 DocType: BOM,"BOM Template","Stücklistenvorlage"
 DocType: BOM Template,"BOM Template","Stücklistenvorlage"
+DoctType: Persistent Session Setting,Persistent Session Setting,Persistente Session-Einstellung

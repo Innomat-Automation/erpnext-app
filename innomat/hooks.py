@@ -21,7 +21,7 @@ app_include_js = ["/assets/innomat/js/innomat_common.js"]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/innomat/css/innomat.css"
-# web_include_js = "/assets/innomat/js/innomat.js"
+web_include_js = "/assets/innomat/js/innomat_web.js"
 
 # include js in page
 # page_js = {"page" : "public/js/file.js"}

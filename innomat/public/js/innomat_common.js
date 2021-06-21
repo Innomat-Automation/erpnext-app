@@ -74,3 +74,30 @@ function check_rates(frm) {
         }
     })
 }
+
+/*
+ * This is a new hook to detect post-login, in order to load persistent session defaults
+ */
+$(document).on('app_ready', function() {
+    if (document.referrer.endsWith("/login")) {
+        // app ready after login, let's rumble
+        console.log("let's rumble");
+        // get persistent session settings
+        frappe.call({
+            'method': "frappe.client.get_list",
+            'args': {
+                'doctype': "Persistent Session Setting",
+                'filters': {'user': frappe.session.user},
+                'fields': ["setting_key", "setting_value"]
+            },
+            'callback': function(response) {
+                if (response.message) {
+                    response.message.forEach(function (setting) {
+                        var key = setting.setting_key.toLowerCase().replaceAll(" ", "_");
+                        frappe.defaults.set_user_default_local(key, setting.setting_value);
+                    });
+                }
+            }
+        });
+    }
+});

@@ -195,6 +195,12 @@ def get_data():
                    },
                    {
                        "type": "doctype",
+                       "name": "Persistent Session Setting",
+                       "label": _("Persistent Session Setting"),
+                       "description": _("Persistent Session Setting")                   
+                   },
+                   {
+                       "type": "doctype",
                        "name": "Project Template",
                        "label": _("Project Template"),
                        "description": _("Project Template")                   
