@@ -612,12 +612,12 @@ def check_rates(doctype, docname):
         elif i.price_list_rate:
             rates = frappe.get_all("Item Price", filters={'item_code': i.item_code, 'selling': 1}, fields=['name', 'price_list_rate'])
             if rates and len(rates) > 0:
-                if rates[0]['price_list_rate'] != i.price_list_rate:
+                if rates[0]['price_list_rate'] != (i.base_price_list_rate or i.price_list_rate):
                     changes.append({
                         'idx': i.idx,
                         'item_code': i.item_code,
                         'item_name': i.item_name,
-                        'doc_rate': i.price_list_rate,
+                        'doc_rate': (i.base_price_list_rate or i.price_list_rate),
                         'current_rate': rates[0]['price_list_rate'],
                         'remarks': "{0}".format(rates[0]['name'])
                     })
