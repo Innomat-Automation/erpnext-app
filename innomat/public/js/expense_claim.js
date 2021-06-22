@@ -1,4 +1,4 @@
-const expense_key = "Spesen nach Beleg";
+const expense_key = ["Spesen nach Beleg", "Pauschal"];
 
 frappe.ui.form.on('Expense Claim', {
     refresh(frm) {

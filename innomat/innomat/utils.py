@@ -8,6 +8,7 @@ from frappe.utils.password import get_decrypted_password
 from frappe.utils.file_manager import save_file
 from frappe.utils.pdf import get_pdf
 from erpnextswiss.erpnextswiss.common_functions import get_primary_address
+import json 
 
 """
 This function will return the BOM cost/rate for calculations (e.g. quotation)
@@ -286,9 +287,10 @@ On submit of an expense claim, create delivery notes from travel entries
 @frappe.whitelist()
 def create_expense_notes(expense_claim, expense_key):
     ts = frappe.get_doc("Expense Claim", expense_claim)
+    expense_key = json.loads(expense_key)
     travel = {}
     for d in ts.expenses:
-        if d.expense_type == expense_key and d.project:
+        if d.expense_type in expense_key and d.project:
             # if project key does not yet exist, create it
             if d.project not in travel:
                 travel[d.project] = []
