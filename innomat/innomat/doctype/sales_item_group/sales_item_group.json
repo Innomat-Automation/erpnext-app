@@ -1,0 +1,60 @@
+{
+ "creation": "2021-03-08 12:37:12.216937",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "group",
+  "title",
+  "sum_caption",
+  "total_amount",
+  "new_page"
+ ],
+ "fields": [
+  {
+   "fieldname": "group",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Group",
+   "reqd": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "sum_caption",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Sum caption",
+   "reqd": 1
+  },
+  {
+   "fieldname": "total_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Total Amount",
+   "options": "currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "new_page",
+   "fieldtype": "Check",
+   "label": "New page"
+  }
+ ],
+ "istable": 1,
+ "modified": "2021-06-22 20:50:28.140453",
+ "modified_by": "Administrator",
+ "module": "Innomat",
+ "name": "Sales Item Group",
+ "owner": "lars.mueller@libracore.com",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
