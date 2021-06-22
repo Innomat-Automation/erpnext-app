@@ -1,18 +1,32 @@
 frappe.ui.form.on('Sales Order', {
     refresh(frm) {
         if (frm.doc.docstatus === 1) {
-            // create project button
-            frm.add_custom_button(__('Create project'), function() {
-                frappe.call({
-                    method:"innomat.innomat.utils.create_project",
-                    args: {
-                        'sales_order': frm.doc.name
-                    },
-                    callback: function(r) {
-                        frappe.set_route("Form", "Project", r.message);
+            // create project button if there is no linked project yet
+            frappe.call({
+                'method': "frappe.client.get_list",
+                'args': {
+                    'doctype': "Project",
+                    'filters': [
+                        ["sales_order","=", frm.doc.name]
+                    ],
+                    'fields': ["name"]
+                },
+                'callback': function(r) {
+                    if ((r.message) && (r.message.length === 0)) {
+                        frm.add_custom_button(__('Create project'), function() {
+                            frappe.call({
+                                method:"innomat.innomat.utils.create_project",
+                                args: {
+                                    'sales_order': frm.doc.name
+                                },
+                                callback: function(r) {
+                                    frappe.set_route("Form", "Project", r.message);
+                                }
+                            })
+                        }).addClass("btn-primary");
                     }
-                })
-            }).addClass("btn-primary");
+                }
+            });
             
             // create part delivery
             frm.add_custom_button(__('Create part delivery'), function() {
