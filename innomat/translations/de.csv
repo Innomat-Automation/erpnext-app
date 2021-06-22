@@ -39,6 +39,8 @@ DocType: Project,Create Service Invoices,Serviceabrechnungen erstellen
 DocType: Project,Nothing to invoice,Nichts zu verrechnen
 DocType: Project,Create Project from Template,Projekt von Vorlage erstellen
 DocType: Project,Status Light,Ampel
+DocType: Project,Planned material cost,Geplante Materialkosten
+DocType: Project,Actual material cost,Tatsächliche Materialkosten
 DocType: Expense Claim,Internal rate,Interner Satz
 DocType: Expense Claim,External rate,Externer Satz
 DocType: Sales Order,Create delivery,Lieferung erstellen

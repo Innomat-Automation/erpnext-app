@@ -623,3 +623,85 @@ def check_rates(doctype, docname):
                     })
     html = frappe.render_template("innomat/templates/includes/price_info.html", {'changes': changes})
     return {'html': html}
+
+"""
+Get all required material with costs from a sales order (based on BOM or purchase item
+"""
+def get_sales_order_materials(sales_order):
+    sales_order= frappe.get_doc("Sales Order", sales_order)
+    data = {'total_cost': 0, 'total_hours': 0, 'items': []}
+    for item in sales_order.items:
+        if "h" in item.uom:
+            if item.by_effort == 0:
+                # single per-hour item
+                data['total_hours'] += item.qty
+        else:
+            # check if there is a BOM
+            boms = frappe.get_all("BOM", filters={'item': item.item_code, 'is_active': 1, 'is_default': 1, 'docstatus': 1}, fields=['name'])
+            if boms and len(boms) > 0:
+                # get pricing from BOM
+                bom = frappe.get_doc("BOM", boms[0]['name'])
+                for i in bom.items:
+                    if "h" in i.uom:
+                        # this is a per-hours item
+                        data['total_hours'] += item.qty * i.qty
+                    else:
+                        # this is a material position
+                        data['items'].append({
+                            'item_code': i.item_code, 
+                            'qty': item.qty * i.qty, 
+                            'cost': item.qty * i.amount
+                        })
+                        data['total_cost'] += item.qty * i.amount
+            else:
+                # no BOM, use valuation rate
+                value = frappe.get_value("Item", item.item_code, "valuation_rate")
+                if not value:
+                    value = frappe.get_value("Item", item.item_code, "last_purchase_rate")
+                data['items'].append({
+                    'item_code': item.item_code, 
+                    'qty': item.qty, 
+                    'cost': item.qty * value
+                })
+                data['total_cost'] += item.qty * value
+    return data
+
+"""
+Get project material cost based on purchase orders
+"""
+def get_project_material_cost(project):
+    data = frappe.db.sql("""SELECT SUM(`base_net_total`) AS `cost`
+                            FROM `tabPurchase Order`
+                            WHERE `tabPurchase Order`.`docstatus` = 1
+                              AND `tabPurchase Order`.`project` = "{project}"
+                        ;""".format(project=project), as_dict=True)
+    if data and len(data) > 0:
+        return data[0]['cost']
+    else:
+        return 0
+        
+"""
+This function will update  the project cost values
+"""
+def update_project_costs():
+    projects = frappe.get_all("Project", filters={'status': 'Open'}, fields=['name', 'sales_order'])
+    for p in projects:
+        if p['sales_order']:
+            planning_data = get_sales_order_materials(p['sales_order'])
+            planned_cost = planning_data['total_cost']
+            planned_hours = planning_data['total_hours']
+        else:
+            planned_cost = 0
+            planned_hours = 0
+        actual_cost = get_project_material_cost(p['name'])
+        project = frappe.get_doc("Project", p['name'])
+        # only update it required
+        if project.planned_material_cost != planned_cost or project.actual_material_cost != actual_cost or project.planned_hours != planned_hours:
+            project.planned_material_cost = planned_cost
+            project.actual_material_cost = actual_cost
+            project.planned_hours = planned_hours
+            try:
+                project.save()
+            except Exception as err:
+                frappe.log_error(err, "Update material cost {0}".format(p['name']))
+    return

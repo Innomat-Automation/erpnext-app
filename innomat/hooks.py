@@ -123,6 +123,11 @@ doctype_list_js = {
 # 		"innomat.tasks.monthly"
 # 	]
 # }
+scheduler_events = {
+    "daily": [
+        "innomat.innomat.utils.update_project_costs"
+    ]
+}
 
 # Testing
 # -------
