@@ -128,6 +128,12 @@ def get_data():
                        "description": _("Timesheet")
                    },
                    {
+                        "type": "report",
+                        "name": "Ressourcenplanung",
+                        "doctype": "Task",
+                        "is_query_report": True,
+                   },
+                   {
                        "type": "doctype",
                        "name": "Expense Claim",
                        "label": _("Expense Claim"),

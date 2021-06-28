@@ -65,4 +65,5 @@ DocType: Expense Claim,"Please provide a project or set as interal expense: row 
 DocType: BOM,"BOM Template Import","Stücklistenvorlagen import"
 DocType: BOM,"BOM Template","Stücklistenvorlage"
 DocType: BOM Template,"BOM Template","Stücklistenvorlage"
-DoctType: Persistent Session Setting,Persistent Session Setting,Persistente Session-Einstellung
+DocType: Persistent Session Setting,Persistent Session Setting,Persistente Session-Einstellung
+Report: Ressourcenplanung,Show Tasks,Tasks zeigen
