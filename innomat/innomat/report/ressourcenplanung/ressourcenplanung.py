@@ -75,7 +75,7 @@ def get_data(filters):
             if "show_tasks" in filters and filters['show_tasks'] == 1:
                 # task view
                 tasks = frappe.db.sql("""
-                    SELECT GROUP_CONCAT(`tabTask`.`name`) AS `task`
+                    SELECT IFNULL(GROUP_CONCAT(`tabTask`.`name`), "-") AS `task`
                     FROM `tabTask`
                     WHERE `tabTask`.`exp_end_date` >= "{date}"
                       AND `tabTask`.`exp_start_date` <= "{date}"
@@ -87,7 +87,7 @@ def get_data(filters):
             else:
                 # load view
                 load = frappe.db.sql("""
-                    SELECT SUM(`tabTask`.`fte`) AS `load`
+                    SELECT IFNULL(SUM(`tabTask`.`fte`), 0) AS `load`
                     FROM `tabTask`
                     WHERE `tabTask`.`exp_end_date` >= "{date}"
                       AND `tabTask`.`exp_start_date` <= "{date}"
@@ -95,18 +95,19 @@ def get_data(filters):
                       AND `tabTask`.`status` IN ("Open", "Working", "Overdue")
                       {conditions}
                 ;""".format(date=date.date(), conditions=conditions, user= user['user']), as_dict = True)
-                content = None
-                if load[0]['load']:
-                    color = "green"
+                color = "green"
+                if load[0]['load'] == 0:
+                    color = "blue"
+                else:
                     if load[0]['load'] >= 0.8:
                         color = "orange"
                     if load[0]['load'] >= 1:
                         color = "red"
-                    content = """
-                        <span style="color: {color}; ">
-                        {load}
-                        </span>
-                    """.format(load=round(load[0]['load'], 3), color=color)
+                content = """
+                    <span style="color: {color}; ">
+                    {load}
+                    </span>
+                """.format(load=round(load[0]['load'], 3), color=color)
                 user_planning[("{0}".format(date.date())).replace("-", "_")] = content
             date += timedelta(days=1)
         # append new row
