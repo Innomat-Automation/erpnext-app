@@ -725,7 +725,6 @@ def get_fte(user, start_date, end_date, hours):
     working_days = get_working_days(start_date, end_date, company)
     # available time
     available_hours = working_days * working_hours
-    frappe.log_error(available_hours)
     # fte
     fte = float(hours) / available_hours
     return fte
