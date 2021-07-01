@@ -406,7 +406,8 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
                     'description': dn_pos.description,
                     'delivery_note': dn.name,
                     'dn_detail': dn_pos.name,
-                    'sales_item_group': dn_pos.sales_item_group
+                    'sales_item_group': dn_pos.sales_item_group,
+                    'rate': dn_pos.rate
                 })
         new_sinv.insert()
         return """<a href="/desk#Form/Sales Invoice/{0}">{0}</a>""".format(new_sinv.name)
