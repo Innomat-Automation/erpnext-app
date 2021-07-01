@@ -146,7 +146,7 @@ def create_project_from_template(template, company, customer):
         "expected_end_date": (datetime.now() + timedelta(days=+30)),
         "customer": customer.name,
         "customer_name": customer.customer_name,
-        "title": "{0}P{1} {2}".format(company_key, key, customer.customer_name)
+        "title": "{0}{3}{1} {2}".format(company_key, key, customer.customer_name, template.project_type[0])
     })
     
     new_project.insert(ignore_permissions=True)         # ignore user permissions, so that a Service member can create a new project
