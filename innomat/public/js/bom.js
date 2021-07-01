@@ -89,13 +89,34 @@ function import_template_bom(frm) {
                     console.log(response.data.items);
                     if(response.data.items != null && response.data.items.length > 0){
                         for (var i = 0; i < response.data.items.length; i++) {
-                            var child = cur_frm.add_child('items',response.data.items[i]);
+                            var child = cur_frm.add_child('items');
+                            frappe.model.set_value(child.doctype, child.name, 'item_code', response.data.items[i].item_code);
+                            frappe.model.set_value(child.doctype, child.name, 'qty', response.data.items[i].qty);
                             console.log("Add item " + response.data.items[i].item_code);
                         }
                     }else{
                         console.log("no items found");
                     }
                     cur_frm.refresh_field('items');
+                    // clean up uom and rates
+                    for (var i = 0; i < frm.doc.items.length; i++) {
+                        if (!frm.doc.items[i].uom) {
+                            frappe.call({
+                                "method": "frappe.client.get",
+                                "args": {
+                                    "doctype": "Item",
+                                    "name": frm.doc.items[i].item_code
+                                },
+                                "async": false,
+                                "callback": function(response) {
+                                    var item = response.message;
+                                    frappe.model.set_value(frm.doc.items[i].doctype, frm.doc.items[i].name, 'uom', item.stock_uom);
+                                }
+                            });
+                        }
+                    }
+                    cur_frm.refresh_field('items');
+        
                 }
             });
         },
