@@ -101,7 +101,7 @@ def migrate_to_erpnext(user,password):
 
     # create all nessecary task
     taskcursor = con.cursor(as_dict=True)
-    taskcursor.execute('SELECT [strProjectNo],[strDesignation],[bForInvoice],[decHourlyRate] FROM [TimesafeBack].[dbo].[ViewActivities] GROUP BY [strProjectNo],[strDesignation],[bForInvoice],[decHourlyRate]')
+    taskcursor.execute('SELECT [strProjectNo],[strDesignation],[bForInvoice],[decHourlyRate],[tinState] FROM [TimesafeBack].[dbo].[ViewActivities] GROUP BY [strProjectNo],[strDesignation],[bForInvoice],[decHourlyRate],[tinState]')
 
     for row in taskcursor:
         #Check if task exist
@@ -117,7 +117,7 @@ def migrate_to_erpnext(user,password):
 
     #create all timesheets
     timecursor = con.cursor(as_dict=True)
-    timecursor.execute('SELECT [strProjectNo],[tinState],[strLogin],[strDesignation],[bForInvoice],[Duration],convert(date,[dtFrom],23) as dtFrom,[decHourlyRate],[lEmployeeID] FROM [TimesafeBack].[dbo].[ViewActivities] ORDER BY [dtFrom],[strLogin]')
+    timecursor.execute('SELECT [strProjectNo],[tinState],[strLogin],[strDesignation],[bForInvoice],[Duration],convert(date,[dtFrom],23) as dtFrom,[decHourlyRate],[lEmployeeID],[lInvoiceID] FROM [TimesafeBack].[dbo].[ViewActivities] ORDER BY [dtFrom],[strLogin]')
 
     lastrow = {'dtFrom' : datetime(year=2021,month=1,day=1), 'strLogin':''}
     timesheet = None
@@ -138,6 +138,8 @@ def migrate_to_erpnext(user,password):
     timesheetdoc = frappe.get_doc(timesheet)
     timesheetdoc.insert()
     timesheetdoc.submit()
+    frappe.db.commit()
+    frappe.db.sql("UPDATE `tabTimesheet Detail` SET `by_effort` = 0,`billable` = 0 WHERE `billable` = 1;")
     frappe.db.commit()
     con.close()
 
@@ -173,6 +175,7 @@ def create_time_sheet(timesheet,row):
                                         'from_time':internal_starttime,
                                         'to_time':internal_starttime.__add__(timedelta(hours=float(row['Duration']))),
                                         'hours':float(row['Duration']),
+                                        'billable': 0 if row['bForInvoice'] and not row['lInvoiceID'] else 1,
                                         'company': get_company_by_user(row['lEmployeeID'])})
     
     return timesheet
