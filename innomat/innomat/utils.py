@@ -127,7 +127,7 @@ def create_project(sales_order):
 Create a project from a project tenplate (not standard way, because of invoicing items!)
 """
 @frappe.whitelist()
-def create_project_from_template(template, company, customer):
+def create_project_from_template(template, company,po_no,po_date, customer):
     key = get_project_key()
     template = frappe.get_doc("Project Template", template)
     customer = frappe.get_doc("Customer", customer)
@@ -142,6 +142,8 @@ def create_project_from_template(template, company, customer):
         "project_type": template.project_type,
         "is_active": "Yes",
         "status": "Open",
+        "po_no" : po_no,
+        "po_date" : po_date,
         "expected_start_date": datetime.now(),
         "expected_end_date": (datetime.now() + timedelta(days=+30)),
         "customer": customer.name,

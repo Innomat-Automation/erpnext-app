@@ -97,6 +97,8 @@ function create_project_from_template() {
     frappe.prompt([
             {'fieldname': 'template', 'fieldtype': 'Link', 'label': __('Template'), 'reqd': 1, 'options': 'Project Template', 'default': 'Service'},
             {'fieldname': 'customer', 'fieldtype': 'Link', 'label': __('Customer'), 'reqd': 1, 'options': 'Customer'},
+            {'fieldname': 'po_no', 'fieldtype': 'Data', 'label': __('Customer\'s Purchase Order'), 'reqd': 0},
+            {'fieldname': 'po_date', 'fieldtype': 'Date', 'label': __('Customer\'s Purchase Date'), 'reqd': 0},
             {'fieldname': 'company', 'fieldtype': 'Link', 'label': __('Company'), 'reqd': 1, 'options': 'Company', 'default': frappe.defaults.get_default("Company")}            
         ],
         function(values){
@@ -104,6 +106,8 @@ function create_project_from_template() {
                 "method": "innomat.innomat.utils.create_project_from_template",
                 "args": {
                     "template": values.template,
+                    "po_no" : values.po_no,
+                    "po_date" : values.po_date,
                     "company": values.company,
                     "customer": values.customer
                 },
