@@ -27,7 +27,20 @@ frappe.query_reports["Ressourcenplanung"] = {
         {
             "fieldname":"show_tasks",
             "label": __("Show Tasks"),
-            "fieldtype": "Check"
+            "fieldtype": "Check",
+            "default": false,
+            onchange
         }
-    ]
+    ],
+	get_datatable_options(options) {
+		return Object.assign(options, {
+            checkboxColumn : true
+        })
+    },
+
+    after_datatable_render: function(datatable_obj) {
+        datatable_obj.style.setStyle(".dt-row",{ position : 'relative !important', top: 'auto !important', height: 'auto !important'});
+    }
 };
+
+
