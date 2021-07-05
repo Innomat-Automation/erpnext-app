@@ -39,6 +39,7 @@ frappe.query_reports["Ressourcenplanung"] = {
     },
 
     after_datatable_render: function(datatable_obj) {
+        datatable_obj.style.setStyle(".dt-scrollable",{ width : 'auto !important', height: 'auto !important'});
         datatable_obj.style.setStyle(".dt-row",{ position : 'relative !important', top: 'auto !important', height: 'auto !important'});
     }
 };
