@@ -3,9 +3,8 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
-import frappe
-import erpnext
+# import frappe
 from frappe.model.document import Document
 
-class BOMTemplate(Document):
-    pass
+class BOMTemplateItem(Document):
+	pass

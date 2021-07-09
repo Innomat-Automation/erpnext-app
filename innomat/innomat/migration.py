@@ -5,7 +5,7 @@
 
 import frappe
 from frappe.exceptions import TemplateNotFoundError
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 import pymssql
 import math
 from frappe import _
@@ -142,6 +142,43 @@ def migrate_to_erpnext(user,password):
     frappe.db.sql("UPDATE `tabTimesheet Detail` SET `by_effort` = 0,`billable` = 0 WHERE `billable` = 1;")
     frappe.db.commit()
     con.close()
+
+def migrate_timesheet_text(user,password):
+    con = get_connection(user,password)
+    #create all timesheets
+    timecursor = con.cursor(as_dict=True)
+    timecursor.execute('SELECT [strProjectNo],[tinState],[strLogin],[strDesignation],[bForInvoice],[Duration],convert(date,[dtFrom],23) as dtFrom,[decHourlyRate],[lEmployeeID],[lInvoiceID],[strRemarks],[strIntRemarks] FROM [TimesafeBack].[dbo].[ViewActivities] ORDER BY [dtFrom],[strLogin]')
+    count = 0
+    for row in timecursor:
+        if check_special_project(row['strProjectNo']):
+            continue
+
+        user = get_user(row['lEmployeeID'])
+
+        if user == 0:
+            continue
+
+        timedata = frappe.db.sql("""SELECT detail.`name` FROM `tabTimesheet Detail` as detail
+                         LEFT JOIN `tabTimesheet` As sheet ON detail.parent = sheet.name 
+                         WHERE Date(detail.from_time) = "{dt_from}"
+                         AND detail.`project` = "{project}"
+                         AND sheet.`employee` = "{employee}"
+                         AND detail .hours = {hours}
+                         AND detail.docstatus = 1"""
+                         .format(dt_from=row['dtFrom'],project=get_erp_projectname(row['strProjectNo']),employee=user,hours=row['Duration']),as_dict = True)
+        
+        if len(timedata) == 1 :
+            internal = str(row['strIntRemarks']).replace("\"","'")
+            external = str(row['strRemarks']).replace("\"","'")
+            if internal == "None":
+                internal = ""
+            if external == "None":
+                external = ""
+            frappe.db.sql("""UPDATE `tabTimesheet Detail` SET `internal_remarks` = "{int}",`external_remarks` = "{ext}" 
+                             WHERE `name` = '{name}';  """.format(int=internal,ext=external,name=timedata[0].name))
+    frappe.db.commit()
+    con.close()
+
 
 def create_time_sheet(timesheet,row):
     internal_starttime = datetime(year=row['dtFrom'].year,month=row['dtFrom'].month,day=row['dtFrom'].day,hour=7)

@@ -75,8 +75,14 @@ def get_data(filters):
             if "show_tasks" in filters and filters['show_tasks'] == 1:
                 # task view
                 tasks = frappe.db.sql("""
-                    SELECT IFNULL(GROUP_CONCAT(`tabTask`.`name`), "-") AS `task`
+                    SELECT IFNULL(GROUP_CONCAT(
+                        CONCAT_WS(' ',
+                            CONCAT('<a href=\"#Form/Project/',`tabTask`.`project`,'\" title=\"',`tabProject`.`title`,'\" data-doctype=\"Project\">',`tabTask`.`project`,'</a>') ,
+                            CONCAT('<a href=\"#Form/Task/',`tabTask`.`name`,'\" title=\"',`tabTask`.`name`,'\" data-doctype=\"Task\">',`tabTask`.`subject`,'</a>')
+                        ) 
+                    SEPARATOR '<br/>'), "-") AS `task`
                     FROM `tabTask`
+                    LEFT JOIN `tabProject` ON `tabProject`.project_name = `tabTask`.project
                     WHERE `tabTask`.`exp_end_date` >= "{date}"
                       AND `tabTask`.`exp_start_date` <= "{date}"
                       AND `tabTask`.`completed_by` = "{user}"
