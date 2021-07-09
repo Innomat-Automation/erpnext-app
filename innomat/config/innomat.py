@@ -144,6 +144,12 @@ def get_data():
                        "name": "Equipment",
                        "label": _("Equipment"),
                        "description": _("Equipment")
+                   },
+                   {
+                        "type": "report",
+                        "name": "Nachkalkulation",
+                        "doctype": "Project",
+                        "is_query_report": True,
                    }
             ]
         },
