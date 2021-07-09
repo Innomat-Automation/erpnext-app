@@ -317,7 +317,8 @@ def create_expense_notes(expense_claim, expense_key):
                 'date': d.expense_date,
                 'expense_type': d.expense_type,
                 'amount': d.amount,
-                'ec_detail': d.name
+                'ec_detail': d.name,
+                'description': d.description
             })
          
     # grouped by project, create delivery notes
@@ -331,11 +332,14 @@ def create_expense_notes(expense_claim, expense_key):
             "company": pj.company
         })
         for value in v:
+            description = "Spesen {0}".format(value['date'].strftime("%d.%m.%Y"))
+            if value['description']:
+                description += "<br>" + value['description']
             item_dict = {
                 'item_code': frappe.get_value("Innomat Settings", "Innomat Settings", "travel_fee_item"),
                 'qty': 1,
                 'rate': value['amount'],
-                'description': "Spesen {0}".format(value['date'].strftime("%d.%m.%Y")),
+                'description': description,
                 'against_expense_claim': expense_claim,
                 'ec_detail': value['ec_detail'],
                 'sales_item_group': "Service"
