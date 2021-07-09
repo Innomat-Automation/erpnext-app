@@ -255,7 +255,8 @@ def create_travel_notes(timesheet, travel_key):
                 'travel_type': d.travel_type,
                 'kilometers': d.kilometers,
                 'travel_fee': d.travel_fee,
-                'ts_detail': d.name
+                'ts_detail': d.name,
+                'external_reamrks': d.external_remarks
             })
          
     # grouped by project, create delivery notes
@@ -270,10 +271,13 @@ def create_travel_notes(timesheet, travel_key):
         })
         for value in v:
             if "wagen" in value['travel_type']:
+                description = "Anfahrt {0}".format(value['date'].strftime("%d.%m.%Y"))
+                if value['external_remarks']:
+                    description += "<br>" + value['external_remarks']
                 item_dict = {
                     'item_code': frappe.get_value("Innomat Settings", "Innomat Settings", "mileage_item"),
                     'qty': value['kilometers'],
-                    'description': "Anfahrt {0}".format(value['date'].strftime("%d.%m.%Y")),
+                    'description': description,
                     'against_timesheet': timesheet,
                     'ts_detail': value['ts_detail'],
                     'sales_item_group': "Service"
