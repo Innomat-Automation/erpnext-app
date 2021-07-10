@@ -156,7 +156,9 @@ def create_project_from_template(template, company, customer, po_no = '',po_date
         new_project.append("project_team", {
             "employee": frappe.get_value("Employee",{'user_id':frappe.session.user},'name'),
             "project_manager": 1
-        }
+        })
+        new_project.project_manager = frappe.get_value("Employee",{'user_id':frappe.session.user},'name')
+        new_project.project_manager_name = frappe.get_value("Employee",{'user_id':frappe.session.user},'employee_name')
 
     new_project.insert(ignore_permissions=True)         # ignore user permissions, so that a Service member can create a new project
 
