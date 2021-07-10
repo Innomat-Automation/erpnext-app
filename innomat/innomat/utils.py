@@ -135,7 +135,7 @@ def create_project_from_template(template, company, customer, po_no = '',po_date
     if "Asprotec" in company:
         company_key = "AS"
     # create project 
-    projectdata = {
+    new_project = frappe.get_doc({
         "doctype": "Project",
         "project_key": key,
         "project_name": "{0}{2}{1}".format(company_key, key, template.project_type[0]),
@@ -148,21 +148,17 @@ def create_project_from_template(template, company, customer, po_no = '',po_date
         "expected_end_date": (datetime.now() + timedelta(days=+30)),
         "customer": customer.name,
         "customer_name": customer.customer_name,
-        "title": "{0}{3}{1} {2}".format(company_key, key, customer.customer_name, template.project_type[0])
-    }
+        "title": "{0}{3}{1} {2}".format(company_key, key, customer.customer_name, template.project_type[0]),
+        "company": company
+    })
 
     if frappe.session.user and frappe.get_value("Employee",{'user_id':frappe.session.user},'name'):
-        projectdata['project_team'] = []
-        usermember = frappe.get_doc({"doctype": "Project Member",
-                                     "employee": frappe.get_value("Employee",{'user_id':frappe.session.user},'name'),
-                                     "project_manager": 1})
-        projectdata['project_team'].append(usermember.as_dict())
+        new_project.append("project_team", {
+            "employee": frappe.get_value("Employee",{'user_id':frappe.session.user},'name'),
+            "project_manager": 1
+        }
 
-    new_project = frappe.get_doc(projectdata)
-    
     new_project.insert(ignore_permissions=True)         # ignore user permissions, so that a Service member can create a new project
-
-
 
     # create tasks for each item
     for t in template.tasks:
