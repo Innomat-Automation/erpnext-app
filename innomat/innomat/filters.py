@@ -16,6 +16,7 @@ def projects_for_employee(doctype, txt, searchfield, start, page_len, filters):
            LEFT JOIN `tabProject Member` ON `tabProject Member`.`parent` = `tabProject`.`name`
            WHERE `tabProject Member`.`employee` = "{e}"
              AND `tabProject`.`is_active` = "Yes"
-             AND (`tabProject`.`title` LIKE "%{s}%" OR `tabProject`.`name` LIKE "%{s}%" OR `tabProject`.`customer_name` LIKE "%{s}%");
+             AND (`tabProject`.`title` LIKE "%{s}%" OR `tabProject`.`name` LIKE "%{s}%" OR `tabProject`.`customer_name` LIKE "%{s}%")
+             AND `tabProject`.`status` = "Open";
         """.format(e=filters['employee'], s=txt))
 

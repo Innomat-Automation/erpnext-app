@@ -52,7 +52,12 @@ frappe.ui.form.on('Timesheet', {
             }
         });
         // validate booking entries
+        var projects = [];
         for (var i = 0; i < frm.doc.time_logs.length; i++) {
+            // compile list of all projects
+            if ((frm.doc.time_logs[i].project) && (!(projects.includes(frm.doc.time_logs[i].project)))) {
+                projects.push(frm.doc.time_logs[i].project);
+            }
             // check that booking is after lock date
             if (frm.doc.time_logs[i].from_time <= lock_date) {
                 frappe.msgprint( __("Row {0} is before lock date").replace("{0}", (i+1)), __("Validation") );
@@ -91,6 +96,21 @@ frappe.ui.form.on('Timesheet', {
                 }
             }
         }
+        // validate that all projects are open
+        var project_str = "\"" + projects.join("\", \"") + "\"";
+        frappe.call({
+            "method": "innomat.innomat.utils.check_projects_open",
+            "args": {
+                "projects": project_str
+            },
+            "async": false,
+            "callback": function(response) {
+                if (response.message) {
+                    frappe.msgprint( __("Only open projects can be booked ({0})").replace("{0}", response.message), __("Validation") );
+                    frappe.validated=false;
+                }
+            }
+        });
     },
     on_submit(frm) {
         create_travel_notes(frm);

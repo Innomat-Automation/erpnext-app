@@ -774,3 +774,21 @@ def get_holidays(company):
     for d in data:
         dates.append(d['holiday_date'].strftime("%Y-%m-%d"))
     return dates
+
+"""
+Check if all projects are open. Returns list of closed projects if one ore more projects are closed.
+"""
+@frappe.whitelist()
+def check_projects_open(projects):
+    sql_query = """SELECT `name`, `status`
+                   FROM `tabProject`
+                   WHERE `tabProject`.`name` IN ({projects})
+                     AND `tabProject`.`status` != "Open";""".format(projects=projects)
+    closed_projects = frappe.db.sql(sql_query, as_dict=True)
+    if closed_projects and len(closed_projects) > 0:
+        result = []
+        for c in closed_projects:
+            result.append(c['name'])
+        return ", ".join(result)
+    else:
+        return None
