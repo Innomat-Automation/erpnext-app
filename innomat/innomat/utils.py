@@ -792,3 +792,54 @@ def check_projects_open(projects):
         return ", ".join(result)
     else:
         return None
+
+""" 
+This function allows to insert a purchase invoice with minimal input
+"""
+@frappe.whitelist()
+def quick_pinv(date, gross_amount, supplier, expense_account, purchase_taxes, remarks, company):
+    # prepare values
+    gross_amount = float(gross_amount)
+    cost_center = frappe.get_value("Company", company, "cost_center")
+    # create base document
+    new_pinv = frappe.get_doc({
+        'doctype': "Purchase Invoice",
+        'company': company,
+        'supplier': supplier,
+        'posting_date': date,
+        'taxes_and_charges': purchase_taxes,
+        'bill_no': remarks,
+        'bill_date': date,
+        'set_posting_time': 1
+    })
+    # check taxation
+    taxes_template = frappe.get_doc("Purchase Taxes and Charges Template", purchase_taxes)
+    if taxes_template.taxes and len(taxes_template.taxes) > 0:
+        tax_rate = taxes_template.taxes[0].rate
+        net_amount = round(gross_amount / ((100 + tax_rate) / 100), 2)
+    else:
+        tax_rate = 0
+        net_amount = gross_amount
+    # add item position
+    item = frappe.get_value("Innomat Settings", "Innomat Settings", "quick_pinv_item")
+    new_pinv.append("items", {
+        'item_code': item,
+        'description': remarks,
+        'qty': 1,
+        'rate': net_amount,
+        'expense_account': expense_account,
+        'cost_center': cost_center
+    })
+    # add taxes
+    for t in taxes_template.taxes:
+        new_pinv.append("taxes", {
+            'account_head': t.account_head,
+            'charge_type': t.charge_type,
+            'rate': t.rate,
+            'description': t.description
+        })
+    # insert new record
+    new_pinv.insert()
+    new_pinv.submit()
+    frappe.db.commit()
+    return new_pinv.name

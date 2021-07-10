@@ -10,7 +10,8 @@
   "column_timesheet",
   "on_call_fee_item",
   "mileage_item",
-  "travel_fee_item"
+  "travel_fee_item",
+  "quick_pinv_item"
  ],
  "fields": [
   {
@@ -50,10 +51,16 @@
    "fieldtype": "Link",
    "label": "Service report print format",
    "options": "Print Format"
+  },
+  {
+   "fieldname": "quick_pinv_item",
+   "fieldtype": "Link",
+   "label": "Quick purchase invoice item",
+   "options": "Item"
   }
  ],
  "issingle": 1,
- "modified": "2021-05-05 12:40:57.160356",
+ "modified": "2021-07-10 10:30:23.664831",
  "modified_by": "Administrator",
  "module": "Innomat",
  "name": "Innomat Settings",
