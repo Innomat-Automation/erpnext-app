@@ -377,7 +377,7 @@ def get_uninvoiced_service_time_records(project, from_date=None, to_date=None):
            {time_conditions}
            AND `tabTimesheet Detail`.`project` = "{project}"
            AND `tabTimesheet Detail`.`by_effort` = 1
-           AND `tabTimesheet Detail`.`activity_type` != "Reisetätigkeit"
+           /* AND `tabTimesheet Detail`.`activity_type` != "Reisetätigkeit" (on effort will be invoiced) */
            AND `tabSales Invoice Item`.`ts_detail` IS NULL;
     """.format(project=project, time_conditions=time_conditions)
     time_logs = frappe.db.sql(sql_query, as_dict=True)
