@@ -270,7 +270,7 @@ def create_travel_notes(timesheet, travel_key):
         for value in v:
             if "wagen" in value['travel_type']:
                 description = "Anfahrt {0}".format(value['date'].strftime("%d.%m.%Y"))
-                if value['external_remarks']:
+                if 'external_remarks' in value and value['external_remarks']:
                     description += "<br>" + value['external_remarks']
                 item_dict = {
                     'item_code': frappe.get_value("Innomat Settings", "Innomat Settings", "mileage_item"),
@@ -400,6 +400,8 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
         cost_center = frappe.get_value("Company", pj.company, "cost_center")
         for t in time_logs:
             description = "{0} ({1})".format(t['from_time'].strftime("%d.%m.%Y"), t['employee_name'])
+            if t.activity_type == "Reisetätigkeit":
+                description += "<br>Reisetätigkeit"
             if t['external_remarks']:
                 description += "<br>" + t['external_remarks']
             row = new_sinv.append('items', {
