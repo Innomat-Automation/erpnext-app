@@ -7,7 +7,8 @@ import frappe
 from frappe.exceptions import TemplateNotFoundError
 from datetime import datetime, time, timedelta
 import pymssql
-import math
+import os
+from frappe.utils import get_site_name
 from frappe import _
 
 
@@ -389,36 +390,125 @@ def get_erp_projectname(key):
     return "{0}{1}".format(company_key, key)
 
 
-# function to migrate projects from Timesafe
-def migrate_projects_from_timesafe(user,password):
+def migrate_invoice(user,password):
     con = get_connection(user,password);
+    errorlist = []
     cursor = con.cursor(as_dict=True)
-    cursor.execute('SELECT * From Projects WHERE strProjectNr = ')
-    for row in cursor:
-        key = row['strProjectNo']
-        company_key = "IN"
-        if(str(key).startswith('2') or str(key).startswith('3')):
-            company_key = "AS"
+    cursor.execute('SELECT * From InvoiceData')
 
-        print("Check {0}{1}".format(company_key, key))
-        doc = frappe.db.exists("Project","{0}{1}".format(company_key, key))
-        if(doc == None):
-            print("Create {0}{1}".format(company_key, key))
-            # create project 
-            new_project = frappe.get_doc({
-                "doctype": "Project",
-                "project_key": key,
-                "project_name": "{0}{1}".format(company_key, key),
-                "project_type": "Project",
-                "is_active": "Yes",
-                "status": "Open",
-                "title": row['strProjectName']
-            })
-            new_project.insert()
-        
-    frappe.db.commit();
-    con.close()
+    for row in cursor:
+        invoice = create_invoice(row,errorlist)
+        if invoice != None:
+            print(invoice.as_dict())
+            get_invoice_pdf(row,invoice,errorlist)
     
+    print(errorlist)
+    frappe.db.commit()
+
+
+def create_invoice(row, errorlist):
+
+    client = row['orgclientno'] 
+    if client == None:
+        client = row['contactclientno']
+
+    if client == None:
+        errorlist.append("Error Client not found : " + str(row['lInvoiceNo']))
+        return;
+    invoicedatetime = row['dtPerDate']
+    payterm = timedelta(days = row['lTermOfPayment'])
+    duedate = invoicedatetime.__add__(payterm)
+    sales_item_group = "Migration";
+
+    project = None
+    doc = frappe.db.exists({'doctype' : "Project","project_key": row['strProjectNo']})
+        # if project not extist continue
+    if doc != ():
+        project = get_erp_projectname(row['strProjectNo'])
+
+    invoice = frappe.get_doc({'doctype' : 'Sales Invoice',
+               'company' : get_company_with_reportdefinition(row['lInvoiceRptDefinitionID']),
+               'customer' : "K-" + client,
+               'posting_date' : invoicedatetime.date(),
+               'posting_time' : invoicedatetime.time(),
+               'set_posting_time' : 1,
+               'due_date' : invoicedatetime.date().__add__(timedelta(30)) if duedate == None else duedate.date(),
+               'project' : project,
+               'po_no' : row['bestellreferenz'],
+               'po_date' : '' if row['bestelldatum'] == None else row['bestelldatum'].date(),
+               'currency' : get_currency_with_reportdefinition(row['lInvoiceRptDefinitionID']),
+               'selling_price_list' : 'Verkauf Normal',
+               'taxes_and_charges' : get_taxes(row['lInvoiceRptDefinitionID'])
+              })
+
+    tax_template = frappe.get_doc('Sales Taxes and Charges Template', get_taxes(row['lInvoiceRptDefinitionID']))
+    if tax_template != None:
+        invoice.taxes = tax_template.taxes
+
+    row = invoice.append('items', {
+        'item_code' : 'MIG-PAUSCHAL',
+        'item_name' : 'Betrag aus Migration',
+        'qty' : 1,
+        'description': 'Timesafe Migration Rechnung {0}'.format(row['lInvoiceNo']),
+        'rate' :  calculate_amount(row['decAmount'],row['lInvoiceRptDefinitionID'] != 3),
+        'uom' : 'Stk',
+        'price_list_rate' : 0.0,
+        'sales_item_group': sales_item_group,
+        'cost_center': get_cost_center(row['lInvoiceRptDefinitionID'] )
+    })
+    # create sales invoice
+    row = invoice.append('sales_item_groups', {
+            'group': sales_item_group, 
+            'title': sales_item_group, 
+            'sum_caption': 'Summe {0}'.format(sales_item_group)})
+    print(invoice.as_dict())
+    invoice.save()
+    invoice.submit()
+
+    return invoice
+
+def get_invoice_pdf(row,invoice, errorlist):
+    filename = get_site_name(frappe.local.site) + '/private/files/' + row['dateiname']
+    print(filename)
+    if os.path.exists(filename):
+        new_file = frappe.get_doc({"doctype": "File",
+                               "file_name": row['dateiname'],
+                               "attached_to_doctype": "Sales Invoice",
+                               "attached_to_name": invoice.name,
+                               "attached_to_field": None,
+                               "file_url": '/private/files/' + row['dateiname'],
+                               "file_size": os.stat(filename).st_size,
+                               "is_private": 1}).insert()
+        print(new_file.as_dict())
+
+
+def get_company_with_reportdefinition(id):
+    if id == 4: return "Innomat-Automation AG"
+    else: return "Asprotec AG"
+
+def get_cost_center(id):
+    if id == 4: return "Haupt - I"
+    else: return "Main - A"
+
+def get_currency_with_reportdefinition(id):
+    if id == 3: return "EUR"
+    else: return "CHF"
+
+def get_taxes(id):
+    if id == 3: return "Export - A"
+    if id == 4: return "MwSt CH (302) - I"
+    else: return "MwSt CH (302) - A"
+
+def calculate_amount(amount,mwst = True):
+    if mwst == False: return float(amount)
+    else: return round_to_05(float(amount) / 1.077)
+
+def round_to(n, precision):
+    correction = 0.5 if n >= 0 else -0.5
+    return int( n/precision+correction ) * precision
+
+def round_to_05(n):
+    return round_to(n, 0.05)
 
 def get_connection(user,password):
     return pymssql.connect("192.168.80.25\Timesafe",user,password,"TimesafeBack")
