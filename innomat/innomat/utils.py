@@ -397,6 +397,7 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
             "project": project,
             "company": pj.company
         })
+        cost_center = frappe.get_value("Company", pj.company, "cost_center")
         for t in time_logs:
             description = "{0} ({1})".format(t['from_time'].strftime("%d.%m.%Y"), t['employee_name'])
             if t['external_remarks']:
@@ -407,7 +408,8 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
                 'description': description,
                 'against_timesheet': t['timesheet'],
                 'ts_detail': t['ts_detail'],
-                'sales_item_group': sales_item_group
+                'sales_item_group': sales_item_group,
+                'cost_center': cost_center
             })
         # create sales invoice
         row = new_sinv.append('sales_item_groups', {
@@ -426,7 +428,8 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
                     'delivery_note': dn.name,
                     'dn_detail': dn_pos.name,
                     'sales_item_group': dn_pos.sales_item_group,
-                    'rate': dn_pos.rate
+                    'rate': dn_pos.rate,
+                    'cost_center': cost_center
                 })
         new_sinv.insert()
         return """<a href="/desk#Form/Sales Invoice/{0}">{0}</a>""".format(new_sinv.name)
