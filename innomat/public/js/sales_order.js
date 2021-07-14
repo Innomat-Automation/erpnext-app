@@ -61,6 +61,12 @@ frappe.ui.form.on('Sales Order', {
                 frappe.model.set_value(frm.doc.akonto[a].doctype, frm.doc.akonto[a].name, 'amount', gross_amount);
             }
         }
+    },
+    customer(frm) {
+        fetch_tax_rule(frm);
+    },
+    company(frm) {
+        fetch_tax_rule(frm);
     }
 });
 

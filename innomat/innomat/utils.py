@@ -395,7 +395,8 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
             "doctype": "Sales Invoice",
             "customer": pj.customer,
             "project": project,
-            "company": pj.company
+            "company": pj.company,
+            "taxes_and_charges": get_sales_tax_rule(pj.customer, pj.company)
         })
         cost_center = frappe.get_value("Company", pj.company, "cost_center")
         for t in time_logs:
@@ -413,7 +414,7 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
                 'sales_item_group': sales_item_group,
                 'cost_center': cost_center
             })
-        # create sales invoice
+        # insert sales item groups
         row = new_sinv.append('sales_item_groups', {
             'group': sales_item_group, 
             'title': sales_item_group, 
@@ -433,6 +434,16 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
                     'rate': dn_pos.rate,
                     'cost_center': cost_center
                 })
+        # insert taxes
+        tax_template = frappe.get_doc("Sales Taxes and Charges Template", new_sinv.taxes_and_charges)
+        for t in tax_template.taxes:
+            new_sinv.append('taxes', {
+                'charge_type': t.charge_type,
+                'account_head': t.account_head,
+                'description': t.description,
+                'rate': t.rate
+            })
+        # create sales invoice
         new_sinv.insert()
         return """<a href="/desk#Form/Sales Invoice/{0}">{0}</a>""".format(new_sinv.name)
     else:
@@ -848,3 +859,16 @@ def quick_pinv(date, gross_amount, supplier, expense_account, purchase_taxes, re
     new_pinv.submit()
     frappe.db.commit()
     return new_pinv.name
+
+"""
+Fetch correct sales tax rule
+"""
+@frappe.whitelist()
+def get_sales_tax_rule(customer, company):
+    territory = frappe.get_value("Customer", customer, "territory")
+    tax_code = "302" if territory == "Schweiz" else "000"
+    rules = frappe.get_all("Sales Taxes and Charges Template", filters={'tax_code': tax_code, 'company': company}, fields=['name'])
+    if rules and len(rules) > 0:
+        return rules[0]['name']
+    else:
+        return None

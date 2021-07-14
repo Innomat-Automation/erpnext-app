@@ -99,3 +99,24 @@ $(document).on('app_ready', function() {
         }
     });
 });
+
+/*
+ * This function will correctly load the tax template for sales documents
+ */
+function fetch_tax_rule(frm) {
+    if ((frm.doc.customer) && (frm.doc.company)) {
+        frappe.call({
+            'method': 'innomat.innomat.utils.get_sales_tax_rule',
+            'args': {
+                'customer': frm.doc.customer,
+                'company': frm.doc.company
+            },
+            "callback": function(response) {
+                // delay callback so that the customer selling controller is overridden (otherwise, link field is wrong)
+                setTimeout(function() {
+                    cur_frm.set_value("taxes_and_charges", response.message);
+                }, 1000);
+            }
+        });
+    }
+}
