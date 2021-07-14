@@ -82,6 +82,7 @@ def create_project(sales_order):
     new_project.insert()
     
     # create tasks for each item
+    dn_items = []   # collect time hours not per effort
     for i in so.items:
         boms = frappe.get_all("BOM", 
                 filters={'item': i.item_code, 'is_default': 1}, 
@@ -120,6 +121,38 @@ def create_project(sales_order):
                     "by_effort": i.by_effort
                 })
                 new_task.insert()
+        # mark for DN creation
+        if i.by_effort == 0:
+            dn_items.append({
+                'item_code': i.item_code,
+                'item_name': i.item_name,
+                'description': i.description,
+                'qty': i.qty,
+                'uom': i.uom,
+                'rate': i.rate,
+                'so_detail': i.name,
+                'against_sales_order': so.name,
+                'warehouse': i.warehouse
+            })
+            
+    # create delivery note for all non-per-effort items
+    if len(dn_items) > 0:
+        new_dn = frappe.get_doc({
+            'doctype': "Delivery Note",
+            'customer': so.customer,
+            'company': so.company,
+            'project': new_project.name
+        })
+        for item in dn_items:
+            new_dn.append('items', item)
+        for sales_item_group in so.sales_item_groups:
+            new_dn.append('sales_item_groups', {
+                'group': sales_item_group.group, 
+                'title': sales_item_group.title, 
+                'sum_caption': sales_item_group.sum_caption
+            })
+        new_dn.insert()
+        
     frappe.db.commit()
     return new_project.name
 
