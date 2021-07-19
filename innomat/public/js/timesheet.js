@@ -99,12 +99,12 @@ frappe.ui.form.on('Timesheet', {
         // validate that all projects are open
         var project_str = "\"" + projects.join("\", \"") + "\"";
         frappe.call({
-            "method": "innomat.innomat.utils.check_projects_open",
-            "args": {
-                "projects": project_str
+            'method': "innomat.innomat.utils.check_projects_open",
+            'args': {
+                'projects': project_str
             },
-            "async": false,
-            "callback": function(response) {
+            'sync': false,
+            'callback': function(response) {
                 if (response.message) {
                     frappe.msgprint( __("Only open projects can be booked ({0})").replace("{0}", response.message), __("Validation") );
                     frappe.validated=false;
@@ -114,6 +114,11 @@ frappe.ui.form.on('Timesheet', {
     },
     on_submit(frm) {
         create_travel_notes(frm);
+        
+        close_completed_tasks(frm);
+    },
+    after_cancel(frm) {
+        unclose_completed_tasks(frm);
     }
 });
 
@@ -139,12 +144,12 @@ frappe.ui.form.on('Timesheet Detail', {
         var row = locals[cdt][cdn];
         if (row.task) {
             frappe.call({
-               method: "frappe.client.get",
-               args: {
-                    "doctype": "Task",
-                    "name": row.task
+               'method': "frappe.client.get",
+               'args': {
+                    'doctype': "Task",
+                    'name': row.task
                },
-               callback: function(response) {
+               'callback': function(response) {
                     var task = response.message;
                     frappe.model.set_value(cdt, cdn, 'by_effort', task.by_effort);
                }
@@ -157,13 +162,13 @@ function pull_external_text_from_activity(frm, cdt, cdn) {
     // check if there is a matching template
     var row = locals[cdt][cdn];
     frappe.call({
-        method: 'frappe.client.get_list',
-        args: {
-            doctype: 'Textkonserve',
-            filters: {'name': row.activity_type},
-            fields: ['name', 'text']
+        'method': 'frappe.client.get_list',
+        'args': {
+            'doctype': 'Textkonserve',
+            'filters': {'name': row.activity_type},
+            'fields': ['name', 'text']
         },
-        "callback": function(response) {
+        'callback': function(response) {
             var templates = response.message;
 
             if ((templates) && (templates.length > 0)) {
@@ -180,12 +185,12 @@ function pull_external_text_from_activity(frm, cdt, cdn) {
 function pull_external_text_from_template(frm, cdt, cdn) {
     // get all templates
     frappe.call({
-        method: 'frappe.client.get_list',
-        args: {
-            doctype: 'Textkonserve',
-            fields: ['name', 'text']
+        'method': 'frappe.client.get_list',
+        'args': {
+            'doctype': 'Textkonserve',
+            'fields': ['name', 'text']
         },
-        callback: function(response) {
+        'callback': function(response) {
             // check which template should be filled
             if ((response.message) && (response.message.length > 0)) {
                 var templates = [];
@@ -235,15 +240,15 @@ function create_dn(frm) {
             d.hide();
             var values = d.get_values();
             frappe.call({
-                method: 'innomat.innomat.utils.create_dn',
-                args: {
-                    project: values.project,
-                    item: values.item,
-                    qty: values.qty,
-                    description: (values.description || ""),
-                    timesheet: frm.doc.name
+                'method': 'innomat.innomat.utils.create_dn',
+                'args': {
+                    'project': values.project,
+                    'item': values.item,
+                    'qty': values.qty,
+                    'description': (values.description || ""),
+                    'timesheet': frm.doc.name
                 },
-                "callback": function(response) {
+                'callback': function(response) {
                     frappe.show_alert( response.message );
                 }
             });
@@ -271,13 +276,13 @@ function create_on_call_fee(frm) {
             d.hide();
             var values = d.get_values();
             frappe.call({
-                method: 'innomat.innomat.utils.create_on_call_fee',
-                args: {
-                    project: values.project,
-                    date: values.date,
-                    timesheet: frm.doc.name
+                'method': 'innomat.innomat.utils.create_on_call_fee',
+                'args': {
+                    'project': values.project,
+                    'date': values.date,
+                    'timesheet': frm.doc.name
                 },
-                "callback": function(response) {
+                'callback': function(response) {
                     frappe.show_alert( response.message );
                 }
             });
@@ -297,10 +302,10 @@ function create_on_call_fee(frm) {
 
 function create_travel_notes(frm) {
     frappe.call({
-        method: 'innomat.innomat.utils.create_travel_notes',
-        args: {
-            timesheet: frm.doc.name,
-            travel_key: travel_key
+        'method': 'innomat.innomat.utils.create_travel_notes',
+        'args': {
+            'timesheet': frm.doc.name,
+            'travel_key': travel_key
         },
         "callback": function(response) {
             frappe.show_alert( response.message );
@@ -321,13 +326,13 @@ function create_service_report(frm) {
         ],
         function(values){
             frappe.call({
-                "method": "innomat.innomat.utils.create_service_report",
-                "args": {
-                    "contact": values.contact,
-                    "timesheet": frm.doc.name,
-                    "project": values.project
+                'method': "innomat.innomat.utils.create_service_report",
+                'args': {
+                    'contact': values.contact,
+                    'timesheet': frm.doc.name,
+                    'project': values.project
                 },
-                "callback": function(response) {
+                'callback': function(response) {
                     frappe.show_alert( response.message );
                     window.open("/private/files/" + response.message, '_blank').focus();
                 }
@@ -336,4 +341,23 @@ function create_service_report(frm) {
         __('Service Report'),
         __('Create')
     );
+}
+
+function close_completed_tasks(frm) {
+    frappe.call({
+        'method': 'innomat.innomat.utils.close_completed_tasks',
+        'args': {
+            'timesheet': frm.doc.name
+        }
+    });
+}
+
+function unclose_completed_tasks(frm) {
+    frappe.call({
+        'method': 'innomat.innomat.utils.close_completed_tasks',
+        'args': {
+            'timesheet': frm.doc.name,
+            'close': 0
+        }
+    });
 }

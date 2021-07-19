@@ -10,7 +10,7 @@ from frappe.utils.pdf import get_pdf
 from erpnextswiss.erpnextswiss.common_functions import get_primary_address
 from erpnextswiss.erpnextswiss.doctype.worktime_settings.worktime_settings import get_daily_working_hours, get_default_working_hours
 import json 
-from frappe.utils import get_link_to_form
+from frappe.utils import get_link_to_form, cint
 
 """
 This function will return the BOM cost/rate for calculations (e.g. quotation)
@@ -957,3 +957,24 @@ def find_drafts(project):
             data['urls'].append(get_link_to_form("Expense Claim", ec['name']))
             
     return data
+
+"""
+Close completed tasks from timesheet
+"""
+@frappe.whitelist()
+def close_completed_tasks(timesheet, close=1):
+    close = cint(close)
+    ts = frappe.get_doc("Timesheet", timesheet)
+    frappe.log_error("close: {0}".format(close))
+    for d in ts.time_logs:
+        if d.task and d.completed:
+            t = frappe.get_doc("Task", d.task)
+            if close == 1:
+                t.status = "Completed"
+            else:
+                t.progress = 80         # required, otherwise, re-opining is not possible due to validation
+                t.status = "Open"
+                frappe.log_error("Open")
+            t.save()
+    frappe.db.commit()
+    return
