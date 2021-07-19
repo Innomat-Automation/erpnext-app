@@ -227,7 +227,7 @@ Shortcut to create delivery notes from timesheet
 @frappe.whitelist()
 def create_dn(project, item, qty, description, timesheet):
     pj = frappe.get_doc("Project", project)
-    currency get_currency(pj)
+    currency = get_currency(pj)
     new_dn = frappe.get_doc({
         "doctype": "Delivery Note",
         "customer": pj.customer,
@@ -254,7 +254,7 @@ Shortcut to create on call fees from timesheet
 @frappe.whitelist()
 def create_on_call_fee(project, date, timesheet):
     pj = frappe.get_doc("Project", project)
-    currency get_currency(pj)
+    currency = get_currency(pj)
     date = datetime.strptime(date, "%Y-%m-%d")
     new_dn = frappe.get_doc({
         "doctype": "Delivery Note",
@@ -301,7 +301,7 @@ def create_travel_notes(timesheet, travel_key):
     dns = []
     for k, v in travel.items():
         pj = frappe.get_doc("Project", k)
-        currency get_currency(pj)
+        currency = get_currency(pj)
         new_dn = frappe.get_doc({
             "doctype": "Delivery Note",
             "customer": pj.customer,
@@ -365,7 +365,7 @@ def create_expense_notes(expense_claim, expense_key):
     dns = []
     for k, v in travel.items():
         pj = frappe.get_doc("Project", k)
-        currency get_currency(pj)
+        currency = get_currency(pj)
         new_dn = frappe.get_doc({
             "doctype": "Delivery Note",
             "customer": pj.customer,
@@ -439,7 +439,7 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
     delivery_notes = frappe.get_all("Delivery Note", filters={'project': project, 'docstatus': 1, 'status': 'To Bill'}, fields=['name'])
     if len(time_logs) > 0 or len(delivery_notes) > 0:
         pj = frappe.get_doc("Project", project)
-        currency get_currency(pj)
+        currency = get_currency(pj)
         new_sinv = frappe.get_doc({
             "doctype": "Sales Invoice",
             "customer": pj.customer,
