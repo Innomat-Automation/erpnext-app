@@ -422,8 +422,11 @@ Create sales invoice when service project completes
 """
 @frappe.whitelist()
 def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_group="Service"):
+    # fetch billable hours
     time_logs = get_uninvoiced_service_time_records(project, from_date, to_date)
-    if len(time_logs) > 0:
+    # fetch open delivery notes
+    delivery_notes = frappe.get_all("Delivery Note", filters={'project': project, 'docstatus': 1, 'status': 'To Bill'}, fields=['name'])
+    if len(time_logs) > 0 or len(delivery_notes) > 0:
         pj = frappe.get_doc("Project", project)
         new_sinv = frappe.get_doc({
             "doctype": "Sales Invoice",
@@ -442,6 +445,7 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
             row = new_sinv.append('items', {
                 'item_code': t['invoicing_item'],
                 'qty': t['hours'],
+                'uom': 'h',
                 'description': description,
                 'against_timesheet': t['timesheet'],
                 'ts_detail': t['ts_detail'],
@@ -454,13 +458,13 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
             'title': sales_item_group, 
             'sum_caption': 'Summe {0}'.format(sales_item_group)})
         # append open delivery note items if there are any
-        delivery_notes = frappe.get_all("Delivery Note", filters={'project': project, 'docstatus': 1, 'status': 'To Bill'}, fields=['name'])
         for d in delivery_notes:
             dn = frappe.get_doc("Delivery Note", d['name'])
             for dn_pos in dn.items:
                 row = new_sinv.append('items', {
                     'item_code': dn_pos.item_code,
                     'qty': dn_pos.qty,
+                    'uom': dn_pos.uom,
                     'description': dn_pos.description,
                     'delivery_note': dn.name,
                     'dn_detail': dn_pos.name,
