@@ -10,6 +10,7 @@ from frappe.utils.pdf import get_pdf
 from erpnextswiss.erpnextswiss.common_functions import get_primary_address
 from erpnextswiss.erpnextswiss.doctype.worktime_settings.worktime_settings import get_daily_working_hours, get_default_working_hours
 import json 
+from frappe.utils import get_link_to_form
 
 """
 This function will return the BOM cost/rate for calculations (e.g. quotation)
@@ -160,7 +161,7 @@ def create_project(sales_order):
 Create a project from a project tenplate (not standard way, because of invoicing items!)
 """
 @frappe.whitelist()
-def create_project_from_template(template, company, customer, po_no = '',po_date = ''):
+def create_project_from_template(template, company, customer, po_no=None, po_date=None):
     key = get_project_key()
     template = frappe.get_doc("Project Template", template)
     customer = frappe.get_doc("Customer", customer)
@@ -181,7 +182,7 @@ def create_project_from_template(template, company, customer, po_no = '',po_date
         "expected_end_date": (datetime.now() + timedelta(days=+30)),
         "customer": customer.name,
         "customer_name": customer.customer_name,
-        "title": "{0}{3}{1} {2}".format(company_key, key, customer.customer_name, template.project_type[0]),
+        "title": "{0}{3}{1} {2}".format(company_key, key, (po_no or customer.customer_name), template.project_type[0]),
         "company": company
     })
 
@@ -906,3 +907,30 @@ def get_sales_tax_rule(customer, company):
         return rules[0]['name']
     else:
         return None
+
+""" 
+Find related draft documents from delivery notes and expense claims
+"""
+@frappe.whitelist()
+def find_drafts(project):
+    data = {'delivery_notes': [], 'urls': [], 'expense_claims': [], 'has_drafts': 0}
+    draft_dns = frappe.get_all("Delivery Note", filters={'project': project, 'docstatus': 0}, fields=['name'])
+    if draft_dns and len(draft_dns) > 0:
+        data['has_drafts'] = 1
+        for dn in draft_dns:
+            data['delivery_notes'].append(dn['name'])
+            data['urls'].append(get_link_to_form("Delivery Note", dn['name']))
+    
+    expense_claims = frappe.db.sql("""SELECT `tabExpense Claim`.`name`
+                                      FROM `tabExpense Claim Detail`
+                                      LEFT JOIN `tabExpense Claim` ON `tabExpense Claim Detail`.`parent` = `tabExpense Claim`.`name`
+                                      WHERE `tabExpense Claim`.`docstatus` = 0
+                                        AND `tabExpense Claim Detail`.`project` = "{project}"
+                                      GROUP BY `tabExpense Claim`.`name`;""".format(project=project), as_dict=True)
+    if expense_claims and len(expense_claims) > 0:
+        data['has_drafts'] = 1
+        for ec in expense_claims:
+            data['expense_claims'].append(ec['name'])
+            data['urls'].append(get_link_to_form("Expense Claim", ec['name']))
+            
+    return data
