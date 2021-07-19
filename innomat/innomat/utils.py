@@ -859,7 +859,8 @@ def quick_pinv(date, gross_amount, supplier, expense_account, purchase_taxes, re
         'taxes_and_charges': purchase_taxes,
         'bill_no': remarks,
         'bill_date': date,
-        'set_posting_time': 1
+        'set_posting_time': 1,
+        'is_proposed': 1
     })
     # check taxation
     taxes_template = frappe.get_doc("Purchase Taxes and Charges Template", purchase_taxes)
