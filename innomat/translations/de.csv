@@ -73,3 +73,10 @@ Report: Ressourcenplanung,Show Tasks,Tasks zeigen
 DocType: Innomat Settings,Quick purchase invoice item,Artikel für Schnellerfassung
 DocType: Purchase Invoice,Quick purchase invoice,Schnellerfassung
 Report: Projects to invoice,Projects to invoice,Verrechenbare Projekte
+Report: Projects to invoice,Volume,Volumen
+Report: Projects to invoice,Akonto open,Akonto offen
+Report: Projects to invoice,Akonto unpaid,Akonto unbezahlt
+Report: Projects to invoice,DN open,LS offen
+Report: Projects to invoice,DN draft,LS Entwurf
+Report: Projects to invoice,TS open,Zeit offen
+Report: Projects to invoice,Invoice unpaid,Rechnung unbezahlt

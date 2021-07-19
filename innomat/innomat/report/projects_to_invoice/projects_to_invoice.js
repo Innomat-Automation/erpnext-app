@@ -8,7 +8,16 @@ frappe.query_reports["Projects to invoice"] = {
             "fieldname":"company",
             "label": __("Company"),
             "fieldtype": "Link",
-            "options": "Company"
+            "options": "Company",
+            "default": frappe.defaults.get_user_default("company"),
+            "reqd": 1
+        },
+        {
+            "fieldname":"date",
+            "label": __("Date"),
+            "fieldtype": "Date",
+            "default": frappe.datetime.get_today(),
+            "reqd": 1
         }
     ]
 };
