@@ -78,7 +78,8 @@ def create_project(sales_order):
         "customer": so.customer,
         "customer_name": so.customer_name,
         "sales_order": sales_order,
-        "title": "{0}P{1} {2}".format(company_key, key, (so.object or so.customer_name))
+        "title": "{0}P{1} {2}".format(company_key, key, (so.object or so.customer_name)),
+        "company": so.company
     })
     new_project.insert()
     
@@ -421,7 +422,7 @@ def get_uninvoiced_service_time_records(project, from_date=None, to_date=None):
 Create sales invoice when service project completes
 """
 @frappe.whitelist()
-def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_group="Service"):
+def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_group="Service", debug=False):
     # fetch billable hours
     time_logs = get_uninvoiced_service_time_records(project, from_date, to_date)
     # fetch open delivery notes
@@ -481,7 +482,25 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
                 'description': t.description,
                 'rate': t.rate
             })
+        # check and pull down payments
+        payments = frappe.db.sql("""SELECT `tabPayment Entry Reference`.`parent`, `tabPayment Entry Reference`.`allocated_amount` 
+                                    FROM `tabPayment Entry Reference` 
+                                    LEFT JOIN `tabPayment Entry` ON `tabPayment Entry Reference`.`parent` = `tabPayment Entry`.`name`
+                                    WHERE `tabPayment Entry`.`docstatus` = 1
+                                      AND `tabPayment Entry Reference`.`reference_doctype` = "Sales Order"
+                                      AND `tabPayment Entry Reference`.`reference_name` = "{sales_order}";""".format(sales_order=pj.sales_order), as_dict=True)
+        if payments and len(payments) > 0:
+            for payment in payments:
+                new_sinv.append('advances', {
+                    'reference_type': "Payment Entry",
+                    'reference_name': payment['parent'],
+                    'advance_amount': payment['allocated_amount'],
+                    'allocated_amount': payment['allocated_amount'],
+                    'remarks': "Auto allocated {0} from {1}".format(payment['allocated_amount'], payment['parent'])
+                })
         # create sales invoice
+        if debug:
+            frappe.log_error("{0}".format(new_sinv.as_dict()), "SINV from Project Debug")
         new_sinv.insert()
         return """<a href="/desk#Form/Sales Invoice/{0}">{0}</a>""".format(new_sinv.name)
     else:
