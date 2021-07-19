@@ -143,7 +143,8 @@ def create_project(sales_order):
             'doctype': "Delivery Note",
             'customer': so.customer,
             'company': so.company,
-            'project': new_project.name
+            'project': new_project.name,
+            'currency': so.currency
         })
         for item in dn_items:
             new_dn.append('items', item)
@@ -226,11 +227,19 @@ Shortcut to create delivery notes from timesheet
 @frappe.whitelist()
 def create_dn(project, item, qty, description, timesheet):
     pj = frappe.get_doc("Project", project)
+    if pj.sales_order:
+        sales_order = frappe.get_doc("Sales Order", pj.sales_order)
+        currency = sales_order.currency
+    if pj.customer:
+        customer = frappe.get_doc("Customer", pj.customer)
+        if not currency:
+            currency = customer.default_currency
     new_dn = frappe.get_doc({
         "doctype": "Delivery Note",
         "customer": pj.customer,
         "project": project,
-        "company": pj.company
+        "company": pj.company,
+        "currency": currency
     })
     item_dict = {
         'item_code': item,
@@ -251,12 +260,20 @@ Shortcut to create on call fees from timesheet
 @frappe.whitelist()
 def create_on_call_fee(project, date, timesheet):
     pj = frappe.get_doc("Project", project)
+    if pj.sales_order:
+        sales_order = frappe.get_doc("Sales Order", pj.sales_order)
+        currency = sales_order.currency
+    if pj.customer:
+        customer = frappe.get_doc("Customer", pj.customer)
+        if not currency:
+            currency = customer.default_currency
     date = datetime.strptime(date, "%Y-%m-%d")
     new_dn = frappe.get_doc({
         "doctype": "Delivery Note",
         "customer": pj.customer,
         "project": project,
-        "company": pj.company
+        "company": pj.company,
+        "currency": currency
     })
     item_dict = {
         'item_code': frappe.get_value("Innomat Settings", "Innomat Settings", "on_call_fee_item"),
@@ -296,11 +313,19 @@ def create_travel_notes(timesheet, travel_key):
     dns = []
     for k, v in travel.items():
         pj = frappe.get_doc("Project", k)
+        if pj.sales_order:
+            sales_order = frappe.get_doc("Sales Order", pj.sales_order)
+            currency = sales_order.currency
+        if pj.customer:
+            customer = frappe.get_doc("Customer", pj.customer)
+            if not currency:
+                currency = customer.default_currency
         new_dn = frappe.get_doc({
             "doctype": "Delivery Note",
             "customer": pj.customer,
             "project": k,
-            "company": pj.company
+            "company": pj.company,
+            "currency": currency
         })
         for value in v:
             if "wagen" in value['travel_type']:
@@ -358,11 +383,19 @@ def create_expense_notes(expense_claim, expense_key):
     dns = []
     for k, v in travel.items():
         pj = frappe.get_doc("Project", k)
+        if pj.sales_order:
+            sales_order = frappe.get_doc("Sales Order", pj.sales_order)
+            currency = sales_order.currency
+        if pj.customer:
+            customer = frappe.get_doc("Customer", pj.customer)
+            if not currency:
+                currency = customer.default_currency
         new_dn = frappe.get_doc({
             "doctype": "Delivery Note",
             "customer": pj.customer,
             "project": k,
-            "company": pj.company
+            "company": pj.company,
+            "currency": currency
         })
         for value in v:
             description = "Spesen {0}".format(value['date'].strftime("%d.%m.%Y"))
@@ -430,12 +463,20 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
     delivery_notes = frappe.get_all("Delivery Note", filters={'project': project, 'docstatus': 1, 'status': 'To Bill'}, fields=['name'])
     if len(time_logs) > 0 or len(delivery_notes) > 0:
         pj = frappe.get_doc("Project", project)
+        if pj.sales_order:
+            sales_order = frappe.get_doc("Sales Order", pj.sales_order)
+            currency = sales_order.currency
+        if pj.customer:
+            customer = frappe.get_doc("Customer", pj.customer)
+            if not currency:
+                currency = customer.default_currency
         new_sinv = frappe.get_doc({
             "doctype": "Sales Invoice",
             "customer": pj.customer,
             "project": project,
             "company": pj.company,
-            "taxes_and_charges": get_sales_tax_rule(pj.customer, pj.company)
+            "taxes_and_charges": get_sales_tax_rule(pj.customer, pj.company),
+            "currency": currency
         })
         cost_center = frappe.get_value("Company", pj.company, "cost_center")
         for t in time_logs:
@@ -555,7 +596,8 @@ def create_part_delivery(sales_order, percentage):
             "currency": so.currency,
             "selling_price_list": so.selling_price_list,
             "taxes_and_charges": so.taxes_and_charges,
-            "payment_terms_template": so.payment_terms_template
+            "payment_terms_template": so.payment_terms_template,
+            "currency": so.currency
         })
     for item in so.items:
         new_dn.append("items", {
