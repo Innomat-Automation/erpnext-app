@@ -54,11 +54,13 @@ def get_data(filters):
                     SUM(`tabBin`.`ordered_qty`) AS `ordered_qty`,
                     (SUM(`tabBin`.`reserved_qty`) + SUM(`tabBin`.`reserved_qty_for_production`) + SUM(`tabBin`.`reserved_qty_for_sub_contract`)) AS `reserved_qty`,
                     SUM(`tabBin`.`projected_qty`) AS `projected_qty`,
-                    `tabItem Default`.`default_supplier` AS `supplier`,
+                    (SELECT `tabItem Default`.`default_supplier`
+                     FROM `tabItem Default`
+                     WHERE `tabItem Default`.`parent` = `tabItem`.`item_code`
+                     LIMIT 1) AS `supplier`,
                     (`tabItem`.`safety_stock` - SUM(`tabBin`.`projected_qty`)) AS `to_order`
                 FROM `tabBin`
                 LEFT JOIN `tabItem` ON `tabBin`.`item_code` = `tabItem`.`name`
-                LEFT JOIN `tabItem Default` ON `tabItem`.`name` = `tabItem Default`.`parent`
             WHERE 
               `tabBin`.`projected_qty` < `tabItem`.`safety_stock` {item_code_filter}
             GROUP BY `tabBin`.`item_code`;""".format(
