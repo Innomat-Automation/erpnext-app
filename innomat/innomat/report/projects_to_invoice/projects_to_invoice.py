@@ -137,10 +137,11 @@ def get_data(filters):
                 FROM `tabTimesheet Detail`
                 LEFT JOIN `tabTimesheet` ON `tabTimesheet Detail`.`parent` = `tabTimesheet`.`name`
                 LEFT JOIN `tabTask` ON `tabTimesheet Detail`.`task` = `tabTask`.`name`
+				LEFT JOIN `tabProject` ON `tabProject`.`name` = `tabTimesheet Detail`.`project`
                 LEFT JOIN `tabSales Invoice Item` ON `tabTimesheet Detail`.`name` = `tabSales Invoice Item`.`ts_detail`
                 LEFT JOIN `tabItem Price` ON (`tabItem Price`.`item_code` = `tabTask`.`item_code` AND `tabItem Price`.`selling` = 1)
                 WHERE `tabTimesheet`.`docstatus` = 1
-                   AND `tabTimesheet`.`company` = "{company}"
+                   AND `tabProject`.`company` = "{company}"
                    AND `tabTimesheet Detail`.`by_effort` = 1
                    AND `tabTimesheet Detail`.`do_not_invoice` = 0
                    AND `tabSales Invoice Item`.`ts_detail` IS NULL
