@@ -982,7 +982,6 @@ Close completed tasks from timesheet
 def close_completed_tasks(timesheet, close=1):
     close = cint(close)
     ts = frappe.get_doc("Timesheet", timesheet)
-    frappe.log_error("close: {0}".format(close))
     for d in ts.time_logs:
         if d.task and d.completed:
             t = frappe.get_doc("Task", d.task)
@@ -991,7 +990,6 @@ def close_completed_tasks(timesheet, close=1):
             else:
                 t.progress = 80         # required, otherwise, re-opining is not possible due to validation
                 t.status = "Open"
-                frappe.log_error("Open")
             t.save()
     frappe.db.commit()
     return
