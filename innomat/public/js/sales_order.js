@@ -44,21 +44,11 @@ frappe.ui.form.on('Sales Order', {
     },
     before_save(frm) {
         // update akonto table
-        var net_amount = 0;
-        for (var i = 0; i < frm.doc.items.length; i++) {
-            if (frm.doc.items[i].by_effort === 0) {
-                net_amount += frm.doc.items[i].amount;
-            }
-        }
-        var tax_rate = 1;
-        if ((frm.doc.taxes) && (frm.doc.taxes.length > 0)) {
-            tax_rate = 1 + (frm.doc.taxes[0].rate / 100);
-        }
+        var net_amount = get_effective_net_amount(frm);
+        var tax_rate = get_tax_rate(frm);
         if (frm.doc.akonto) {
             for (var a = 0; a < frm.doc.akonto.length; a++) {
-                var fraction  = frappe.model.get_value(frm.doc.akonto[a].doctype, frm.doc.akonto[a].name, 'percent') / 100;
-                var gross_amount = net_amount * tax_rate * fraction;
-                frappe.model.set_value(frm.doc.akonto[a].doctype, frm.doc.akonto[a].name, 'amount', gross_amount);
+                recalculate_akonto(frm, frm.doc.akonto[a].doctype, frm.doc.akonto[a].name);
             }
         }
     },
@@ -69,6 +59,48 @@ frappe.ui.form.on('Sales Order', {
         fetch_tax_rule(frm);
     }
 });
+
+frappe.ui.form.on('Sales Order Akonto', {
+    amount(frm, cdt, cdn) {
+        // amount set, compute percentage
+        var akonto = locals[cdt][cdn];
+        var net_amount = get_effective_net_amount(frm);
+        var tax_rate = get_tax_rate(frm);
+        var percent = (akonto / (net_amount * tax_rate)) * 100;
+        frappe.model.set_value(cdt, cdn, 'percent', percent);
+    },
+    percent(frm, cdt, cdn) {
+        recalculate_akonto(frm, cdt, cdn);
+    }
+});
+
+function recalculate_akonto(frm, cdt, cdn) {
+    var akonto = locals[cdt][cdn];
+    var fraction  = frappe.model.get_value(cdt, cdn, 'percent') / 100;
+    var gross_amount = net_amount * tax_rate * fraction;
+    if (abs(gross_amount - akonto.amount) >= 1) {
+        // only update amount if it is more than CHF 1 different from actual value (compensate for rounding)
+        frappe.model.set_value(frm.doc.akonto[a].doctype, frm.doc.akonto[a].name, 'amount', gross_amount);
+    }
+}
+
+function get_tax_rate(frm) {
+    var tax_rate = 1;
+    if ((frm.doc.taxes) && (frm.doc.taxes.length > 0)) {
+        tax_rate = 1 + (frm.doc.taxes[0].rate / 100);
+    }
+    rturn tax_rate;
+}
+
+function get_effective_net_amount(frm) {
+    var net_amount = 0;
+    for (var i = 0; i < frm.doc.items.length; i++) {
+        if (frm.doc.items[i].by_effort === 0) {
+            net_amount += frm.doc.items[i].amount;
+        }
+    }
+    return net_amount;
+}
 
 function create_part_delivery(frm) {
     var total_qty = 0;
