@@ -61,6 +61,7 @@ Create a new project with tasks from a sales order
 def create_project(sales_order):
     key = get_project_key()
     so = frappe.get_doc("Sales Order", sales_order)
+    cost_center = frappe.get_value("Company", so.company, "cost_center")
     company_key = "IN"
     if "Asprotec" in so.company:
         company_key = "AS"
@@ -134,7 +135,8 @@ def create_project(sales_order):
                 'rate': i.rate,
                 'so_detail': i.name,
                 'against_sales_order': so.name,
-                'warehouse': i.warehouse
+                'warehouse': i.warehouse,
+                'cost_center': cost_center
             })
             
     # create delivery note for all non-per-effort items
