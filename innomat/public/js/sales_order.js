@@ -89,7 +89,7 @@ function get_tax_rate(frm) {
     if ((frm.doc.taxes) && (frm.doc.taxes.length > 0)) {
         tax_rate = 1 + (frm.doc.taxes[0].rate / 100);
     }
-    rturn tax_rate;
+    return tax_rate;
 }
 
 function get_effective_net_amount(frm) {
