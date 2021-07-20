@@ -28,10 +28,10 @@ frappe.ui.form.on('Sales Order', {
                 }
             });
             
-            // create part delivery
-            frm.add_custom_button(__('Create part delivery'), function() {
+            // create part delivery (deprecated 2021-07-20, process no longer used)
+            /* frm.add_custom_button(__('Create part delivery'), function() {
                 create_part_delivery(frm);
-            }).addClass("btn-primary");
+            }).addClass("btn-primary"); */ 
             // create akonto
             frm.add_custom_button(__('Create akonto'), function() {
                 create_akonto(frm);
