@@ -27,6 +27,7 @@ DocType: Timesheet,Resume Timer,Timer aufnehmen
 DocType: Timesheet,On Call Fee,Piketpauschale
 DocType: Timesheet,Project Hours,Projektstunden
 DocType: Timesheet,Only open projects can be booked ({0}),Nur offene Projekte können bebucht werden ({0})
+DocType: Timesheet,Do not invoice,Nicht verrechnen
 DocType: Activity Type,"Lower is shown first (alphanumeric sort)","Je kleiner desto früher (alphanumerisch, gleiche Anzahl Stellen beachten)"
 DocType: Task,By Effort,Nach Aufwand
 DocType: Task,Please select an item for invoicing,Bitte einen Artikel zur Verrechnung wählen
@@ -42,6 +43,8 @@ DocType: Project,Create Project from Template,Projekt von Vorlage erstellen
 DocType: Project,Status Light,Ampel
 DocType: Project,Planned material cost,Geplante Materialkosten
 DocType: Project,Actual material cost,Tatsächliche Materialkosten
+DocType: Project,This project has drafts: {0},Für dieses Projekt bestehen noch Dokumente im Entwurf: {0}
+DocType: Project,Finished,Fertiggestellt
 DocType: Expense Claim,Internal rate,Interner Satz
 DocType: Expense Claim,External rate,Externer Satz
 DocType: Sales Order,Create delivery,Lieferung erstellen
@@ -70,3 +73,11 @@ DocType: Persistent Session Setting,Persistent Session Setting,Persistente Sessi
 Report: Ressourcenplanung,Show Tasks,Tasks zeigen
 DocType: Innomat Settings,Quick purchase invoice item,Artikel für Schnellerfassung
 DocType: Purchase Invoice,Quick purchase invoice,Schnellerfassung
+Report: Projects to invoice,Projects to invoice,Verrechenbare Projekte
+Report: Projects to invoice,Volume,Volumen
+Report: Projects to invoice,Akonto open,Akonto offen
+Report: Projects to invoice,Akonto unpaid,Akonto unbezahlt
+Report: Projects to invoice,DN open,LS offen
+Report: Projects to invoice,DN draft,LS Entwurf
+Report: Projects to invoice,TS open,Zeit offen
+Report: Projects to invoice,Invoice unpaid,Rechnung unbezahlt

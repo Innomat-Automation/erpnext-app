@@ -14,11 +14,29 @@ cur_frm.dashboard.add_transactions([
  */
 frappe.ui.form.on('Project', {
     refresh(frm) {
-        // button to create sales invoice
+        // restricted area for account users (elevated)
         if (frappe.user.has_role("Accounts User")) {
+            // button to create sales invoice
             frm.add_custom_button(__("Create Invoice"), function() {
                 create_sinv(frm);
             });
+            // draft notification area
+            if (!frm.doc.__islocal) {
+                frappe.call({
+                    'method': 'innomat.innomat.utils.find_drafts',
+                    'args': {
+                        'project': frm.doc.name
+                    },
+                    'callback': function(r) {
+                        if ((r.message) && (r.message.has_drafts === 1)) {
+                            // render links into html string
+                            var html = r.message.urls.join(", ");
+                            cur_frm.dashboard.add_comment( __('This project has drafts: {0}', [html]), 'yellow', true);
+                        }
+                    }
+                });
+            }
+            
         }
     },
     before_save(frm) {
@@ -39,9 +57,9 @@ frappe.ui.form.on('Project', {
  */
 function get_project_key(frm) {
     frappe.call({
-        method: 'innomat.innomat.utils.get_project_key',
-        async: false,
-        callback: function(r) {
+        'method': 'innomat.innomat.utils.get_project_key',
+        'async': false,
+        'callback': function(r) {
             cur_frm.set_value('project_key', r.message);
             var company_key = "IN";
             if (frm.doc.company.indexOf('Asprotec') >= 0) {
@@ -70,12 +88,12 @@ function set_project_manager(frm) {
 
 function create_sinv(frm) {
     frappe.call({
-        method: "innomat.innomat.utils.create_sinv_from_project",
-        args: {
+        'method': "innomat.innomat.utils.create_sinv_from_project",
+        'args': {
             'project': frm.doc.name,
             'sales_item_group': frm.doc.project_type
         },
-        callback: function(response) {
+        'callback': function(response) {
             frappe.show_alert( response.message );
             if (frm.doc.status === "Completed") {
                 cur_frm.set_value("is_invoiced", 1);
