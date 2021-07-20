@@ -996,11 +996,11 @@ def close_completed_tasks(timesheet, close=1):
 Find currency for project
 """
 def get_currency(project):
-    if pj.sales_order:
-        sales_order = frappe.get_doc("Sales Order", pj.sales_order)
+    if project.sales_order:
+        sales_order = frappe.get_doc("Sales Order", project.sales_order)
         currency = sales_order.currency
-    elif pj.customer:
-        customer = frappe.get_doc("Customer", pj.customer)
+    elif project.customer:
+        customer = frappe.get_doc("Customer", project.customer)
         currency = customer.default_currency or "CHF"
     else:
         currency = "CHF"
