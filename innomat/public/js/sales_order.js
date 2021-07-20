@@ -77,6 +77,7 @@ frappe.ui.form.on('Sales Order Akonto', {
 function recalculate_akonto(frm, cdt, cdn) {
     var akonto = locals[cdt][cdn];
     var fraction  = frappe.model.get_value(cdt, cdn, 'percent') / 100;
+    var net_amount = get_effective_net_amount(frm);
     var gross_amount = net_amount * tax_rate * fraction;
     if (abs(gross_amount - akonto.amount) >= 1) {
         // only update amount if it is more than CHF 1 different from actual value (compensate for rounding)
