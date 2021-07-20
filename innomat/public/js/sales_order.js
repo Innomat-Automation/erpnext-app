@@ -80,7 +80,7 @@ function recalculate_akonto(frm, cdt, cdn) {
     var net_amount = get_effective_net_amount(frm);
     var tax_rate = get_tax_rate(frm);
     var gross_amount = net_amount * tax_rate * fraction;
-    if (abs(gross_amount - akonto.amount) >= 1) {
+    if (Math.abs(gross_amount - akonto.amount) >= 1) {
         // only update amount if it is more than CHF 1 different from actual value (compensate for rounding)
         frappe.model.set_value(frm.doc.akonto[a].doctype, frm.doc.akonto[a].name, 'amount', gross_amount);
     }
