@@ -65,7 +65,7 @@ def get_data(filters):
                 FROM `tabBin`
                 LEFT JOIN `tabItem` ON `tabBin`.`item_code` = `tabItem`.`name`) AS `raw`
             WHERE 
-              `raw`.`projected_qty` < `tabItem`.`safety_stock` 
+              `raw`.`projected_qty` < `raw`.`safety_stock` 
               {item_code_filter}
             GROUP BY `raw`.`item_code`;""".format(
               item_code_filter=item_code_filter)
