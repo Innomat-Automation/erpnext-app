@@ -35,15 +35,17 @@ def get_data(filters):
     else:
         filters = dict(filters)
     if 'item_code' in filters:
-        item_code_filter += """ AND `tabItem`.`item_code` = '{item_code}'""".format(item_code=filters['item_code'])
+        item_code_filter += """ AND `raw`.`item_code` = '{item_code}'""".format(item_code=filters['item_code'])
     if 'item_name' in filters:
-        item_code_filter += """ AND `tabItem`.`item_name` LIKE '%{item_name}%'""".format(item_name=filters['item_name'])
+        item_code_filter += """ AND `raw`.`item_name` LIKE '%{item_name}%'""".format(item_name=filters['item_name'])
     if 'item_group' in filters:
-        item_code_filter = """ AND `tabItem`.`item_group` = '{item_group}'""".format(item_group=filters['item_group'])
+        item_code_filter = """ AND `raw`.`item_group` = '{item_group}'""".format(item_group=filters['item_group'])
     if 'supplier' in filters:
-        item_code_filter = """ AND `tabItem Default`.`default_supplier` = '{supplier}'""".format(supplier=filters['supplier'])
+        item_code_filter = """ AND `raw`.`supplier` = '{supplier}'""".format(supplier=filters['supplier'])
     
-    sql_query = """SELECT 
+    sql_query = """SELECT *
+            FROM
+                (SELECT 
                     `tabBin`.`item_code` AS `item_code`,
                     `tabItem`.`item_name` AS `item_name`,
                     `tabItem`.`item_group` AS `item_group`,
@@ -57,13 +59,15 @@ def get_data(filters):
                     (SELECT `tabItem Default`.`default_supplier`
                      FROM `tabItem Default`
                      WHERE `tabItem Default`.`parent` = `tabItem`.`item_code`
+                     ORDER BY `default_supplier` DESC
                      LIMIT 1) AS `supplier`,
                     (`tabItem`.`safety_stock` - SUM(`tabBin`.`projected_qty`)) AS `to_order`
                 FROM `tabBin`
-                LEFT JOIN `tabItem` ON `tabBin`.`item_code` = `tabItem`.`name`
+                LEFT JOIN `tabItem` ON `tabBin`.`item_code` = `tabItem`.`name`) AS `raw`
             WHERE 
-              `tabBin`.`projected_qty` < `tabItem`.`safety_stock` {item_code_filter}
-            GROUP BY `tabBin`.`item_code`;""".format(
+              `raw`.`projected_qty` < `raw`.`safety_stock` 
+              {item_code_filter}
+            GROUP BY `raw`.`item_code`;""".format(
               item_code_filter=item_code_filter)
     
     data = frappe.db.sql(sql_query, as_dict=True)
