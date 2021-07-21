@@ -43,7 +43,19 @@ def get_data(filters):
     if 'supplier' in filters:
         item_code_filter = """ AND `raw`.`supplier` = '{supplier}'""".format(supplier=filters['supplier'])
     
-    sql_query = """SELECT *
+    sql_query = """SELECT 
+                `raw`.`item_code` AS `item_code`,
+                `raw`.`item_name` AS `item_name`,
+                `raw`.`item_group` AS `item_group`,
+                `raw`.`stock_uom` AS `stock_uom`,
+                `raw`.`safety_stock` AS `safety_stock`,
+                SUM(`raw`.`actual_qty`) AS `actual_qty`,
+                SUM(`raw`.`planned_qty`) AS `planned_qty`,
+                SUM(`raw`.`ordered_qty`) AS `ordered_qty`,
+                (SUM(`raw`.`reserved_qty`) + SUM(`raw`.`reserved_qty_for_production`) + SUM(`raw`.`reserved_qty_for_sub_contract`)) AS `reserved_qty`,
+                SUM(`raw`.`projected_qty`) AS `projected_qty`,
+                `raw`.`supplier` AS `supplier`,
+                (`raw`.`safety_stock` - SUM(`raw`.`projected_qty`)) AS `to_order`
             FROM
                 (SELECT 
                     `tabBin`.`item_code` AS `item_code`,
@@ -51,17 +63,18 @@ def get_data(filters):
                     `tabItem`.`item_group` AS `item_group`,
                     `tabItem`.`stock_uom` AS `stock_uom`,
                     `tabItem`.`safety_stock` AS `safety_stock`,
-                    SUM(`tabBin`.`actual_qty`) AS `actual_qty`,
-                    SUM(`tabBin`.`planned_qty`) AS `planned_qty`,
-                    SUM(`tabBin`.`ordered_qty`) AS `ordered_qty`,
-                    (SUM(`tabBin`.`reserved_qty`) + SUM(`tabBin`.`reserved_qty_for_production`) + SUM(`tabBin`.`reserved_qty_for_sub_contract`)) AS `reserved_qty`,
-                    SUM(`tabBin`.`projected_qty`) AS `projected_qty`,
+                    `tabBin`.`actual_qty` AS `actual_qty`,
+                    `tabBin`.`planned_qty` AS `planned_qty`,
+                    `tabBin`.`ordered_qty` AS `ordered_qty`,
+                    `tabBin`.`reserved_qty` AS `reserved_qty`,
+                    `tabBin`.`reserved_qty_for_production` AS `reserved_qty_for_production`, 
+                    `tabBin`.`reserved_qty_for_sub_contract` AS `reserved_qty_for_sub_contract`,
+                    `tabBin`.`projected_qty` AS `projected_qty`,
                     (SELECT `tabItem Default`.`default_supplier`
                      FROM `tabItem Default`
                      WHERE `tabItem Default`.`parent` = `tabItem`.`item_code`
                      ORDER BY `default_supplier` DESC
-                     LIMIT 1) AS `supplier`,
-                    (`tabItem`.`safety_stock` - SUM(`tabBin`.`projected_qty`)) AS `to_order`
+                     LIMIT 1) AS `supplier`
                 FROM `tabBin`
                 LEFT JOIN `tabItem` ON `tabBin`.`item_code` = `tabItem`.`name`) AS `raw`
             WHERE 
