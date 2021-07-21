@@ -40,13 +40,13 @@ function bulk_import(frm) {
                 var fields = [];
                 try {
                     fields = lines[i].split(";");
+                    var child = cur_frm.add_child('items');
+                    frappe.model.set_value(child.doctype, child.name, 'item_code', fields[0]);
+                    frappe.model.set_value(child.doctype, child.name, 'qty', fields[1]);
                 } catch {
                     console.log("failed to parse field");
-                    fields = ["", "0"];
                 }
-                var child = cur_frm.add_child('items');
-                frappe.model.set_value(child.doctype, child.name, 'item_code', fields[0]);
-                frappe.model.set_value(child.doctype, child.name, 'qty', fields[1]);
+
             }
             cur_frm.refresh_field('items');
             // clean up uom and rates

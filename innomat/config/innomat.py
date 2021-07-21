@@ -123,15 +123,15 @@ def get_data():
                    },
                    {
                        "type": "doctype",
+                       "name": "Work Order",
+                       "label": _("Work Order"),
+                       "description": _("Work Order")
+                   },
+                   {
+                       "type": "doctype",
                        "name": "Timesheet",
                        "label": _("Timesheet"),
                        "description": _("Timesheet")
-                   },
-                   {
-                        "type": "report",
-                        "name": "Ressourcenplanung",
-                        "doctype": "Task",
-                        "is_query_report": True,
                    },
                    {
                        "type": "doctype",
@@ -147,8 +147,8 @@ def get_data():
                    },
                    {
                         "type": "report",
-                        "name": "Nachkalkulation",
-                        "doctype": "Project",
+                        "name": "Ressourcenplanung",
+                        "doctype": "Task",
                         "is_query_report": True,
                    }
             ]
@@ -174,6 +174,48 @@ def get_data():
                        "name": "Payment Reminder",
                        "label": _("Payment Reminder"),
                        "description": _("Payment Reminder")
+                   }
+            ]
+        },
+        {
+            "label": _("Reports"),
+            "icon": "fa fa-money",
+            "items": [
+                    {
+                        "type": "report",
+                        "name": "Price Analysis",
+                        "doctype": "Item Price",
+                        "is_query_report": True,
+                    },
+                    {
+                        "type": "report",
+                        "name": "Akonto Forecast",
+                        "doctype": "Sales Order",
+                        "is_query_report": True,
+                    },
+                    {
+                        "type": "report",
+                        "name": "Order Planning",
+                        "doctype": "Sales Order",
+                        "is_query_report": True,
+                    },
+                    {
+                        "type": "report",
+                        "name": "Projects to invoice",
+                        "doctype": "Project",
+                        "is_query_report": True,
+                    },
+                    {
+                        "type": "report",
+                        "name": "Worktime Overview",
+                        "doctype": "Project",
+                        "is_query_report": True,
+                    },
+                   {
+                        "type": "report",
+                        "name": "Nachkalkulation",
+                        "doctype": "Project",
+                        "is_query_report": True,
                    }
             ]
         },
@@ -229,36 +271,6 @@ def get_data():
                        "label": _("OCI Partners"),
                        "description": _("OCI Partners")                   
                    }
-            ]
-        },
-        {
-            "label": _("Reports"),
-            "icon": "fa fa-money",
-            "items": [
-                    {
-                        "type": "report",
-                        "name": "Price Analysis",
-                        "doctype": "Item Price",
-                        "is_query_report": True,
-                    },
-                    {
-                        "type": "report",
-                        "name": "Akonto Forecast",
-                        "doctype": "Sales Order",
-                        "is_query_report": True,
-                    },
-                    {
-                        "type": "report",
-                        "name": "Order Planning",
-                        "doctype": "Sales Order",
-                        "is_query_report": True,
-                    },
-                    {
-                        "type": "report",
-                        "name": "Projects to invoice",
-                        "doctype": "Project",
-                        "is_query_report": True,
-                    }
             ]
         }
     ]

@@ -7,7 +7,7 @@
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2021-06-22 08:06:57.079824",
+ "modified": "2021-07-21 13:45:27.411176",
  "modified_by": "Administrator",
  "module": "Innomat",
  "name": "Nachkalkulation",
@@ -18,10 +18,10 @@
  "report_type": "Script Report",
  "roles": [
   {
-   "role": "Projects User"
+   "role": "System Manager"
   },
   {
-   "role": "Projects Manager"
+   "role": "Accounts Manager"
   }
  ]
 }
