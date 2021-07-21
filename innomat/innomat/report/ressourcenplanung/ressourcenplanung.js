@@ -28,7 +28,7 @@ frappe.query_reports["Ressourcenplanung"] = {
             "fieldname":"show_tasks",
             "label": __("Show Tasks"),
             "fieldtype": "Check",
-            "default": false
+            "default": true
         }
     ],
 	get_datatable_options(options) {
