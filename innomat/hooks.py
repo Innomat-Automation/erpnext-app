@@ -100,13 +100,12 @@ doctype_list_js = {
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-#	}
-# }
+doc_events = {
+    "Sales Invoice": {
+        "on_cancel": "innomat.innomat.utils.unset_project_invoiced",
+        "on_trash": "innomat.innomat.utils.unset_project_invoiced"
+    }
+ }
 
 # Scheduled Tasks
 # ---------------

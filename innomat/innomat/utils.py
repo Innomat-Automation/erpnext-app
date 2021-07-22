@@ -524,7 +524,7 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
 Bulk create sales invoices for not-invoiced timesheet positions in service projects
 """
 @frappe.whitelist()
-def create_sinvs_for_date_range(from_date, to_date):
+def create_sinvs_for_date_range(from_date, to_date, company):
     # find all service projects in this period
     sql_query = """
         SELECT `tabProject`.`name` AS `project`
@@ -538,8 +538,9 @@ def create_sinvs_for_date_range(from_date, to_date):
           AND `tabProject`.`project_type` = "Service"
           AND `tabTimesheet Detail`.`project` IS NOT NULL
           AND `tabSales Invoice Item`.`ts_detail` IS NULL
+          AND `tabProject`.`company` = "{company}"
         GROUP BY `tabProject`.`name`;
-    """.format(from_date=from_date, to_date=to_date)
+    """.format(from_date=from_date, to_date=to_date, company=company)
     projects = frappe.db.sql(sql_query, as_dict=True)
     invoices = []
     for p in projects:
@@ -1033,3 +1034,16 @@ def set_price_list(sourcelist, destlist, itemgroup,margin, set_valuation_rate = 
             price.insert()
     frappe.db.commit()
     return "Done"
+
+""" 
+This will mark a related project not invoiced when a Sales Invoice is cancelled or trashed (hooks)
+"""
+def unset_project_invoiced(sales_invoice, method):
+    if sales_invoice.project:
+        project = frappe.get_doc("Project", sales_invoice.project)
+        if project.is_invoiced == 1:
+            project.is_invoiced = 0;
+            project.status = "Open"
+            project.save()
+            frappe.db.commit()
+    return

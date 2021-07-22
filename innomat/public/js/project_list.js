@@ -9,16 +9,16 @@ frappe.listview_settings['Project'] = {
         // default filter settings
         try {
             frappe.call({
-                method:"frappe.client.get_list",
-                args:{
-                    doctype:"Employee",
-                    filters: [
+                'method':"frappe.client.get_list",
+                'args':{
+                    'doctype': "Employee",
+                    'filters': [
                         ["user_id","=", frappe.session.user]
                     ],
-                    fields: ["name"],
+                    'fields': ["name"],
                 },
-                async: false,
-                callback: function(response) {
+                'async': false,
+                'callback': function(response) {
                     if (response.message.length > 0) {
                         frappe.route_options = {"employee": response.message[0].name};
                     }
@@ -32,17 +32,19 @@ frappe.listview_settings['Project'] = {
 
 function create_service_sales_invoices() {
     frappe.prompt([
+            {'fieldname': 'company', 'fieldtype': 'Link', 'label': __('Company'), 'reqd': 1, 'options': 'Company', 'default': frappe.defaults.get_default("Company")},
             {'fieldname': 'from_date', 'fieldtype': 'Date', 'label': __('From Date'), 'reqd': 1, 'default': get_start_last_quarter()},
             {'fieldname': 'to_date', 'fieldtype': 'Date', 'label': __('To Date'), 'reqd': 1, 'default': get_end_last_quarter()}
         ],
         function(values){
             frappe.call({
-                "method": "innomat.innomat.utils.create_sinvs_for_date_range",
-                "args": {
-                    "from_date": values.from_date,
-                    "to_date": values.to_date
+                'method': "innomat.innomat.utils.create_sinvs_for_date_range",
+                'args': {
+                    'from_date': values.from_date,
+                    'to_date': values.to_date,
+                    'company': values.company
                 },
-                "callback": function(response) {
+                'callback': function(response) {
                     frappe.show_alert( response.message );
                 }
             });
@@ -103,15 +105,15 @@ function create_project_from_template() {
         ],
         function(values){
             frappe.call({
-                "method": "innomat.innomat.utils.create_project_from_template",
-                "args": {
-                    "template": values.template,
-                    "po_no" : values.po_no,
-                    "po_date" : values.po_date,
-                    "company": values.company,
-                    "customer": values.customer
+                'method': "innomat.innomat.utils.create_project_from_template",
+                'args': {
+                    'template': values.template,
+                    'po_no' : values.po_no,
+                    'po_date' : values.po_date,
+                    'company': values.company,
+                    'customer': values.customer
                 },
-                "callback": function(response) {
+                'callback': function(response) {
                     frappe.set_route("Form", "Project", response.message);
                 }
             });
