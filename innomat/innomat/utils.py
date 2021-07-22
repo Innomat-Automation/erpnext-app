@@ -675,8 +675,8 @@ def create_akonto(sales_order):
                 'date': a.date,
                 'percent': a.percent,
                 'idx': a.idx,
-				'remarks': a.remarks,
-				'amount': a.amount
+                'remarks': a.remarks,
+                'amount': a.amount
             }
             template = frappe.get_doc("Print Format", "Akonto")
             html = frappe.render_template(template.html, data)
@@ -689,9 +689,52 @@ def create_akonto(sales_order):
             a.file = file_name
             a.creation_date = datetime.now()
             sales_order.save()
+            # create payment record
+            create_akonto_payment(sales_order.name, a.amount, "Akonto {0}".format(a.idx))
             break
     return
 
+def get_akonto_account(company):
+    accounts = frappe.db.sql("""
+        SELECT `akonto_account` 
+        FROM `tabInnomat Settings Account`
+        WHERE `parentfield` = "akonto_accounts"
+          AND `company` = "{company}";""".format(company=company), as_dict=True)
+    if accounts and len(accounts) > 0:
+        return accounts[0]['akonto_account']
+    else:
+        frappe.throw( _("Please configure akonto accounts in Innomat Settings") )
+        
+def create_akonto_payment(sales_order, amount, akonto_reference):
+    so = frappe.get_doc("Sales Order", sales_order)
+    account = get_akonto_account(so.company)
+    
+    # create payment entry
+    new_pe = frappe.get_doc({
+        'doctype': "Payment Entry",
+        'company': so.company,
+        'payment_type': "Receive",
+        'party_type': "Customer",
+        'party': so.customer,
+        'posting_date': datetime.now(),
+        'paid_to': account,
+        'received_amount': amount,
+        'paid_amount': amount,
+        'reference_no': akonto_reference,
+        'reference_date': datetime.now(),
+        'remarks': "Akonto payment {0} from {1}".format(akonto_reference, so.name)
+    })
+    new_pe.append('references', {
+        'reference_doctype': "Sales Order",
+        'reference_name': so.name,
+        'allocated_amount': amount
+    })
+    new_pe.insert()
+    new_pe.submit()
+    frappe.db.commit()
+    return
+        
+            
 @frappe.whitelist()
 def add_akonto_payment_reference(sales_order, payment_entry):
     sales_order = frappe.get_doc("Sales Order", sales_order)
@@ -702,6 +745,13 @@ def add_akonto_payment_reference(sales_order, payment_entry):
             break
     return
 
+@frappe.whitelist()
+def get_akonto_deduction_content(payment_entry):
+    pe = frappe.get_doc("Payment Entry", payment_entry)
+    account = get_akonto_account(pe.company)
+    cost_center = frappe.get_value("Company", pe.company, "cost_center")
+    return {'account': account, 'cost_center': cost_center, 'amount': (-1) * pe.paid_amount }
+    
 """
 This function checks the rates (price list or BOM) in a quotation or sales order against the current values
 """

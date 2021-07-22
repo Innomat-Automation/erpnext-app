@@ -11,7 +11,9 @@
   "on_call_fee_item",
   "mileage_item",
   "travel_fee_item",
-  "quick_pinv_item"
+  "quick_pinv_item",
+  "section_akonto",
+  "akonto_accounts"
  ],
  "fields": [
   {
@@ -57,10 +59,21 @@
    "fieldtype": "Link",
    "label": "Quick purchase invoice item",
    "options": "Item"
+  },
+  {
+   "fieldname": "section_akonto",
+   "fieldtype": "Section Break",
+   "label": "Akonto"
+  },
+  {
+   "fieldname": "akonto_accounts",
+   "fieldtype": "Table",
+   "label": "Akonto Accounts",
+   "options": "Innomat Settings Account"
   }
  ],
  "issingle": 1,
- "modified": "2021-07-10 10:30:23.664831",
+ "modified": "2021-07-22 18:50:32.216349",
  "modified_by": "Administrator",
  "module": "Innomat",
  "name": "Innomat Settings",

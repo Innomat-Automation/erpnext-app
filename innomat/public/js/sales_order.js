@@ -71,6 +71,9 @@ frappe.ui.form.on('Sales Order Akonto', {
     },
     percent(frm, cdt, cdn) {
         recalculate_akonto(frm, cdt, cdn);
+    },
+    date(frm, cdt, cdn) {
+        recalculate_akonto(frm, cdt, cdn);
     }
 });
 
@@ -80,9 +83,10 @@ function recalculate_akonto(frm, cdt, cdn) {
     var net_amount = get_effective_net_amount(frm);
     var tax_rate = get_tax_rate(frm);
     var gross_amount = net_amount * tax_rate * fraction;
-    if (Math.abs(gross_amount - akonto.amount) >= 1) {
+    if ((Math.abs(gross_amount - akonto.amount) >= 1) || (!akonto.amount)) {
         // only update amount if it is more than CHF 1 different from actual value (compensate for rounding)
         frappe.model.set_value(cdt, cdn, 'amount', gross_amount);
+        cur_frm.refresh_field('akonto');
     }
 }
 
