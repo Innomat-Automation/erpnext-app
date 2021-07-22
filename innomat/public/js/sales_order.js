@@ -98,7 +98,7 @@ function get_effective_net_amount(frm) {
     var net_amount = 0;
     for (var i = 0; i < frm.doc.items.length; i++) {
         if (frm.doc.items[i].by_effort === 0) {
-            net_amount += frm.doc.items[i].amount;
+            net_amount += frm.doc.items[i].net_amount;
         }
     }
     return net_amount;
