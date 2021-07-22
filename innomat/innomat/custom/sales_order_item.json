@@ -315,6 +315,30 @@
  ],
  "custom_perms": [],
  "doctype": "Sales Order Item",
- "property_setters": [],
+ "property_setters": [
+  {
+   "_assign": null,
+   "_comments": null,
+   "_liked_by": null,
+   "_user_tags": null,
+   "creation": "2021-07-22 18:44:27.247343",
+   "default_value": null,
+   "doc_type": "Sales Order Item",
+   "docstatus": 0,
+   "doctype_or_field": "DocField",
+   "field_name": "blanket_order",
+   "idx": 0,
+   "modified": "2021-07-22 18:44:27.247343",
+   "modified_by": "Administrator",
+   "name": "Sales Order Item-blanket_order-hidden",
+   "owner": "Administrator",
+   "parent": null,
+   "parentfield": null,
+   "parenttype": null,
+   "property": "hidden",
+   "property_type": "Check",
+   "value": "1"
+  }
+ ],
  "sync_on_migrate": 1
 }
