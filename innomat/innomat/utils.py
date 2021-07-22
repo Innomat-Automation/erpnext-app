@@ -954,7 +954,7 @@ Find related draft documents from delivery notes and expense claims
 """
 @frappe.whitelist()
 def find_drafts(project):
-    data = {'delivery_notes': [], 'urls': [], 'expense_claims': [], 'has_drafts': 0}
+    data = {'delivery_notes': [], 'urls': [], 'expense_claims': [], 'has_drafts': 0, 'timesheets': []}
     draft_dns = frappe.get_all("Delivery Note", filters={'project': project, 'docstatus': 0}, fields=['name'])
     if draft_dns and len(draft_dns) > 0:
         data['has_drafts'] = 1
@@ -973,6 +973,18 @@ def find_drafts(project):
         for ec in expense_claims:
             data['expense_claims'].append(ec['name'])
             data['urls'].append(get_link_to_form("Expense Claim", ec['name']))
+    
+    timesheets = frappe.db.sql("""SELECT `tabTimesheet`.`name`
+                                      FROM `tabTimesheet Detail`
+                                      LEFT JOIN `tabTimesheet` ON `tabTimesheet Detail`.`parent` = `tabTimesheet`.`name`
+                                      WHERE `tabTimesheet`.`docstatus` = 0
+                                        AND `tabTimesheet Detail`.`project` = "{project}"
+                                      GROUP BY `tabTimesheet`.`name`;""".format(project=project), as_dict=True)
+    if timesheets and len(timesheets) > 0:
+        data['has_drafts'] = 1
+        for ts in timesheets:
+            data['timesheets'].append(ts['name'])
+            data['urls'].append(get_link_to_form("Timesheet", ts['name']))
             
     return data
 
