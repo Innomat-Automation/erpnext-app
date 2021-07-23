@@ -31,8 +31,8 @@ frappe.query_reports["Ressourcenplanung"] = {
             "default": true
         }
     ],
-	get_datatable_options(options) {
-		return Object.assign(options, {
+    get_datatable_options(options) {
+        return Object.assign(options, {
             checkboxColumn : true
         })
     },

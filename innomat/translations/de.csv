@@ -81,3 +81,12 @@ Report: Projects to invoice,DN open,LS offen
 Report: Projects to invoice,DN draft,LS Entwurf
 Report: Projects to invoice,TS open,Zeit offen
 Report: Projects to invoice,Invoice unpaid,Rechnung unbezahlt
+Report: Employee Productivity,Employee Productivity,Produktive Stunden
+Report: Employee Productivity,"Emplyoee","Mitarbeiter"
+Report: Employee Productivity,"Employee Name","Mitarbeitername"
+Report: Employee Productivity,"Total hours","Gesamtstunden"
+Report: Employee Productivity,"Project hours","Projektstunden"
+Report: Employee Productivity,"Productivity","Produktivität"
+Report: Employee Productivity,"Total hours YTD","Gesamtstunden YTD"
+Report: Employee Productivity,"Project hours YTD","Projektstunden YTD"
+Report: Employee Productivity,"Productivity YTD","Produktivität YTD"

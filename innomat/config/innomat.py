@@ -211,12 +211,18 @@ def get_data():
                         "doctype": "Project",
                         "is_query_report": True,
                     },
-                   {
+                    {
                         "type": "report",
                         "name": "Nachkalkulation",
                         "doctype": "Project",
                         "is_query_report": True,
-                   }
+                    },
+                    {
+                        "type": "report",
+                        "name": "Employee Productivity",
+                        "doctype": "Timesheet",
+                        "is_query_report": True,
+                    }
             ]
         },
         {
