@@ -676,7 +676,8 @@ def create_akonto(sales_order):
                 'percent': a.percent,
                 'idx': a.idx,
                 'remarks': a.remarks,
-                'amount': a.amount
+                'amount': a.amount,
+                'print_total_and_percent': a.print_total_and_percent
             }
             template = frappe.get_doc("Print Format", "Akonto")
             html = frappe.render_template(template.html, data)
