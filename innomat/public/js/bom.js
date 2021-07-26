@@ -9,6 +9,11 @@ frappe.ui.form.on('BOM', {
                 import_template_bom(frm);
             });
         }
+        // button to create sales invoice
+        frm.add_custom_button(__("Bulk Export"), function() {
+            bulk_export(frm);
+        });
+
     },
     before_save(frm) {
         // update total hours
@@ -73,6 +78,37 @@ function bulk_import(frm) {
     });
     d.show();
 }
+
+
+function bulk_export(frm) {
+    var d = new frappe.ui.Dialog({
+        'fields': [
+            {'fieldname': 'raw', 
+             'fieldtype': 'Long Text', 
+             'label': __('Code'), 
+             'reqd': 1, 
+             'description': __("Data to copy"),
+             'default': get_items(frm)
+            }
+        ],
+        primary_action: function() {
+            d.hide();
+        },
+        primary_action_label: __('OK'),
+        title: __('Bulk Export')
+    });
+    d.show();
+}
+
+function get_items(frm)
+{
+    var data = []
+    for(var i = 0;frm.doc.exploded_items.length > i;i++){
+        data.push(frm.doc.exploded_items[i].item_code + ";" + cur_frm.doc.exploded_items[i].qty_consumed_per_unit + ";" + frm.doc.exploded_items[i].item_name)
+    }
+    return data.join("\n");
+}
+
 
 function import_template_bom(frm) {
     var d = new frappe.ui.Dialog({

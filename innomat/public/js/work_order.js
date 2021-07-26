@@ -33,7 +33,7 @@ function get_items(frm)
 {
     var data = []
     for(var i = 0;frm.doc.required_items.length > i;i++){
-        data.push(frm.doc.required_items[i].item_code + ";" + cur_frm.doc.required_items[i].required_qty)
+        data.push(frm.doc.required_items[i].item_code + ";" + cur_frm.doc.required_items[i].required_qty + ";" + cur_frm.doc.required_items[i].item_name)
     }
     return data.join("\n");
 }
