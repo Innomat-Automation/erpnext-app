@@ -37,6 +37,7 @@ doctype_js = {
     "Expense Claim" : "public/js/expense_claim.js",
     "Sales Invoice" : "public/js/sales_invoice.js",
     "Purchase Order" : "public/js/purchase_order.js",
+    "Purchase Invoice" : "public/js/purchase_invoice.js",
     "Payment Entry" : "public/js/payment_entry.js",
     "Quotation" : "public/js/quotation.js",
     "User" : "public/js/user.js",
