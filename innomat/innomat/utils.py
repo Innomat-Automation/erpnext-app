@@ -1110,3 +1110,18 @@ def unset_project_invoiced(sales_invoice, method):
             project.save()
             frappe.db.commit()
     return
+
+
+"""
+Update Timesheets, after chaning by Effort on Task. 
+"""
+@frappe.whitelist()
+def update_timesheets(task,by_effort):
+    frappe.db.sql("""UPDATE `tabTimesheet Detail`
+                                  SET `by_effort` = {byeffort}
+                                  WHERE `tabTimesheet Detail`.`task` = "{task}";""".format(task=task,byeffort=by_effort), as_dict=True)
+                                      
+    affected_rows = frappe.db.sql("""SELECT COUNT(`task`) as count FROM `tabTimesheet Detail`
+                                  WHERE `tabTimesheet Detail`.`task` = "{task}";""".format(task=task,byeffort=by_effort), as_dict=True)
+    return affected_rows[0];
+

@@ -1,4 +1,12 @@
 frappe.ui.form.on('Task', {
+    "by_effort": function(frm) {
+        frappe.msgprint("Um bestehende Timesheets zu aktualisieren auf Timesheet aktualisieren drücken!");
+    },
+    refresh(frm) {
+        frm.add_custom_button(__("Update Timesheets"), function() {
+                update_timesheets(frm);
+        });
+    },
     before_save(frm) {
        // assure service projects are always invoiced by effort
        if ((frm.doc.project_type === "Service") && (!frm.doc.by_effort)) {
@@ -30,3 +38,19 @@ frappe.ui.form.on('Task', {
         }
     }
 });
+
+function update_timesheets(frm) {
+    frappe.call({
+        'method': 'innomat.innomat.utils.update_timesheets',
+        'async': false,
+        'args': {
+            'task': frm.doc.name,
+            'by_effort': frm.doc.by_effort
+        },
+        'callback': function(r) {
+            console.log(r);
+            console.log(r.message.count);
+            frappe.msgprint("Aktualisiert Einträge: " + r.message.count);
+        }
+    });
+}
