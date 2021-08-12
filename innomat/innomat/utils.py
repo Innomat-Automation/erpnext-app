@@ -456,7 +456,7 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
             if t.activity_type == "Reisetätigkeit":
                 description += "<br>Reisetätigkeit"
             if t['external_remarks']:
-                description += "<br>" + t['external_remarks']
+                description += "<br>" + t['external_remarks'].replace("\n","<br>")
             row = new_sinv.append('items', {
                 'item_code': t['invoicing_item'],
                 'qty': t['hours'],
