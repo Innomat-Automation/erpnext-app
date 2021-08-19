@@ -76,7 +76,12 @@ frappe.ui.form.on('Timesheet', {
                 continue;
             }
             // check that if project type is "Project", task is selected
-            if ((frm.doc.time_logs[i].project_type === "Project") && (!frm.doc.time_logs[i].task)) {
+            if ((frm.doc.time_logs[i].activity_type === travel_key) && (!frm.doc.time_logs[i].task)) {
+                frappe.msgprint( __("Task required for {0} in row {1}").replace("{0}", frm.doc.time_logs[i].project).replace("{1}", (i+1)), __("Validation") );
+                frappe.validated=false;
+            }
+            // require task also for travel
+            if ((frm.doc.time_logs[i].project_type === "Project") && (frm.doc.time_logs[i].project) && (!frm.doc.time_logs[i].task)) {
                 frappe.msgprint( __("Task required for {0} in row {1}").replace("{0}", frm.doc.time_logs[i].project).replace("{1}", (i+1)), __("Validation") );
                 frappe.validated=false;
             }
@@ -113,12 +118,20 @@ frappe.ui.form.on('Timesheet', {
         });
     },
     on_submit(frm) {
+        // on submitting timesheet, create travel delivery notes and close tasks marked completed
         create_travel_notes(frm);
         
         close_completed_tasks(frm);
     },
     after_cancel(frm) {
+        // when a timesheet is cancelled, re-open tasks
         unclose_completed_tasks(frm);
+    },
+    employee(frm) {
+        // when switching the employee, make sure the employee's company is selected
+        if (frm.doc.employee) {
+            pull_employee_company(frm);
+        }
     }
 });
 
@@ -358,6 +371,22 @@ function unclose_completed_tasks(frm) {
         'args': {
             'timesheet': frm.doc.name,
             'close': 0
+        }
+    });
+}
+
+function pull_employee_company(frm) {
+    frappe.call({
+        method: "frappe.client.get",
+        args: {
+            "doctype": "Employee",
+            "name": frm.doc.employee
+        },
+        callback: function(response) {
+            var employee = response.message;
+            if (employee) {
+               cur_frm.set_value("company", employee.company);
+            }
         }
     });
 }
