@@ -695,12 +695,13 @@ def create_akonto(sales_order):
             break
     return
 
-def get_akonto_account(company):
+def get_akonto_account(company, currency):
     accounts = frappe.db.sql("""
         SELECT `akonto_account` 
         FROM `tabInnomat Settings Account`
         WHERE `parentfield` = "akonto_accounts"
-          AND `company` = "{company}";""".format(company=company), as_dict=True)
+          AND `company` = "{company}"
+          AND `akonto_currency` = "{currency}";""".format(company=company, currency=currency), as_dict=True)
     if accounts and len(accounts) > 0:
         return accounts[0]['akonto_account']
     else:
@@ -708,7 +709,7 @@ def get_akonto_account(company):
         
 def create_akonto_payment(sales_order, amount, akonto_reference):
     so = frappe.get_doc("Sales Order", sales_order)
-    account = get_akonto_account(so.company)
+    account = get_akonto_account(so.company, so.currency)
     
     # create payment entry
     new_pe = frappe.get_doc({
@@ -749,7 +750,7 @@ def add_akonto_payment_reference(sales_order, payment_entry):
 @frappe.whitelist()
 def get_akonto_deduction_content(payment_entry):
     pe = frappe.get_doc("Payment Entry", payment_entry)
-    account = get_akonto_account(pe.company)
+    account = get_akonto_account(pe.company, pe.paid_from_account_currency)
     cost_center = frappe.get_value("Company", pe.company, "cost_center")
     return {'account': account, 'cost_center': cost_center, 'amount': (-1) * pe.paid_amount }
     

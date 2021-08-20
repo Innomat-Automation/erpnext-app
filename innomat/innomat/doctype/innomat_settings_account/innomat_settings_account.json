@@ -5,7 +5,8 @@
  "engine": "InnoDB",
  "field_order": [
   "company",
-  "akonto_account"
+  "akonto_account",
+  "akonto_currency"
  ],
  "fields": [
   {
@@ -23,10 +24,20 @@
    "label": "Akonto Account",
    "options": "Account",
    "reqd": 1
+  },
+  {
+   "fetch_from": "akonto_account.account_currency",
+   "fieldname": "akonto_currency",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Currency",
+   "options": "Currency",
+   "read_only": 1,
+   "reqd": 1
   }
  ],
  "istable": 1,
- "modified": "2021-07-22 18:50:12.334675",
+ "modified": "2021-08-20 07:52:29.712817",
  "modified_by": "Administrator",
  "module": "Innomat",
  "name": "Innomat Settings Account",
