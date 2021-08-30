@@ -195,13 +195,13 @@ def get_data():
                     },
                     {
                         "type": "report",
-                        "name": "Receivables",
+                        "name": "Accounts Receivable",
                         "doctype": "Sales Invoice",
                         "is_query_report": True,
                     },
                     {
                         "type": "report",
-                        "name": "Payables",
+                        "name": "Accounts Payable",
                         "doctype": "Purchase Invoice",
                         "is_query_report": True,
                     }
