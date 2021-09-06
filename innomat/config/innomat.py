@@ -174,7 +174,37 @@ def get_data():
                        "name": "Payment Reminder",
                        "label": _("Payment Reminder"),
                        "description": _("Payment Reminder")
-                   }
+                   },
+                    {
+                        "type": "report",
+                        "name": "Balance Sheet",
+                        "doctype": "GL Entry",
+                        "is_query_report": True,
+                    },
+                    {
+                        "type": "report",
+                        "name": "Profit and Loss Statement",
+                        "doctype": "GL Entry",
+                        "is_query_report": True,
+                    },
+                    {
+                        "type": "report",
+                        "name": "General Ledger",
+                        "doctype": "GL Entry",
+                        "is_query_report": True,
+                    },
+                    {
+                        "type": "report",
+                        "name": "Accounts Receivable",
+                        "doctype": "Sales Invoice",
+                        "is_query_report": True,
+                    },
+                    {
+                        "type": "report",
+                        "name": "Accounts Payable",
+                        "doctype": "Purchase Invoice",
+                        "is_query_report": True,
+                    }
             ]
         },
         {
