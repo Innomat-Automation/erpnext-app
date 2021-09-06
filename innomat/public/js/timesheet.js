@@ -31,11 +31,11 @@ frappe.ui.form.on('Timesheet', {
                 });
             }
             // button to add on call fees
-            if (frm.doc.docstatus === 0) {
-                frm.add_custom_button(__("Service Report"), function() {
-                    create_service_report(frm);
-                });
-            }
+            //if (frm.doc.docstatus === 0) {
+            frm.add_custom_button(__("Service Report"), function() {
+                create_service_report(frm);
+            });
+            //}
         }
         // hide salary buttons
         $('button[data-label="Create%20Salary%20Slip"]').hide();
