@@ -732,6 +732,15 @@ def create_akonto_payment(sales_order, amount, akonto_reference):
         'allocated_amount': amount
     })
     new_pe.insert()
+    # check for currency conversion differences and write them off
+    if new_pe.difference_amount != 0:
+        company_settings = frappe.get_doc("Company", so.company)
+        new_pe.append("deductions", {
+            'account': company_settings.round_off_account,
+            'cost_center': company_settings.round_off_cost_center,
+            'amount': new_pe.difference_amount
+        })
+        new_pe.save()
     new_pe.submit()
     frappe.db.commit()
     return
