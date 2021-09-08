@@ -105,7 +105,7 @@ function get_effective_net_amount(frm) {
             net_amount += frm.doc.items[i].net_amount;
         }
     }
-    if (net_amount 0) {
+    if (net_amount === 0) {
         net_amount = 0.01;      // in case of all by effort positions to prevent division by 0
     }
     return net_amount;
