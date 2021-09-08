@@ -252,6 +252,18 @@ def get_data():
                         "name": "Employee Productivity",
                         "doctype": "Timesheet",
                         "is_query_report": True,
+                    },
+                    {
+                        "type": "report",
+                        "name": "Mitarbeiter Gegenverrechnung",
+                        "doctype": "Timesheet",
+                        "is_query_report": True,
+                    },
+                    {
+                        "type": "report",
+                        "name": "Kennzahlen",
+                        "doctype": "Timesheet",
+                        "is_query_report": True,
                     }
             ]
         },
