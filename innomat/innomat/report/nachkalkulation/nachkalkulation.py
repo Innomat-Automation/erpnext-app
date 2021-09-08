@@ -84,6 +84,8 @@ def get_data(filters):
     for row in data:
         if row['end_date'] and row['start_date']:
             duration_days = (row['end_date'] - row['start_date']).days
+            if duration_days == 0:
+                duration_days = 1
             expired_days = (date.today() - row['start_date']).days
             progress_time = 100 * expired_days / duration_days
             row['progress_time'] = progress_time
