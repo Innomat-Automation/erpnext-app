@@ -83,7 +83,7 @@ function recalculate_akonto(frm, cdt, cdn) {
     var net_amount = get_effective_net_amount(frm);
     var tax_rate = get_tax_rate(frm);
     var gross_amount = net_amount * tax_rate * fraction;
-    if ((Math.abs(gross_amount - akonto.amount) >= 1) || (!akonto.amount)) {
+    if ((Math.abs(gross_amount - (akonto.amount || 0)) >= 1) || (!akonto.amount)) {
         // only update amount if it is more than CHF 1 different from actual value (compensate for rounding)
         frappe.model.set_value(cdt, cdn, 'amount', gross_amount);
         cur_frm.refresh_field('akonto');
@@ -104,6 +104,9 @@ function get_effective_net_amount(frm) {
         if (frm.doc.items[i].by_effort === 0) {
             net_amount += frm.doc.items[i].net_amount;
         }
+    }
+    if (net_amount 0) {
+        net_amount = 0.01;      // in case of all by effort positions to prevent division by 0
     }
     return net_amount;
 }
