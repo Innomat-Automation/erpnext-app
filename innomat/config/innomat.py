@@ -264,6 +264,12 @@ def get_data():
                         "name": "Kennzahlen",
                         "doctype": "Timesheet",
                         "is_query_report": True,
+                    },
+                    {
+                        "type": "report",
+                        "name": "Projektstatus",
+                        "doctype": "Timesheet",
+                        "is_query_report": True,
                     }
             ]
         },

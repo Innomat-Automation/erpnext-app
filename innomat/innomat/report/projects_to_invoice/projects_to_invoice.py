@@ -24,8 +24,7 @@ def get_columns():
         {"label": _("Akonto unpaid"), "fieldname": "unpaid_akonto_amount", "fieldtype": "Currency", "width": 100},
         {"label": _("DN open"), "fieldname": "dn_amount", "fieldtype": "Currency", "width": 100},
         {"label": _("DN draft"), "fieldname": "draft_dn_amount", "fieldtype": "Currency", "width": 100},
-        {"label": _("TS open"), "fieldname": "ts_amount", "fieldtype": "Currency", "width": 100},
-        {"label": _("Invoice unpaid"), "fieldname": "unpaid_invoice", "fieldtype": "Currency", "width": 100}
+        {"label": _("TS open"), "fieldname": "ts_amount", "fieldtype": "Currency", "width": 100}
     ]
 
 def get_data(filters):
@@ -65,36 +64,36 @@ def get_data(filters):
            (
             /* open akonto */
             SELECT 
-                    (SELECT `tabProject`.`name`
-                     FROM `tabProject` 
-                     WHERE `tabProject`.`sales_order` = `tabSales Order Akonto`.`parent`) AS `project`,
-                    `tabSales Order Akonto`.`amount` AS `akonto_amount`,
-                    0 AS `unpaid_akonto_amount`,
-                    0 AS `dn_amount`,
-                    0 AS `draft_dn_amount`,
-                    0 AS `ts_amount`,
-                    `tabSales Order Akonto`.`date` AS `date`
-                FROM `tabSales Order Akonto`
-                LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabSales Order Akonto`.`parent`
-                WHERE `tabSales Order Akonto`.`file` IS NULL
-                  AND `tabSales Order`.`company` = "{company}"
+                (SELECT `tabProject`.`name`
+                 FROM `tabProject` 
+                 WHERE `tabProject`.`sales_order` = `tabSales Order Akonto`.`parent`) AS `project`,
+                `tabSales Order Akonto`.`amount` AS `akonto_amount`,
+                0 AS `unpaid_akonto_amount`,
+                0 AS `dn_amount`,
+                0 AS `draft_dn_amount`,
+                0 AS `ts_amount`,
+                `tabSales Order Akonto`.`date` AS `date`
+            FROM `tabSales Order Akonto`
+            LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabSales Order Akonto`.`parent`
+            WHERE `tabSales Order Akonto`.`file` IS NULL
+              AND `tabSales Order`.`company` = "{company}"
             
             /* unpaid akonto */
             UNION SELECT 
-                    0 AS `akonto_amount`,
-                    (SELECT `tabProject`.`name`
-                     FROM `tabProject` 
-                     WHERE `tabProject`.`sales_order` = `tabSales Order Akonto`.`parent`) AS `project`,
-                    `tabSales Order Akonto`.`amount` AS `unpaid_akonto_amount`,
-                    0 AS `dn_amount`,
-                    0 AS `draft_dn_amount`,
-                    0 AS `ts_amount`,
-                    `tabSales Order Akonto`.`creation_date` AS `date`
-                FROM `tabSales Order Akonto`
-                LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabSales Order Akonto`.`parent`
-                WHERE `tabSales Order Akonto`.`file` IS NOT NULL
-                  AND `tabSales Order Akonto`.`payment` IS NOT NULL
-                  AND `tabSales Order`.`company` = "{company}"
+                (SELECT `tabProject`.`name`
+                 FROM `tabProject` 
+                 WHERE `tabProject`.`sales_order` = `tabSales Order Akonto`.`parent`) AS `project`,
+                 0 AS `akonto_amount`,
+                `tabSales Order Akonto`.`amount` AS `unpaid_akonto_amount`,
+                0 AS `dn_amount`,
+                0 AS `draft_dn_amount`,
+                0 AS `ts_amount`,
+                `tabSales Order Akonto`.`creation_date` AS `date`
+            FROM `tabSales Order Akonto`
+            LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabSales Order Akonto`.`parent`
+            WHERE `tabSales Order Akonto`.`file` IS NOT NULL
+              AND `tabSales Order Akonto`.`payment` IS NULL
+              AND `tabSales Order`.`company` = "{company}"
                       
             /* uninvoice delivery notes */
             UNION SELECT 
@@ -137,7 +136,7 @@ def get_data(filters):
                 FROM `tabTimesheet Detail`
                 LEFT JOIN `tabTimesheet` ON `tabTimesheet Detail`.`parent` = `tabTimesheet`.`name`
                 LEFT JOIN `tabTask` ON `tabTimesheet Detail`.`task` = `tabTask`.`name`
-				LEFT JOIN `tabProject` ON `tabProject`.`name` = `tabTimesheet Detail`.`project`
+                LEFT JOIN `tabProject` ON `tabProject`.`name` = `tabTimesheet Detail`.`project`
                 LEFT JOIN `tabSales Invoice Item` ON `tabTimesheet Detail`.`name` = `tabSales Invoice Item`.`ts_detail`
                 LEFT JOIN `tabItem Price` ON (`tabItem Price`.`item_code` = `tabTask`.`item_code` AND `tabItem Price`.`selling` = 1)
                 WHERE `tabTimesheet`.`docstatus` = 1
@@ -156,4 +155,22 @@ def get_data(filters):
     
     data = projects
 
+    # processing
+    totals = {'volume': 0, 'akonto_amount': 0, 'unpaid_akonto_amount': 0, 'dn_amount': 0, 'draft_dn_amount': 0, 'ts_amount': 0}
+    for row in data:
+        totals['volume'] += row['volume'] or 0
+        totals['akonto_amount'] += row['akonto_amount'] or 0
+        totals['unpaid_akonto_amount'] += row['unpaid_akonto_amount'] or 0
+        totals['dn_amount'] += row['dn_amount'] or 0
+        totals['draft_dn_amount'] += row['draft_dn_amount'] or 0
+        totals['ts_amount'] += row['ts_amount'] or 0
+    data.append({
+        'customer_name': "Total",
+        'volume': totals['volume'],
+        'unpaid_akonto_amount': totals['unpaid_akonto_amount'],
+        'akonto_amount': totals['akonto_amount'] ,
+        'dn_amount': totals['dn_amount'],
+        'draft_dn_amount': totals['draft_dn_amount'],
+        'ts_amount': totals['ts_amount']
+    })
     return data

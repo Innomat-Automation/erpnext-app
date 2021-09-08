@@ -802,12 +802,13 @@ Get all required material with costs from a sales order (based on BOM or purchas
 """
 def get_sales_order_materials(sales_order):
     sales_order= frappe.get_doc("Sales Order", sales_order)
-    data = {'total_cost': 0, 'total_hours': 0, 'items': []}
+    data = {'total_cost': 0, 'total_hours': 0, 'total_hours_budget': 0, 'items': []}
     for item in sales_order.items:
         if "h" in item.uom:
             if item.by_effort == 0:
                 # single per-hour item
                 data['total_hours'] += item.qty
+                data['total_hours_budget'] += item.qty * frappe.get_value("Item", item.item_code, "valuation_rate")
         else:
             # check if there is a BOM
             boms = frappe.get_all("BOM", filters={'item': item.item_code, 'is_active': 1, 'is_default': 1, 'docstatus': 1}, fields=['name'])
@@ -818,6 +819,7 @@ def get_sales_order_materials(sales_order):
                     if "h" in i.uom:
                         # this is a per-hours item
                         data['total_hours'] += item.qty * i.qty
+                        data['total_hours_budget'] += item.qty * i.qty * frappe.get_value("Item", i.item_code, "valuation_rate")
                     else:
                         # this is a material position
                         data['items'].append({
@@ -852,6 +854,22 @@ def get_project_material_cost(project):
         return data[0]['cost']
     else:
         return 0
+
+"""
+Get project time cost
+"""
+def get_project_time_cost(project):
+    data = frappe.db.sql("""SELECT SUM(`tabTimesheet Detail`.`hours` * `tabEmployee`.`internal_rate_per_hour`) AS `cost`
+            FROM `tabTimesheet Detail` 
+            LEFT JOIN `tabTimesheet` ON `tabTimesheet`.`name` = `tabTimesheet Detail`.`parent`
+            LEFT JOIN `tabEmployee` ON `tabEmployee`.`name` = `tabTimesheet`.`employee`
+            WHERE `tabTimesheet`.`docstatus` = 1
+              AND `tabTimesheet Detail`.`project` = "{project}"
+        ;""".format(project=project), as_dict=True)
+    if data and len(data) > 0:
+        return data[0]['cost']
+    else:
+        return 0
         
 """
 This function will update  the project cost values
@@ -863,20 +881,26 @@ def update_project_costs():
             planning_data = get_sales_order_materials(p['sales_order'])
             planned_cost = planning_data['total_cost']
             planned_hours = planning_data['total_hours']
+            planned_hours_budget = planning_data['total_hours_budget']
         else:
             planned_cost = 0
             planned_hours = 0
+            planned_hours_budget = 0
         actual_cost = get_project_material_cost(p['name'])
+        actual_time_costs = get_project_time_cost(p['name'])
         project = frappe.get_doc("Project", p['name'])
         # only update it required
-        if project.planned_material_cost != planned_cost or project.actual_material_cost != actual_cost or project.planned_hours != planned_hours:
+        if project.planned_material_cost != planned_cost or project.actual_material_cost != actual_cost or project.planned_hours != planned_hours or project.stundenbudget_plan != planned_hours_budget or project.stundenbudget_aktuell != actual_time_costs:
             project.planned_material_cost = planned_cost
             project.actual_material_cost = actual_cost
             project.planned_hours = planned_hours
+            project.stundenbudget_plan = planned_hours_budget
+            project.stundenbudget_aktuell = actual_time_costs
             try:
                 project.save()
             except Exception as err:
                 frappe.log_error(err, "Update material cost {0}".format(p['name']))
+    frappe.db.commit()
     return
 
 """

@@ -1,0 +1,30 @@
+{
+ "add_total_row": 0,
+ "creation": "2021-09-08 21:25:03.866868",
+ "disable_prepared_report": 0,
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "idx": 0,
+ "is_standard": "Yes",
+ "modified": "2021-09-08 21:25:03.866868",
+ "modified_by": "Administrator",
+ "module": "Innomat",
+ "name": "Projektstatus",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "ref_doctype": "Project",
+ "report_name": "Projektstatus",
+ "report_type": "Script Report",
+ "roles": [
+  {
+   "role": "Projects User"
+  },
+  {
+   "role": "Projects Manager"
+  },
+  {
+   "role": "System Manager"
+  }
+ ]
+}

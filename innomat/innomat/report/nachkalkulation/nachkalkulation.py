@@ -26,7 +26,9 @@ def get_columns():
         {"label": _("Material (used)"), "fieldname": "actual_material_cost", "fieldtype": "Currency", "width": 100},
         {"label": _("Hours flat (plan)"), "fieldname": "planned_hours", "fieldtype": "Float", "width": 100},
         {"label": _("Hours flat (used)"), "fieldname": "hours_flat", "fieldtype": "Float", "width": 100},
-        {"label": _("Hours by effort"), "fieldname": "hours_effective", "fieldtype": "Float", "width": 100}
+        {"label": _("Hours by effort"), "fieldname": "hours_effective", "fieldtype": "Float", "width": 100},
+        {"label": _("Hours budget"), "fieldname": "stundenbudget_plan", "fieldtype": "Currency", "width": 100},
+        {"label": _("Hours consumed"), "fieldname": "stundenbudget_aktuell", "fieldtype": "Currency", "width": 100}
     ]
 
 @frappe.whitelist()
@@ -51,13 +53,9 @@ def get_data(filters):
                     `tabProject`.`status_light` AS `status_light`,
                     `tabProject`.`expected_start_date` AS `start_date`,
                     `tabProject`.`expected_end_date` AS `end_date`,
-                    (SELECT IFNULL(COUNT(`tabTask`.`name`) , 0)
+                    (SELECT IFNULL(COUNT(`tabTask`.`expected_time`) , 0)
                      FROM `tabTask` 
-                     WHERE `tabTask`.`project` = `tabProject`.`name`) AS `project_task_count`,
-                    (SELECT IFNULL(COUNT(`tabTask`.`name`), 0)
-                     FROM `tabTask` 
-                     WHERE `tabTask`.`project` = `tabProject`.`name`
-                       AND `tabTask`.`status` IN ("Completed", "Cancelled")) AS `project_task_completed_count`,
+                     WHERE `tabTask`.`project` = `tabProject`.`name`) AS `project_expected_time`,
                     IFNULL(`tabProject`.`planned_material_cost`, 0) AS `planned_material_cost`,
                     IFNULL(`tabProject`.`actual_material_cost`, 0) AS `actual_material_cost`,
                     IFNULL(`tabProject`.`planned_hours`, 0) AS `planned_hours`,
@@ -70,7 +68,9 @@ def get_data(filters):
                      FROM `tabTimesheet Detail`
                      WHERE `tabTimesheet Detail`.`docstatus` = 1
                        AND `tabTimesheet Detail`.`project` = `tabProject`.`name`
-                       AND `tabTimesheet Detail`. `by_effort` = 1) AS `hours_effective`
+                       AND `tabTimesheet Detail`. `by_effort` = 1) AS `hours_effective`,
+                    `tabProject`.`stundenbudget_plan` AS `stundenbudget_plan`,
+                    `tabProject`.`stundenbudget_aktuell` AS `stundenbudget_aktuell`
                 FROM `tabProject`
                 WHERE 
                   `tabProject`.`status` = "Open" 
@@ -89,7 +89,7 @@ def get_data(filters):
             expired_days = (date.today() - row['start_date']).days
             progress_time = 100 * expired_days / duration_days
             row['progress_time'] = progress_time
-        if row['project_task_count']:
-            row['progress_tasks'] = 100 * row['project_task_completed_count'] / row['project_task_count']
+        if row['project_expected_time']:
+            row['progress_tasks'] = 100 * (row['hours_flat'] or 0) / row['project_expected_time']
         
     return data
