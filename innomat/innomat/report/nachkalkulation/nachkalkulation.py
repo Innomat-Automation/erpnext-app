@@ -53,7 +53,7 @@ def get_data(filters):
                     `tabProject`.`status_light` AS `status_light`,
                     `tabProject`.`expected_start_date` AS `start_date`,
                     `tabProject`.`expected_end_date` AS `end_date`,
-                    (SELECT IFNULL(COUNT(`tabTask`.`expected_time`) , 0)
+                    (SELECT IFNULL(SUM(`tabTask`.`expected_time`) , 0)
                      FROM `tabTask` 
                      WHERE `tabTask`.`project` = `tabProject`.`name`) AS `project_expected_time`,
                     IFNULL(`tabProject`.`planned_material_cost`, 0) AS `planned_material_cost`,
