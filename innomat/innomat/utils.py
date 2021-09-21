@@ -465,7 +465,8 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
                 'against_timesheet': t['timesheet'],
                 'ts_detail': t['ts_detail'],
                 'sales_item_group': sales_item_group,
-                'cost_center': cost_center
+                'cost_center': cost_center,
+                'sales_order': pj.sales_order
             })
         # insert sales item groups
         row = new_sinv.append('sales_item_groups', {
@@ -485,7 +486,8 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
                     'dn_detail': dn_pos.name,
                     'sales_item_group': dn_pos.sales_item_group,
                     'rate': dn_pos.rate,
-                    'cost_center': cost_center
+                    'cost_center': cost_center,
+                    'sales_order': pj.sales_order
                 })
         # insert taxes
         tax_template = frappe.get_doc("Sales Taxes and Charges Template", new_sinv.taxes_and_charges)
@@ -497,7 +499,7 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
                 'rate': t.rate
             })
         # check and pull down payments
-        payments = frappe.db.sql("""SELECT `tabPayment Entry Reference`.`parent`, `tabPayment Entry Reference`.`allocated_amount` 
+        payments = frappe.db.sql("""SELECT `tabPayment Entry Reference`.`parent`, `tabPayment Entry Reference`.`allocated_amount`, `tabPayment Entry Reference`.`name` 
                                     FROM `tabPayment Entry Reference` 
                                     LEFT JOIN `tabPayment Entry` ON `tabPayment Entry Reference`.`parent` = `tabPayment Entry`.`name`
                                     WHERE `tabPayment Entry`.`docstatus` = 1
@@ -508,6 +510,7 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
                 new_sinv.append('advances', {
                     'reference_type': "Payment Entry",
                     'reference_name': payment['parent'],
+                    'reference_row': payment['name'],
                     'advance_amount': payment['allocated_amount'],
                     'allocated_amount': payment['allocated_amount'],
                     'remarks': "Auto allocated {0} from {1}".format(payment['allocated_amount'], payment['parent'])
