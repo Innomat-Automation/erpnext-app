@@ -37,22 +37,70 @@ def get_data(filters):
     
     # revenue
     ytd_revenue = frappe.db.sql("""
-        SELECT IFNULL(SUM(`base_net_total`), 0) AS `amount`
-        FROM `tabSales Invoice`
-        WHERE
-            `tabSales Invoice`.`docstatus` = 1
-            AND `tabSales Invoice`.`company` = "{company}"
-            AND DATE(`tabSales Invoice`.`posting_date`) >= "{year}-01-01"
-            AND DATE(`tabSales Invoice`.`posting_date`) <= "{date}";""".format(
+        SELECT ((`invoice_volume` - `advance_volume` + `akonto_invoiced`) / 1.077) AS `amount`
+        FROM
+        (SELECT
+            (SELECT IFNULL(SUM(`grand_total` * IFNULL(`conversion_rate`, 1)), 0)
+                    FROM `tabSales Invoice`
+                    WHERE
+                        `tabSales Invoice`.`docstatus` = 1
+                        AND `tabSales Invoice`.`company` = "{company}"
+                        AND DATE(`tabSales Invoice`.`posting_date`) >= "{year}-01-01"
+                        AND DATE(`tabSales Invoice`.`posting_date`) <= "{date}"
+            ) AS `invoice_volume`,
+            (SELECT IFNULL(SUM(`total_advance` * IFNULL(`conversion_rate`, 1)), 0)
+                    FROM `tabSales Invoice`
+                    WHERE
+                        `tabSales Invoice`.`docstatus` = 1
+                        AND `tabSales Invoice`.`company` = "{company}"
+                        AND DATE(`tabSales Invoice`.`posting_date`) >= "{year}-01-01"
+                        AND DATE(`tabSales Invoice`.`posting_date`) <= "{date}"
+            ) AS `advance_volume`,
+            (SELECT
+                IFNULL(SUM(`tabSales Order Akonto`.`amount` * IFNULL(`tabSales Order`.`conversion_rate`, 1)), 0) AS `amount`
+             FROM `tabSales Order Akonto`
+             LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabSales Order Akonto`.`parent`
+             WHERE `tabSales Order`.`docstatus` = 1
+               AND `tabSales Order`.`status` NOT IN ("Closed", "Completed")
+               AND `tabSales Order`.`company` = "{company}"
+               AND DATE(`tabSales Order Akonto`.`date`) >= "{year}-01-01"
+               AND DATE(`tabSales Order Akonto`.`date`) <= "{date}"
+               AND `tabSales Order Akonto`.`file` IS NOT NULL
+            ) AS `akonto_invoiced`
+        ) AS `data`;""".format(
         company=filters['company'], year=year, date=date), as_dict=True)[0]['amount']
     py_revenue = frappe.db.sql("""
-        SELECT IFNULL(SUM(`base_net_total`), 0) AS `amount`
-        FROM `tabSales Invoice`
-        WHERE
-            `tabSales Invoice`.`docstatus` = 1
-            AND `tabSales Invoice`.`company` = "{company}"
-            AND DATE(`tabSales Invoice`.`posting_date`) >= "{year}-01-01"
-            AND DATE(`tabSales Invoice`.`posting_date`) <= "{date}";""".format(
+        SELECT ((`invoice_volume` - `advance_volume` + `akonto_invoiced`) / 1.077) AS `amount`
+        FROM
+        (SELECT
+            (SELECT IFNULL(SUM(`grand_total` * IFNULL(`conversion_rate`, 1)), 0)
+                    FROM `tabSales Invoice`
+                    WHERE
+                        `tabSales Invoice`.`docstatus` = 1
+                        AND `tabSales Invoice`.`company` = "{company}"
+                        AND DATE(`tabSales Invoice`.`posting_date`) >= "{year}-01-01"
+                        AND DATE(`tabSales Invoice`.`posting_date`) <= "{date}"
+            ) AS `invoice_volume`,
+            (SELECT IFNULL(SUM(`total_advance` * IFNULL(`conversion_rate`, 1)), 0)
+                    FROM `tabSales Invoice`
+                    WHERE
+                        `tabSales Invoice`.`docstatus` = 1
+                        AND `tabSales Invoice`.`company` = "{company}"
+                        AND DATE(`tabSales Invoice`.`posting_date`) >= "{year}-01-01"
+                        AND DATE(`tabSales Invoice`.`posting_date`) <= "{date}"
+            ) AS `advance_volume`,
+            (SELECT
+                IFNULL(SUM(`tabSales Order Akonto`.`amount` * IFNULL(`tabSales Order`.`conversion_rate`, 1)), 0) AS `amount`
+             FROM `tabSales Order Akonto`
+             LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabSales Order Akonto`.`parent`
+             WHERE `tabSales Order`.`docstatus` = 1
+               AND `tabSales Order`.`status` NOT IN ("Closed", "Completed")
+               AND `tabSales Order`.`company` = "{company}"
+               AND DATE(`tabSales Order Akonto`.`date`) >= "{year}-01-01"
+               AND DATE(`tabSales Order Akonto`.`date`) <= "{date}"
+               AND `tabSales Order Akonto`.`file` IS NOT NULL
+            ) AS `akonto_invoiced`
+        ) AS `data`;""".format(
         company=filters['company'], year=previous_year, date=previous_date), as_dict=True)[0]['amount']
     data.append({
         'description': _("Revenue"),
@@ -95,12 +143,13 @@ def get_data(filters):
     
     # receivables
     ytd_receivables = frappe.db.sql("""
-        SELECT IFNULL((SUM(`debit`) - SUM(`credit`)), 0) AS `amount`
-        FROM `tabGL Entry` 
-        WHERE `account` IN (SELECT `name` FROM `tabAccount` WHERE `account_type` = "Receivable")
-          AND `posting_date` <= "{date}"
-          AND `company` = "{company}"
-        ;""".format(company=filters['company'], date=date), as_dict=True)[0]['amount']
+        SELECT IFNULL(SUM(`outstanding_amount` * IFNULL(`conversion_rate`, 1)), 0) AS `amount`
+        FROM `tabSales Invoice`
+        WHERE
+            `tabSales Invoice`.`docstatus` = 1
+            AND `tabSales Invoice`.`company` = "{company}"
+            AND `tabSales Invoice`.`outstanding_amount` > 0;""".format(
+        company=filters['company'], year=year, date=date), as_dict=True)[0]['amount']
     data.append({
         'description': _("Receivables"),
         'ytd': ytd_receivables,
