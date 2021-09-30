@@ -117,7 +117,7 @@ def get_data(filters):
         WHERE 
           `tabGL Entry`.`docstatus` = 1
           AND `tabGL Entry`.`company` = "{company}"
-          AND `tabAccount`.`account_type` IN ('Expense Account', 'Stock Adjustment')
+          AND `tabAccount`.`account_type` IN ('Expense Account', 'Stock Adjustment', 'Depreciation', 'Cost of Goods Sold')
           AND `tabGL Entry`.`posting_date` >= '{year}-01-01'
           AND `tabGL Entry`.`posting_date` <= '{date}'
           AND `tabGL Entry`.`voucher_type` != 'Period Closing Voucher';""".format(
@@ -130,7 +130,7 @@ def get_data(filters):
         WHERE 
           `tabGL Entry`.`docstatus` = 1
           AND `tabGL Entry`.`company` = "{company}"
-          AND `tabAccount`.`account_type` IN ('Expense Account', 'Stock Adjustment')
+          AND `tabAccount`.`account_type` IN ('Expense Account', 'Stock Adjustment', 'Cost of Goods Sold', 'Depreciation')
           AND `tabGL Entry`.`posting_date` >= '{year}-01-01'
           AND `tabGL Entry`.`posting_date` <= '{date}'
           AND `tabGL Entry`.`voucher_type` != 'Period Closing Voucher';""".format(
