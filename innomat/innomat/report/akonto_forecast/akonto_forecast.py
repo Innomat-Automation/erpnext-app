@@ -17,7 +17,8 @@ def get_columns():
         {"label": _("Sales Order"), "fieldname": "sales_order", "fieldtype": "Link", "options": "Sales Order", "width": 110},
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 110},
         {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 200},
-        {"label": _("Amount"), "fieldname": "amount", "fieldtype": "Currency", "width": 120}
+        {"label": _("Amount"), "fieldname": "amount", "fieldtype": "Currency", "width": 120},
+        {"label": _(""), "fieldname": "blank", "fieldtype": "Data", "width": 20}
     ]
 
 def get_data(filters):   
@@ -34,7 +35,7 @@ def get_data(filters):
       WHERE
         `tabSales Order`.`docstatus` = 1
         AND (`tabSales Order Akonto`.`payment` IS NULL OR `tabSales Order Akonto`.`payment` = "")
-      ORDER BY `tabSales Order Akonto`.`date` ASC;
+      ORDER BY `tabSales Order Akonto`.`creation_date` ASC, `tabSales Order Akonto`.`date` ASC;
       """
     
     data = frappe.db.sql(sql_query, as_dict=True)
