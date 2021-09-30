@@ -35,7 +35,7 @@ def get_data(filters):
       WHERE
         `tabSales Order`.`docstatus` = 1
         AND (`tabSales Order Akonto`.`payment` IS NULL OR `tabSales Order Akonto`.`payment` = "")
-      ORDER BY `tabSales Order Akonto`.`creation_date` ASC, `tabSales Order Akonto`.`date` ASC;
+      ORDER BY -`tabSales Order Akonto`.`creation_date` DESC, `tabSales Order Akonto`.`date` ASC;
       """
     
     data = frappe.db.sql(sql_query, as_dict=True)

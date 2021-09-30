@@ -63,8 +63,8 @@ def get_data(filters):
              WHERE `tabSales Order`.`docstatus` = 1
                AND `tabSales Order`.`status` NOT IN ("Closed", "Completed")
                AND `tabSales Order`.`company` = "{company}"
-               AND DATE(`tabSales Order Akonto`.`date`) >= "{year}-01-01"
-               AND DATE(`tabSales Order Akonto`.`date`) <= "{date}"
+               AND DATE(`tabSales Order Akonto`.`creation_date`) >= "{year}-01-01"
+               AND DATE(`tabSales Order Akonto`.`creation_date`) <= "{date}"
                AND `tabSales Order Akonto`.`file` IS NOT NULL
             ) AS `akonto_invoiced`
         ) AS `data`;""".format(
@@ -96,8 +96,8 @@ def get_data(filters):
              WHERE `tabSales Order`.`docstatus` = 1
                AND `tabSales Order`.`status` NOT IN ("Closed", "Completed")
                AND `tabSales Order`.`company` = "{company}"
-               AND DATE(`tabSales Order Akonto`.`date`) >= "{year}-01-01"
-               AND DATE(`tabSales Order Akonto`.`date`) <= "{date}"
+               AND DATE(`tabSales Order Akonto`.`creation_date`) >= "{year}-01-01"
+               AND DATE(`tabSales Order Akonto`.`creation_date`) <= "{date}"
                AND `tabSales Order Akonto`.`file` IS NOT NULL
             ) AS `akonto_invoiced`
         ) AS `data`;""".format(
