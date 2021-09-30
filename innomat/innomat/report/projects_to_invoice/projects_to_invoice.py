@@ -24,7 +24,8 @@ def get_columns():
         {"label": _("Akonto unpaid"), "fieldname": "unpaid_akonto_amount", "fieldtype": "Currency", "width": 100},
         {"label": _("DN open"), "fieldname": "dn_amount", "fieldtype": "Currency", "width": 100},
         {"label": _("DN draft"), "fieldname": "draft_dn_amount", "fieldtype": "Currency", "width": 100},
-        {"label": _("TS open"), "fieldname": "ts_amount", "fieldtype": "Currency", "width": 100}
+        {"label": _("TS open"), "fieldname": "ts_amount", "fieldtype": "Currency", "width": 100},
+        {"label": _(""), "fieldname": "blank", "fieldtype": "Data", "width": 20}
     ]
 
 def get_data(filters):
