@@ -20,8 +20,8 @@ def get_columns():
         {"label": _("Status Light"), "fieldname": "status_light", "fieldtype": "Data", "width": 100},
         {"label": _("Start Date"), "fieldname": "start_date", "fieldtype": "Date", "width": 80},
         {"label": _("End Date"), "fieldname": "end_date", "fieldtype": "Date", "width": 80},
-        {"label": _("Progress (time)"), "fieldname": "progress_time", "fieldtype": "Percent", "width": 100},
-        {"label": _("Progress (tasks)"), "fieldname": "progress_tasks", "fieldtype": "Percent", "width": 100},
+        #{"label": _("Progress (time)"), "fieldname": "progress_time", "fieldtype": "Percent", "width": 100},   # only requried for project status
+        #{"label": _("Progress (tasks)"), "fieldname": "progress_tasks", "fieldtype": "Percent", "width": 100}, # only requried for project status
         {"label": _("Material (plan)"), "fieldname": "planned_material_cost", "fieldtype": "Currency", "width": 100},
         {"label": _("Material (used)"), "fieldname": "actual_material_cost", "fieldtype": "Currency", "width": 100},
         {"label": _("Hours flat (plan)"), "fieldname": "planned_hours", "fieldtype": "Float", "width": 100},
