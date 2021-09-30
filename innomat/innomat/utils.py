@@ -868,6 +868,7 @@ def get_project_time_cost(project):
             LEFT JOIN `tabEmployee` ON `tabEmployee`.`name` = `tabTimesheet`.`employee`
             WHERE `tabTimesheet`.`docstatus` = 1
               AND `tabTimesheet Detail`.`project` = "{project}"
+              AND `tabTimesheet Detail`.`by_effort` = 0
         ;""".format(project=project), as_dict=True)
     if data and len(data) > 0:
         return data[0]['cost']
