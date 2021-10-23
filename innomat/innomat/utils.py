@@ -12,6 +12,7 @@ from erpnextswiss.erpnextswiss.doctype.worktime_settings.worktime_settings impor
 import json 
 from frappe.utils import get_link_to_form, cint
 
+
 """
 This function will return the BOM cost/rate for calculations (e.g. quotation)
 """
@@ -1162,4 +1163,6 @@ def update_timesheets(task,by_effort):
     affected_rows = frappe.db.sql("""SELECT COUNT(`task`) as count FROM `tabTimesheet Detail`
                                   WHERE `tabTimesheet Detail`.`task` = "{task}";""".format(task=task,byeffort=by_effort), as_dict=True)
     return affected_rows[0];
+
+
 

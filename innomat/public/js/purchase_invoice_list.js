@@ -3,6 +3,9 @@ frappe.listview_settings['Purchase Invoice'] = {
         listview.page.add_menu_item( __("Quick Invoice"), function() {
             quick_invoice();
         });
+        listview.page.add_menu_item( __("Get Invoices"), function() {
+            get_invoices();
+        });
     },
     add_fields: ["supplier", "supplier_name", "base_grand_total", "outstanding_amount", "due_date", "company",
       "currency", "is_return", "release_date", "on_hold"],
@@ -59,4 +62,20 @@ function quick_invoice() {
         __("Quick purchase invoice"),
         __("Create")
     )
+}
+
+
+function get_invoices() {
+    frappe.prompt([
+        {'fieldname': 'company', 'fieldtype': 'Link', 'label': __("Company"), 'options': 'Company', 'reqd': 1},
+        {'fieldname': 'fromdate', 'fieldtype': 'Date', 'label': __("Date"), 'reqd': 1},
+        {'fieldname': 'todate', 'fieldtype': 'Date', 'label': __("Date"), 'reqd': 1}
+    ],
+    function(values){
+        window.open('/api/method/innomat.innomat.scripts.invoices.get_invoices?' +
+								'&company=' + encodeURIComponent(values.company) + '&fromdate=' + encodeURIComponent(values.fromdate) + '&todate=' + encodeURIComponent(values.todate));
+    },
+    __("Quick purchase invoice"),
+    __("Create")
+)
 }
