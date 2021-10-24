@@ -23,7 +23,7 @@ frappe.ui.form.on('Project', {
             // draft notification area
             if (!frm.doc.__islocal) {
                 frappe.call({
-                    'method': 'innomat.innomat.utils.find_drafts',
+                    'method': 'innomat.innomat.scripts.project.find_drafts',
                     'args': {
                         'project': frm.doc.name
                     },
@@ -88,7 +88,7 @@ function set_project_manager(frm) {
 
 function create_sinv(frm) {
     frappe.call({
-        'method': "innomat.innomat.utils.create_sinv_from_project",
+        'method': "innomat.innomat.scripts.project.create_sinv_from_project",
         'args': {
             'project': frm.doc.name,
             'sales_item_group': frm.doc.project_type

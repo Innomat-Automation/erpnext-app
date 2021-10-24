@@ -15,7 +15,7 @@ frappe.ui.form.on('Sales Order', {
                     if ((r.message) && (r.message.length === 0)) {
                         frm.add_custom_button(__('Create project'), function() {
                             frappe.call({
-                                method:"innomat.innomat.utils.create_project",
+                                method:"innomat.innomat.scripts.sales_order.create_project",
                                 args: {
                                     'sales_order': frm.doc.name
                                 },
@@ -125,7 +125,7 @@ function create_part_delivery(frm) {
         ],
         function(values){
             frappe.call({
-                method:"innomat.innomat.utils.create_part_delivery",
+                method:"innomat.innomat.scripts.sales_order.create_part_delivery",
                 args: {
                     'sales_order': frm.doc.name,
                     'percentage': values.deliver_part
@@ -142,7 +142,7 @@ function create_part_delivery(frm) {
 
 function create_akonto(frm) {
     frappe.call({
-        method:"innomat.innomat.utils.create_akonto",
+        method:"innomat.innomat.scripts.sales_order.create_akonto",
         args: {
             'sales_order': frm.doc.name
         },
@@ -151,3 +151,4 @@ function create_akonto(frm) {
         }
     });
 }
+

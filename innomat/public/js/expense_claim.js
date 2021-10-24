@@ -54,7 +54,7 @@ function set_amount_from_qty(frm, cdt, cdn) {
 
 function create_expense_notes(frm) {
     frappe.call({
-        method: 'innomat.innomat.utils.create_expense_notes',
+        method: 'innomat.innomat.scripts.exense_claim.create_expense_notes',
         args: {
             expense_claim: frm.doc.name,
             expense_key: expense_key

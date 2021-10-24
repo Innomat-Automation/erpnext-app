@@ -42,7 +42,7 @@ function quick_invoice() {
         ],
         function(values){
             frappe.call({
-                'method': 'innomat.innomat.utils.quick_pinv',
+                'method': 'innomat.innomat.scripts.invoices.quick_pinv',
                 'args': {
                     'date': values.date,
                     'gross_amount': values.amount,

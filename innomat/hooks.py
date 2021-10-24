@@ -105,8 +105,8 @@ doctype_list_js = {
 
 doc_events = {
     "Sales Invoice": {
-        "on_cancel": "innomat.innomat.utils.unset_project_invoiced",
-        "on_trash": "innomat.innomat.utils.unset_project_invoiced"
+        "on_cancel": "innomat.innomat.scripts.project.unset_project_invoiced",
+        "on_trash": "innomat.innomat.scripts.project.unset_project_invoiced"
     }
  }
 
@@ -132,7 +132,7 @@ doc_events = {
 # }
 scheduler_events = {
     "daily": [
-        "innomat.innomat.utils.update_project_costs"
+        "innomat.innomat.scripts.project.update_project_costs"
     ]
 }
 

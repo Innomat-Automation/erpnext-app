@@ -45,7 +45,7 @@ frappe.ui.form.on('Timesheet', {
         // get lock date
         var lock_date = new Date('2000-01-01T00:00:00');
         frappe.call({
-            "method": "innomat.innomat.utils.get_timesheet_lock_date",
+            "method": "innomat.innomat.scripts.timesheet.get_timesheet_lock_date",
             "async": false,
             "callback": function(response) {
                 lock_date = response.message;
@@ -104,7 +104,7 @@ frappe.ui.form.on('Timesheet', {
         // validate that all projects are open
         var project_str = "\"" + projects.join("\", \"") + "\"";
         frappe.call({
-            'method': "innomat.innomat.utils.check_projects_open",
+            'method': "innomat.innomat.scripts.timesheet.check_projects_open",
             'args': {
                 'projects': project_str
             },
@@ -253,7 +253,7 @@ function create_dn(frm) {
             d.hide();
             var values = d.get_values();
             frappe.call({
-                'method': 'innomat.innomat.utils.create_dn',
+                'method': 'innomat.innomat.scripts.timesheet.create_dn',
                 'args': {
                     'project': values.project,
                     'item': values.item,
@@ -289,7 +289,7 @@ function create_on_call_fee(frm) {
             d.hide();
             var values = d.get_values();
             frappe.call({
-                'method': 'innomat.innomat.utils.create_on_call_fee',
+                'method': 'innomat.innomat.scripts.timesheet.create_on_call_fee',
                 'args': {
                     'project': values.project,
                     'date': values.date,
@@ -315,7 +315,7 @@ function create_on_call_fee(frm) {
 
 function create_travel_notes(frm) {
     frappe.call({
-        'method': 'innomat.innomat.utils.create_travel_notes',
+        'method': 'innomat.innomat.scritps.timesheet.create_travel_notes',
         'args': {
             'timesheet': frm.doc.name,
             'travel_key': travel_key
@@ -339,7 +339,7 @@ function create_service_report(frm) {
         ],
         function(values){
             frappe.call({
-                'method': "innomat.innomat.utils.create_service_report",
+                'method': "innomat.innomat.scripts.timesheet.create_service_report",
                 'args': {
                     'contact': values.contact,
                     'timesheet': frm.doc.name,
@@ -358,7 +358,7 @@ function create_service_report(frm) {
 
 function close_completed_tasks(frm) {
     frappe.call({
-        'method': 'innomat.innomat.utils.close_completed_tasks',
+        'method': 'innomat.innomat.scripts.timesheet.close_completed_tasks',
         'args': {
             'timesheet': frm.doc.name
         }
@@ -367,7 +367,7 @@ function close_completed_tasks(frm) {
 
 function unclose_completed_tasks(frm) {
     frappe.call({
-        'method': 'innomat.innomat.utils.close_completed_tasks',
+        'method': 'innomat.innomat.scritps.timesheet.close_completed_tasks',
         'args': {
             'timesheet': frm.doc.name,
             'close': 0
