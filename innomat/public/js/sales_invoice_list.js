@@ -6,7 +6,21 @@ frappe.listview_settings['Sales Invoice'] = {
         listview.page.add_menu_item( __("Get Akontos"), function() {
             get_sales_akonto();
         });
-    }
+    },
+    get_indicator: function(doc) {
+		var status_color = {
+			"Draft": "grey",
+			"Unpaid": "orange",
+			"Paid": "green",
+			"Return": "darkgrey",
+			"Credit Note Issued": "darkgrey",
+			"Unpaid and Discounted": "orange",
+			"Overdue and Discounted": "red",
+			"Overdue": "red"
+
+		};
+		return [__(doc.status), status_color[doc.status], "status,=,"+doc.status];
+	}
 }
 
 
