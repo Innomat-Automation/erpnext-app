@@ -5,8 +5,14 @@ window.onload = function () {
         setTimeout(function() {
                 var navbars = document.getElementsByClassName("navbar");
                 if (navbars.length > 0) {
-                        if (window.location.hostname.includes("srv-erp-test")) {
+                        if (window.location.hostname.includes("erp-test")) {
                                 navbars[0].style.backgroundColor = "#d68080";
+                        }
+                        if (window.location.hostname.includes("erp-dev")) {
+                                navbars[0].style.backgroundColor = "#008b00";
+                        }
+                        if (window.location.hostname.includes("172.25.100.31")) {
+                                navbars[0].style.backgroundColor = "#008b00";
                         }
                 }
         }, 500);
