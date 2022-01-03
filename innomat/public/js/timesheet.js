@@ -315,7 +315,7 @@ function create_on_call_fee(frm) {
 
 function create_travel_notes(frm) {
     frappe.call({
-        'method': 'innomat.innomat.scritps.timesheet.create_travel_notes',
+        'method': 'innomat.innomat.scripts.timesheet.create_travel_notes',
         'args': {
             'timesheet': frm.doc.name,
             'travel_key': travel_key
@@ -367,7 +367,7 @@ function close_completed_tasks(frm) {
 
 function unclose_completed_tasks(frm) {
     frappe.call({
-        'method': 'innomat.innomat.scritps.timesheet.close_completed_tasks',
+        'method': 'innomat.innomat.scripts.timesheet.close_completed_tasks',
         'args': {
             'timesheet': frm.doc.name,
             'close': 0
