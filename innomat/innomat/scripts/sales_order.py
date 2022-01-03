@@ -119,51 +119,6 @@ def create_project(sales_order):
     return new_project.name
 
 
-    """
-Allow to create part delivery from sales order
-"""
-@frappe.whitelist()
-def create_part_delivery(sales_order, percentage):
-    so = frappe.get_doc("Sales Order", sales_order)
-    new_dn = frappe.get_doc({
-            "doctype": "Delivery Note",
-            "customer": so.customer,
-            "project": so.project,
-            "company": so.company,
-            "customer_address": so.customer_address,
-            "contact_person": so.contact_person,
-            "shipping_Address_name": so.shipping_address_name,
-            "currency": so.currency,
-            "selling_price_list": so.selling_price_list,
-            "taxes_and_charges": so.taxes_and_charges,
-            "payment_terms_template": so.payment_terms_template,
-            "currency": so.currency
-        })
-    for item in so.items:
-        new_dn.append("items", {
-            'item_code': item.item_code,
-            'rate': item.rate,
-            'description': item.description,
-            'qty': item.qty * (float(percentage) / 100),
-            'against_sales_order': so.name,
-            'so_detail': item.name
-        })
-    for sig in so.sales_item_groups:
-        new_dn.append("sales_item_groups", {
-            'group': sig.group,
-            'title': sig.title,
-            'sum_caption': sig.sum_caption
-        })
-    for t in so.taxes:
-        new_dn.append("taxes", {
-            'charge_type': t.charge_type,
-            'account_head': t.account_head,
-            'description': t.description,
-            'rate': t.rate
-        })
-    new_dn.insert()
-    return new_dn.name
-
    
 """
 This function will create the next akonto invoice and store/attach the pdf
