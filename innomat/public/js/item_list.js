@@ -17,7 +17,7 @@ function set_prices() {
         ],
         function(values){
             frappe.call({
-                "method": "innomat.innomat.utils.set_price_list",
+                "method": "innomat.innomat.scripts.item.set_price_list",
                 "args": {
                     "sourcelist" : values.sourcelist,
                     "destlist" : values.destlist,

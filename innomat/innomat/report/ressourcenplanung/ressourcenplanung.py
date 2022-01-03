@@ -7,7 +7,7 @@ from frappe import _
 import ast
 from datetime import datetime, timedelta
 from frappe.utils import cint
-from innomat.innomat.utils import get_holidays
+from innomat.innomat.scripts.task import get_holidays
 
 def execute(filters=None):
     # parse filters to a dict

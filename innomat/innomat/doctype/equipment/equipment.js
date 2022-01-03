@@ -69,7 +69,7 @@ frappe.ui.form.on('Equipment', {
 frappe.ui.form.on('Equipment Access', {
     copy_password(frm, cdt, cdn) {
         frappe.call({
-            "method": "innomat.innomat.utils.decrypt_access_password",
+            "method": "innomat.innomat.scripts.equipment.decrypt_access_password",
             "args": {
                 "cdn": cdn
             },

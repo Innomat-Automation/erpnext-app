@@ -16,7 +16,7 @@ frappe.ui.form.on('Task', {
        // compute fte of this task
        if ((frm.doc.expected_time) && (frm.doc.exp_start_date) && (frm.doc.exp_end_date) && (frm.doc.completed_by)) {
             frappe.call({
-                'method': 'innomat.innomat.utils.get_fte',
+                'method': 'innomat.innomat.scripts.task.get_fte',
                 'async': false,
                 'args': {
                     'user': frm.doc.completed_by,
@@ -41,7 +41,7 @@ frappe.ui.form.on('Task', {
 
 function update_timesheets(frm) {
     frappe.call({
-        'method': 'innomat.innomat.utils.update_timesheets',
+        'method': 'innomat.innomat.scripts.task.update_timesheets',
         'async': false,
         'args': {
             'task': frm.doc.name,

@@ -38,7 +38,7 @@ function create_service_sales_invoices() {
         ],
         function(values){
             frappe.call({
-                'method': "innomat.innomat.utils.create_sinvs_for_date_range",
+                'method': "innomat.innomat.scripts.project.create_sinvs_for_date_range",
                 'args': {
                     'from_date': values.from_date,
                     'to_date': values.to_date,
@@ -105,7 +105,7 @@ function create_project_from_template() {
         ],
         function(values){
             frappe.call({
-                'method': "innomat.innomat.utils.create_project_from_template",
+                'method': "innomat.innomat.scripts.project.create_project_from_template",
                 'args': {
                     'template': values.template,
                     'po_no' : values.po_no,

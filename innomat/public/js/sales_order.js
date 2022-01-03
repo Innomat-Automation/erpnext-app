@@ -15,7 +15,7 @@ frappe.ui.form.on('Sales Order', {
                     if ((r.message) && (r.message.length === 0)) {
                         frm.add_custom_button(__('Create project'), function() {
                             frappe.call({
-                                method:"innomat.innomat.utils.create_project",
+                                method:"innomat.innomat.scripts.sales_order.create_project",
                                 args: {
                                     'sales_order': frm.doc.name
                                 },
@@ -28,10 +28,6 @@ frappe.ui.form.on('Sales Order', {
                 }
             });
             
-            // create part delivery (deprecated 2021-07-20, process no longer used)
-            /* frm.add_custom_button(__('Create part delivery'), function() {
-                create_part_delivery(frm);
-            }).addClass("btn-primary"); */ 
             // create akonto
             frm.add_custom_button(__('Create akonto'), function() {
                 create_akonto(frm);
@@ -111,38 +107,9 @@ function get_effective_net_amount(frm) {
     return net_amount;
 }
 
-function create_part_delivery(frm) {
-    var total_qty = 0;
-    var delivered_qty = 0;
-    for (var i=0; i < frm.doc.items.length; i++) {
-        total_qty += frm.doc.items[i].qty;
-        delivered_qty += frm.doc.items[i].delivered_qty;
-    }
-    console.log(total_qty);
-    console.log(delivered_qty);
-    frappe.prompt([
-            {'fieldname': 'deliver_part', 'fieldtype': 'Percent', 'label': __('Deliver part'), 'reqd': 1, 'default': 40}  
-        ],
-        function(values){
-            frappe.call({
-                method:"innomat.innomat.utils.create_part_delivery",
-                args: {
-                    'sales_order': frm.doc.name,
-                    'percentage': values.deliver_part
-                },
-                callback: function(r) {
-                    frappe.set_route("Form", "Delivery Note", r.message);
-                }
-            });
-        },
-        __('Deliver part') + " (" + Math.round(100 * delivered_qty / total_qty) + __("% delivered)"),
-        __('Create')
-    );
-}
-
 function create_akonto(frm) {
     frappe.call({
-        method:"innomat.innomat.utils.create_akonto",
+        method:"innomat.innomat.scripts.sales_order.create_akonto",
         args: {
             'sales_order': frm.doc.name
         },
@@ -151,3 +118,4 @@ function create_akonto(frm) {
         }
     });
 }
+
