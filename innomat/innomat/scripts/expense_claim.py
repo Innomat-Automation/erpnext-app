@@ -96,7 +96,7 @@ def get_expense_claim_attachement(fromdate,todate,company):
                     except:
                         error.append(exp_doc.name + ":" + filename.name)
                         pass
-                if str(file_object.file_url).lower().endswith(".png") or str(file_object.file_url).lower().endswith(".git") or str(file_object.file_url).lower().endswith(".jpg"):
+                if str(file_object.file_url).lower().endswith(".png") or str(file_object.file_url).lower().endswith(".gif") or str(file_object.file_url).lower().endswith(".jpg"):
                     try:
                         image = Image.open(frappe.utils.get_path('private' if file_object.is_private else 'public', 'files', file_object.file_name));
                         im = image.convert('RGB');
