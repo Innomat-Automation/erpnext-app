@@ -6,6 +6,7 @@
  "field_order": [
   "date",
   "percent",
+  "netto",
   "amount",
   "remarks",
   "print_total_and_percent",
@@ -36,9 +37,9 @@
    "allow_on_submit": 1,
    "fieldname": "amount",
    "fieldtype": "Currency",
-   "in_list_view": 1,
    "label": "Amount",
    "options": "currency",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -80,10 +81,19 @@
    "fieldname": "print_total_and_percent",
    "fieldtype": "Check",
    "label": "Print Total and Percent"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "netto",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Netto",
+   "options": "currency",
+   "reqd": 1
   }
  ],
  "istable": 1,
- "modified": "2021-08-20 11:14:02.446688",
+ "modified": "2022-01-05 21:08:04.801274",
  "modified_by": "Administrator",
  "module": "Innomat",
  "name": "Sales Order Akonto",
