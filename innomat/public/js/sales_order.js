@@ -57,13 +57,29 @@ frappe.ui.form.on('Sales Order', {
 });
 
 frappe.ui.form.on('Sales Order Akonto', {
-    amount(frm, cdt, cdn) {
-        // amount set, compute percentage
+    form_render : function(frm, cdt, cdn) {
+        var akonto = locals[cdt][cdn];
+        if(akonto.file === undefined) {
+            frm.fields_dict.akonto.grid.grid_rows[akonto.idx -1].toggle_editable("date",true);
+            frm.fields_dict.akonto.grid.grid_rows[akonto.idx -1].toggle_editable("percent",true);
+            frm.fields_dict.akonto.grid.grid_rows[akonto.idx -1].toggle_editable("netto",true);
+            frm.fields_dict.akonto.grid.grid_rows[akonto.idx -1].toggle_editable("remarks",true);
+            frm.fields_dict.akonto.grid.grid_rows[akonto.idx -1].toggle_editable("print_total_and_percent",true);
+        }else{
+            frm.fields_dict.akonto.grid.grid_rows[akonto.idx -1].toggle_editable("date",false);
+            frm.fields_dict.akonto.grid.grid_rows[akonto.idx -1].toggle_editable("percent",false);
+            frm.fields_dict.akonto.grid.grid_rows[akonto.idx -1].toggle_editable("netto",false);
+            frm.fields_dict.akonto.grid.grid_rows[akonto.idx -1].toggle_editable("remarks",false);
+            frm.fields_dict.akonto.grid.grid_rows[akonto.idx -1].toggle_editable("print_total_and_percent",false);
+        }
+    },
+    netto(frm, cdt, cdn) {
         var akonto = locals[cdt][cdn];
         var net_amount = get_effective_net_amount(frm);
-        var tax_rate = get_tax_rate(frm);
-        var percent = (akonto.amount / (net_amount * tax_rate)) * 100;
+        var percent = (akonto.netto / net_amount) * 100;
         frappe.model.set_value(cdt, cdn, 'percent', percent);
+        var tax_rate = get_tax_rate(frm);
+        frappe.model.set_value(cdt, cdn, 'amount', akonto.netto * tax_rate);
     },
     percent(frm, cdt, cdn) {
         recalculate_akonto(frm, cdt, cdn);
@@ -78,12 +94,13 @@ function recalculate_akonto(frm, cdt, cdn) {
     var fraction  = frappe.model.get_value(cdt, cdn, 'percent') / 100;
     var net_amount = get_effective_net_amount(frm);
     var tax_rate = get_tax_rate(frm);
-    var gross_amount = net_amount * tax_rate * fraction;
+    var gross_amount = net_amount * fraction;
     if ((Math.abs(gross_amount - (akonto.amount || 0)) >= 1) || (!akonto.amount)) {
         // only update amount if it is more than CHF 1 different from actual value (compensate for rounding)
-        frappe.model.set_value(cdt, cdn, 'amount', gross_amount);
+        frappe.model.set_value(cdt, cdn, 'netto', gross_amount);
+        frappe.model.set_value(cdt, cdn, 'amount', akonto.netto * tax_rate);
         cur_frm.refresh_field('akonto');
-    }
+    }frappe
 }
 
 function get_tax_rate(frm) {
