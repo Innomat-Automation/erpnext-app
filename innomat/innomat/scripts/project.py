@@ -57,7 +57,7 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
     # fetch billable hours
     time_logs = get_uninvoiced_service_time_records(project, from_date, to_date)
     # fetch open delivery notes
-    delivery_notes = frappe.get_all("Delivery Note", filters={'project': project, 'docstatus': 1, 'status': 'To Bill'}, fields=['name'])
+    delivery_notes = get_uninvoiced_delivery_notes(project)
     if len(time_logs) > 0 or len(delivery_notes) > 0:
         pj = frappe.get_doc("Project", project)
         currency = get_currency(pj)
@@ -94,20 +94,19 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
             'sum_caption': 'Summe {0}'.format(sales_item_group)})
         # append open delivery note items if there are any
         for d in delivery_notes:
-            dn = frappe.get_doc("Delivery Note", d['name'])
-            for dn_pos in dn.items:
-                row = new_sinv.append('items', {
+            dn_pos = frappe.get_doc("Delivery Note Item", d['dn_detail'])
+            row = new_sinv.append('items', {
                     'item_code': dn_pos.item_code,
                     'qty': dn_pos.qty,
                     'uom': dn_pos.uom,
                     'description': dn_pos.description,
-                    'delivery_note': dn.name,
+                    'delivery_note': d.name,
                     'dn_detail': dn_pos.name,
                     'sales_item_group': dn_pos.sales_item_group,
                     'rate': dn_pos.rate,
                     'cost_center': cost_center,
                     'sales_order': pj.sales_order
-                })
+            })
         # insert taxes
         tax_template = frappe.get_doc("Sales Taxes and Charges Template", new_sinv.taxes_and_charges)
         for t in tax_template.taxes:
@@ -265,6 +264,24 @@ def get_uninvoiced_service_time_records(project, from_date=None, to_date=None):
     """.format(project=project, time_conditions=time_conditions)
     time_logs = frappe.db.sql(sql_query, as_dict=True)
     return time_logs
+
+def get_uninvoiced_delivery_notes(project):
+    sql_query = """SELECT 
+           `tabDelivery Note`.`name` AS `name`,
+           `tabDelivery Note Item`.`name` AS `dn_detail`
+         FROM `tabDelivery Note Item`
+         LEFT JOIN `tabDelivery Note` ON `tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name`
+         LEFT JOIN `tabSales Invoice Item` ON `tabDelivery Note Item`.`name` = `tabSales Invoice Item`.`dn_detail`
+         WHERE 
+           `tabDelivery Note`.`docstatus` = 1
+           AND `tabDelivery Note`.`project` = "{project}"
+           AND `tabSales Invoice Item`.`dn_detail` IS NULL;
+    """.format(project=project)
+    delivery_notes = frappe.db.sql(sql_query, as_dict=True)
+    return delivery_notes
+
+
+    return frappe.get_all("Delivery Note", filters={'project': project, 'docstatus': 1, 'status': 'To Bill'}, fields=['name'])
  
 
 """ 

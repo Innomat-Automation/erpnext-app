@@ -44,11 +44,6 @@ frappe.ui.form.on('Project', {
             get_project_key(frm);
         }
         set_project_manager(frm);
-        
-        // invoice completed project
-        if ((frm.doc.project_type === "Service") && (frm.doc.status === "Completed") && (frm.doc.is_invoiced === 0)) {
-            create_sinv(frm);
-        }
     }
 });
 
