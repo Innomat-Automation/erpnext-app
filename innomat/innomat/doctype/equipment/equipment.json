@@ -11,6 +11,7 @@
   "customer",
   "customer_name",
   "column_main",
+  "remote_access",
   "project",
   "section_location",
   "end_customer",
@@ -20,8 +21,6 @@
   "location_display",
   "section_contacts",
   "contacts",
-  "section_access",
-  "access",
   "section_licences",
   "licenses"
  ],
@@ -37,6 +36,7 @@
   {
    "fieldname": "customer",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Customer",
    "options": "Customer"
   },
@@ -44,6 +44,7 @@
    "fetch_from": "customer.customer_name",
    "fieldname": "customer_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Customer name",
    "read_only": 1
   },
@@ -87,6 +88,8 @@
    "fetch_from": "end_customer.customer_name",
    "fieldname": "end_customer_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "End Customer Name",
    "read_only": 1
   },
@@ -102,17 +105,6 @@
    "options": "Equipment Contact"
   },
   {
-   "fieldname": "section_access",
-   "fieldtype": "Section Break",
-   "label": "Access"
-  },
-  {
-   "fieldname": "access",
-   "fieldtype": "Table",
-   "label": "Access",
-   "options": "Equipment Access"
-  },
-  {
    "fieldname": "section_licences",
    "fieldtype": "Section Break",
    "label": "Licences"
@@ -122,9 +114,15 @@
    "fieldtype": "Table",
    "label": "Licences",
    "options": "Equipment Licence"
+  },
+  {
+   "fieldname": "remote_access",
+   "fieldtype": "Link",
+   "label": "Remote Access",
+   "options": "Remote Access"
   }
  ],
- "modified": "2021-05-03 22:12:29.698752",
+ "modified": "2022-01-05 20:25:45.204157",
  "modified_by": "Administrator",
  "module": "Innomat",
  "name": "Equipment",
@@ -149,7 +147,8 @@
    "read": 1,
    "report": 1,
    "role": "Projects User",
-   "share": 1
+   "share": 1,
+   "write": 1
   },
   {
    "create": 1,
