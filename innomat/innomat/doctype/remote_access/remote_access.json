@@ -8,6 +8,8 @@
   "access_name",
   "customer",
   "customer_name",
+  "contact_section",
+  "contact",
   "access_section",
   "access",
   "description"
@@ -35,7 +37,7 @@
    "fieldname": "access",
    "fieldtype": "Table",
    "label": "Access",
-   "options": "Equipment Access"
+   "options": "Remote Access Point"
   },
   {
    "fieldname": "customer",
@@ -49,9 +51,20 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Customer Name"
+  },
+  {
+   "fieldname": "contact_section",
+   "fieldtype": "Section Break",
+   "label": "Contact"
+  },
+  {
+   "fieldname": "contact",
+   "fieldtype": "Table",
+   "label": "Contact",
+   "options": "Remote Access Contact"
   }
  ],
- "modified": "2022-01-05 20:32:42.955568",
+ "modified": "2022-01-06 16:14:45.467039",
  "modified_by": "Administrator",
  "module": "Innomat",
  "name": "Remote Access",

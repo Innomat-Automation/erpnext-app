@@ -19,8 +19,9 @@
   "column_location",
   "location",
   "location_display",
-  "section_contacts",
-  "contacts",
+  "description_section",
+  "machine",
+  "description",
   "section_licences",
   "licenses"
  ],
@@ -94,17 +95,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "section_contacts",
-   "fieldtype": "Section Break",
-   "label": "Contacts"
-  },
-  {
-   "fieldname": "contacts",
-   "fieldtype": "Table",
-   "label": "Contacts",
-   "options": "Equipment Contact"
-  },
-  {
    "fieldname": "section_licences",
    "fieldtype": "Section Break",
    "label": "Licences"
@@ -120,9 +110,24 @@
    "fieldtype": "Link",
    "label": "Remote Access",
    "options": "Remote Access"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Text Editor",
+   "label": "Description"
+  },
+  {
+   "fieldname": "description_section",
+   "fieldtype": "Section Break",
+   "label": "Description"
+  },
+  {
+   "fieldname": "machine",
+   "fieldtype": "Data",
+   "label": "Machine"
   }
  ],
- "modified": "2022-01-05 20:25:45.204157",
+ "modified": "2022-01-06 21:27:01.053134",
  "modified_by": "Administrator",
  "module": "Innomat",
  "name": "Equipment",
