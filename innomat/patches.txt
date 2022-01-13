@@ -1,1 +1,2 @@
+execute:frappe.reload_doc('Selling', 'doctype', 'Sales Order') 
 innomat.patches.v1_1.update_akonto

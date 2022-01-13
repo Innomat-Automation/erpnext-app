@@ -13,6 +13,7 @@
   "column_main",
   "remote_access",
   "project",
+  "service_contract",
   "section_location",
   "end_customer",
   "end_customer_name",
@@ -125,9 +126,15 @@
    "fieldname": "machine",
    "fieldtype": "Data",
    "label": "Machine"
+  },
+  {
+   "fieldname": "service_contract",
+   "fieldtype": "Link",
+   "label": "Service Contract",
+   "options": "Service Contract"
   }
  ],
- "modified": "2022-01-06 21:27:01.053134",
+ "modified": "2022-01-13 22:02:45.222733",
  "modified_by": "Administrator",
  "module": "Innomat",
  "name": "Equipment",
