@@ -2,7 +2,6 @@ import frappe
 from frappe import _
 
 def execute():
-    # this will mark all existing salary slips as proposed and prevent, that they will go into a payment run
     try:
         invoices = frappe.get_all('Sales Order',filters={'docstatus': 1});
 
