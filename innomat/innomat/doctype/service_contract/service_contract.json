@@ -1,0 +1,180 @@
+{
+ "allow_rename": 1,
+ "autoname": "field:title",
+ "creation": "2022-01-13 21:18:30.038463",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "start_date",
+  "min_duration",
+  "period_duration",
+  "end_date",
+  "status",
+  "column_break_2",
+  "company",
+  "customer",
+  "customer_name",
+  "po_no",
+  "po_date",
+  "section_break_9",
+  "comments",
+  "section_services",
+  "services",
+  "section_periods",
+  "periods"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Start Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "label": "End Date"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Active\nInactive"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "Customer",
+   "options": "Customer",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "customer.customer_name",
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Customer Name",
+   "options": "customer.customer_name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_services",
+   "fieldtype": "Section Break",
+   "label": "Services"
+  },
+  {
+   "fieldname": "services",
+   "fieldtype": "Table",
+   "label": "Services",
+   "options": "Service Contract Services"
+  },
+  {
+   "fieldname": "section_periods",
+   "fieldtype": "Section Break",
+   "label": "Periods"
+  },
+  {
+   "fieldname": "periods",
+   "fieldtype": "Table",
+   "label": "Periods",
+   "options": "Service Contract Period"
+  },
+  {
+   "description": "Minimum Duration in Years",
+   "fieldname": "min_duration",
+   "fieldtype": "Int",
+   "label": "Min  Duration"
+  },
+  {
+   "fieldname": "comments",
+   "fieldtype": "Text Editor",
+   "label": "Comments"
+  },
+  {
+   "fieldname": "section_break_9",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "po_no",
+   "fieldtype": "Data",
+   "label": "Customer's Purchase Order"
+  },
+  {
+   "fieldname": "po_date",
+   "fieldtype": "Date",
+   "label": "Customer's Purchase Order Date"
+  },
+  {
+   "fieldname": "period_duration",
+   "fieldtype": "Select",
+   "label": "Period Duration",
+   "options": "Week\nMonth\nYear\n2 Year\n3 Year\n5 Year",
+   "reqd": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  }
+ ],
+ "modified": "2022-01-13 23:03:32.405477",
+ "modified_by": "Administrator",
+ "module": "Innomat",
+ "name": "Service Contract",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accounts User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Projects Manager",
+   "share": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "title",
+ "track_changes": 1
+}
