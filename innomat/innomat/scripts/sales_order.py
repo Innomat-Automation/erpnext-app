@@ -15,7 +15,7 @@ from innomat.innomat.utils import get_project_key
 Create a new project with tasks from a sales order
 """
 @frappe.whitelist()
-def create_project(sales_order):
+def create_project(sales_order,combine_bom):
     key = get_project_key()
     so = frappe.get_doc("Sales Order", sales_order)
     cost_center = frappe.get_value("Company", so.company, "cost_center")
@@ -44,6 +44,7 @@ def create_project(sales_order):
     # create tasks for each item
     dn_items = []   # collect time hours not per effort
     for i in so.items:
+        hours = 0.0 # sum hours when combine the tasks 
         boms = frappe.get_all("BOM", 
                 filters={'item': i.item_code, 'is_default': 1}, 
                 fields=['name', 'total_hours'])
@@ -53,19 +54,54 @@ def create_project(sales_order):
             bom = frappe.get_doc("BOM", boms[0]['name'])
             for bom_item in bom.items:
                 if "h" in bom_item.uom:
-                    new_task = frappe.get_doc({
-                        "doctype": "Task",
-                        "subject": bom_item.item_name,
-                        "project": new_project.name,
-                        "status": "Open",
-                        "expected_time": bom_item.qty,
-                        "description": bom_item.description,
-                        "sales_order": sales_order,
-                        "sales_order_item": i.name,
-                        "item_code": bom_item.item_code,
-                        "by_effort": i.by_effort
+                    if combine_bom == '1':
+                        hours += (bom_item.qty * i.qty)
+                    else:
+                        new_task = frappe.get_doc({
+                            "doctype": "Task",
+                            "subject": bom_item.item_name,
+                            "project": new_project.name,
+                            "status": "Open",
+                            "expected_time": (bom_item.qty * i.qty),
+                            "description": bom_item.description,
+                            "sales_order": sales_order,
+                            "sales_order_item": i.name,
+                            "item_code": bom_item.item_code,
+                            "by_effort": i.by_effort
+                        })
+                        new_task.insert()
+                if bom_item.need_task:
+                    if combine_bom == '1':
+                        hours += (bom_item.qty * i.qty)
+                    else:
+                        new_task = frappe.get_doc({
+                            "doctype": "Task",
+                            "subject": bom_item.item_name,
+                            "project": new_project.name,
+                            "status": "Open",
+                            "expected_time": (bom_item.hours * i.qty),
+                            "description": bom_item.description,
+                            "sales_order": sales_order,
+                            "sales_order_item": i.name,
+                            "item_code": bom_item.item_code,
+                            "by_effort": i.by_effort
+                        })
+                        new_task.insert()
+            
+            if combine_bom == '1':
+                new_task = frappe.get_doc({
+                    "doctype": "Task",
+                    "subject": i.item_name,
+                    "project": new_project.name,
+                    "status": "Open",
+                    "expected_time": hours,
+                    "description": i.description,
+                    "sales_order": sales_order,
+                    "sales_order_item": i.name,
+                    "item_code": i.item_code,
+                    "by_effort": i.by_effort
                     })
-                    new_task.insert()
+                new_task.insert()
         else:
             if "h" in i.uom:
                 new_task = frappe.get_doc({
@@ -74,6 +110,20 @@ def create_project(sales_order):
                     "project": new_project.name,
                     "status": "Open",
                     "expected_time": i.qty,
+                    "description": i.description,
+                    "sales_order": sales_order,
+                    "sales_order_item": i.name,
+                    "item_code": i.item_code,
+                    "by_effort": i.by_effort
+                })
+                new_task.insert()
+            if bom_item.need_task:
+                new_task = frappe.get_doc({
+                    "doctype": "Task",
+                    "subject": i.item_name,
+                    "project": new_project.name,
+                    "status": "Open",
+                    "expected_time": (i.hours * i.qty),
                     "description": i.description,
                     "sales_order": sales_order,
                     "sales_order_item": i.name,

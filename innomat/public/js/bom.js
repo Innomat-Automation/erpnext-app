@@ -27,6 +27,27 @@ frappe.ui.form.on('BOM', {
     }
 });
 
+
+frappe.ui.form.on('BOM Item', {
+    item_code(frm, cdt, cdn) {
+        // fetch need_task
+        var row = locals[cdt][cdn];
+        if (row.task) {
+            frappe.call({
+                'method': "frappe.client.get",
+                'args': {
+                    'doctype': "Item",
+                    'name': row.item_code
+                },
+                'callback': function (response) {
+                    var item = response.message;
+                    frappe.model.set_value(cdt, cdn, 'need_task', item.need_task);
+                }
+            });
+        }
+    }
+});
+
 function bulk_import(frm) {
     var d = new frappe.ui.Dialog({
         'fields': [
