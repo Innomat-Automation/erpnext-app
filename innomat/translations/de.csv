@@ -45,6 +45,7 @@ DocType: Project,Planned material cost,Geplante Materialkosten
 DocType: Project,Actual material cost,Tatsächliche Materialkosten
 DocType: Project,This project has drafts: {0},Für dieses Projekt bestehen noch Dokumente im Entwurf: {0}
 DocType: Project,Finished,Fertiggestellt
+DocType: Project,Combine Task per Bom,Fasse Task pro Position zusammen
 DocType: Expense Claim,Internal rate,Interner Satz
 DocType: Expense Claim,External rate,Externer Satz
 DocType: Sales Order,Create delivery,Lieferung erstellen

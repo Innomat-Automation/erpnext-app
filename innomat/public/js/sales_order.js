@@ -14,15 +14,32 @@ frappe.ui.form.on('Sales Order', {
                 'callback': function(r) {
                     if ((r.message) && (r.message.length === 0)) {
                         frm.add_custom_button(__('Create project'), function() {
-                            frappe.call({
-                                method:"innomat.innomat.scripts.sales_order.create_project",
-                                args: {
-                                    'sales_order': frm.doc.name
+                            var d = new frappe.ui.Dialog({
+                                'fields': [
+                                    {'fieldname': 'combine_bom', 
+                                     'fieldtype': 'Check', 
+                                     'label': __('Combine Task per Bom'), 
+                                     'default': 0
+                                    }
+                                ],
+                                primary_action: function() {
+                                    var values = d.get_values();
+                                    frappe.call({
+                                        method:"innomat.innomat.scripts.sales_order.create_project",
+                                        args: {
+                                            'sales_order': frm.doc.name,
+                                            'combine_bom': values.combine_bom
+                                        },
+                                        callback: function(r) {
+                                            frappe.set_route("Form", "Project", r.message);
+                                        }
+                                    })
+                                    d.hide();
                                 },
-                                callback: function(r) {
-                                    frappe.set_route("Form", "Project", r.message);
-                                }
-                            })
+                                primary_action_label: __('OK'),
+                                title: __('Create Project')
+                            });
+                            d.show();
                         }).addClass("btn-primary");
                     }
                 }
