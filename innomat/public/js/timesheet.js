@@ -334,20 +334,17 @@ function create_service_report(frm) {
         }
     } 
     frappe.prompt([
-            {'fieldname': 'project', 'fieldtype': 'Select', 'label': __('Project'), 'reqd': 1, 'options': projects.join("\n")},
-            {'fieldname': 'contact', 'fieldtype': 'Data', 'label': __('Contact person'), 'reqd': 1}
+            {'fieldname': 'project', 'fieldtype': 'Select', 'label': __('Project'), 'reqd': 1, 'options': projects.join("\n")}
         ],
         function(values){
             frappe.call({
-                'method': "innomat.innomat.scripts.timesheet.create_service_report",
+                'method': "innomat.innomat.scripts.acceptance_report.create_acceptance_report",
                 'args': {
-                    'contact': values.contact,
-                    'timesheet': frm.doc.name,
-                    'project': values.project
+                    'project': values.project,
+                    'employee': frm.doc.employee
                 },
-                'callback': function(response) {
-                    frappe.show_alert( response.message );
-                    window.open("/private/files/" + response.message, '_blank').focus();
+                'callback': function(r) {
+                    frappe.set_route("Form", "Acceptance Report", r.message);
                 }
             });
         },

@@ -1,0 +1,69 @@
+{
+ "creation": "2022-01-16 10:35:45.310986",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "item_code",
+  "description",
+  "qty",
+  "references_section",
+  "dn",
+  "column_break_6",
+  "dn_entry"
+ ],
+ "fields": [
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Item",
+   "options": "Item",
+   "reqd": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Text Editor",
+   "label": "Description"
+  },
+  {
+   "fieldname": "qty",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Quantity",
+   "reqd": 1
+  },
+  {
+   "fieldname": "references_section",
+   "fieldtype": "Section Break",
+   "label": "References"
+  },
+  {
+   "fieldname": "dn",
+   "fieldtype": "Data",
+   "label": "Delivery Note",
+   "read_only": 1
+  },
+  {
+   "fieldname": "dn_entry",
+   "fieldtype": "Data",
+   "label": "Delivery Note Entry",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "istable": 1,
+ "modified": "2022-01-18 23:05:45.006558",
+ "modified_by": "Administrator",
+ "module": "Innomat",
+ "name": "Acceptance Report Delivery",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

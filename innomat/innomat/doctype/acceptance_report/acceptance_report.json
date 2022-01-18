@@ -1,0 +1,392 @@
+{
+ "allow_import": 1,
+ "autoname": "naming_series:",
+ "creation": "2022-01-15 23:34:12.048660",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "customer_section",
+  "column_break0",
+  "title",
+  "naming_series",
+  "customer",
+  "customer_name",
+  "project",
+  "employee",
+  "column_break1",
+  "company",
+  "transaction_date",
+  "po_no",
+  "po_date",
+  "contact_info",
+  "customer_address",
+  "address_display",
+  "contact_person",
+  "contact_display",
+  "contact_phone",
+  "contact_mobile",
+  "contact_email",
+  "company_address_display",
+  "company_address",
+  "acceptance_tests_section",
+  "tests",
+  "timesheet_section",
+  "timesheets",
+  "delivery_section",
+  "delivery",
+  "signatures_section",
+  "employee_name",
+  "sig_employee",
+  "column_break_29",
+  "contact_name",
+  "sig_customer",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "customer_section",
+   "fieldtype": "Section Break",
+   "options": "fa fa-user"
+  },
+  {
+   "fieldname": "column_break0",
+   "fieldtype": "Column Break",
+   "oldfieldtype": "Column Break",
+   "width": "50%"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "{customer_name}",
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Title",
+   "no_copy": 1,
+   "print_hide": 1
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "no_copy": 1,
+   "oldfieldname": "naming_series",
+   "oldfieldtype": "Select",
+   "options": "AR-.YYYY.-.",
+   "print_hide": 1,
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "bold": 1,
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "in_global_search": 1,
+   "in_standard_filter": 1,
+   "label": "Customer",
+   "oldfieldname": "customer",
+   "oldfieldtype": "Link",
+   "options": "Customer",
+   "print_hide": 1,
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "bold": 1,
+   "fetch_from": "customer.customer_name",
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "in_global_search": 1,
+   "label": "Customer Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break1",
+   "fieldtype": "Column Break",
+   "oldfieldtype": "Column Break",
+   "width": "50%"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Company",
+   "oldfieldname": "company",
+   "oldfieldtype": "Link",
+   "options": "Company",
+   "print_hide": 1,
+   "remember_last_selected_value": 1,
+   "reqd": 1,
+   "width": "150px"
+  },
+  {
+   "default": "Today",
+   "fieldname": "transaction_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Date",
+   "no_copy": 1,
+   "oldfieldname": "transaction_date",
+   "oldfieldtype": "Date",
+   "reqd": 1,
+   "search_index": 1,
+   "width": "160px"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "po_no",
+   "fieldtype": "Data",
+   "label": "Customer's Purchase Order",
+   "oldfieldname": "po_no",
+   "oldfieldtype": "Data",
+   "width": "100px"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.po_no",
+   "fieldname": "po_date",
+   "fieldtype": "Date",
+   "label": "Customer's Purchase Order Date",
+   "oldfieldname": "po_date",
+   "oldfieldtype": "Date",
+   "width": "100px"
+  },
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "oldfieldname": "project",
+   "oldfieldtype": "Link",
+   "options": "Project"
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "customer",
+   "fieldname": "contact_info",
+   "fieldtype": "Section Break",
+   "label": "Address and Contact",
+   "options": "fa fa-bullhorn"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "customer_address",
+   "fieldtype": "Link",
+   "label": "Customer Address",
+   "options": "Address",
+   "print_hide": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "address_display",
+   "fieldtype": "Small Text",
+   "label": "Address",
+   "read_only": 1
+  },
+  {
+   "fieldname": "contact_person",
+   "fieldtype": "Link",
+   "label": "Contact Person",
+   "options": "Contact",
+   "print_hide": 1
+  },
+  {
+   "fieldname": "contact_display",
+   "fieldtype": "Small Text",
+   "in_global_search": 1,
+   "label": "Contact",
+   "read_only": 1
+  },
+  {
+   "fieldname": "contact_phone",
+   "fieldtype": "Data",
+   "label": "Phone",
+   "read_only": 1
+  },
+  {
+   "fieldname": "contact_mobile",
+   "fieldtype": "Small Text",
+   "label": "Mobile No",
+   "read_only": 1
+  },
+  {
+   "fieldname": "contact_email",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Contact Email",
+   "options": "Email",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "company_address_display",
+   "fieldtype": "Small Text",
+   "read_only": 1
+  },
+  {
+   "fieldname": "company_address",
+   "fieldtype": "Link",
+   "label": "Company Address",
+   "options": "Address"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Acceptance Report",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "acceptance_tests_section",
+   "fieldtype": "Section Break",
+   "label": "Acceptance Tests"
+  },
+  {
+   "fieldname": "tests",
+   "fieldtype": "Table",
+   "label": "Tests",
+   "options": "Acceptance Report Test"
+  },
+  {
+   "fieldname": "signatures_section",
+   "fieldtype": "Section Break",
+   "label": "Signatures"
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "sig_employee",
+   "fieldtype": "Signature",
+   "label": "Signature Employee"
+  },
+  {
+   "fieldname": "contact_name",
+   "fieldtype": "Data",
+   "label": "Contact Name"
+  },
+  {
+   "fieldname": "sig_customer",
+   "fieldtype": "Signature",
+   "label": "Signature Customer"
+  },
+  {
+   "fieldname": "column_break_29",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "timesheet_section",
+   "fieldtype": "Section Break",
+   "label": "Timesheet"
+  },
+  {
+   "fieldname": "timesheets",
+   "fieldtype": "Table",
+   "label": "Timesheets",
+   "options": "Acceptance Report Time Entry"
+  },
+  {
+   "fieldname": "delivery_section",
+   "fieldtype": "Section Break",
+   "label": "Delivery"
+  },
+  {
+   "fieldname": "delivery",
+   "fieldtype": "Table",
+   "label": "Delivery",
+   "options": "Acceptance Report Delivery"
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name",
+   "read_only": 1
+  }
+ ],
+ "icon": "fa fa-file-text",
+ "is_submittable": 1,
+ "modified": "2022-01-18 22:16:43.991123",
+ "modified_by": "Administrator",
+ "module": "Innomat",
+ "name": "Acceptance Report",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Sales User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Sales Manager",
+   "set_user_permissions": 1,
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Maintenance User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Accounts User"
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "Stock User"
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Sales Manager",
+   "write": 1
+  }
+ ],
+ "search_fields": "customer,customer_name, company",
+ "show_name_in_global_search": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "timeline_field": "customer",
+ "title_field": "title",
+ "track_changes": 1,
+ "track_seen": 1
+}

@@ -152,6 +152,12 @@ def get_data():
                        "description": _("Equipment")
                    },
                    {
+                       "type": "doctype",
+                       "name": "Acceptance Report",
+                       "label": _("Acceptance Report"),
+                       "description": _("Acceptance Report")
+                   },
+                   {
                         "type": "report",
                         "name": "Ressourcenplanung",
                         "doctype": "Task",

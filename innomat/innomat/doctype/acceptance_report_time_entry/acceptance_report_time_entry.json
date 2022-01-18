@@ -1,0 +1,82 @@
+{
+ "creation": "2022-01-15 23:52:14.281615",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "activity_type",
+  "from_time",
+  "to_time",
+  "hours",
+  "remarks",
+  "references_section",
+  "ts",
+  "column_break_8",
+  "ts_detail"
+ ],
+ "fields": [
+  {
+   "fieldname": "activity_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Activity Type",
+   "options": "Activity Type"
+  },
+  {
+   "columns": 2,
+   "fieldname": "from_time",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "From Time"
+  },
+  {
+   "fieldname": "to_time",
+   "fieldtype": "Datetime",
+   "label": "To Time"
+  },
+  {
+   "columns": 1,
+   "fieldname": "hours",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Hrs"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "references_section",
+   "fieldtype": "Section Break",
+   "label": "References"
+  },
+  {
+   "fieldname": "ts",
+   "fieldtype": "Data",
+   "label": "Timesheet",
+   "read_only": 1
+  },
+  {
+   "fieldname": "ts_detail",
+   "fieldtype": "Data",
+   "label": "Timesheet Entry",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_8",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "istable": 1,
+ "modified": "2022-01-18 23:05:54.623839",
+ "modified_by": "Administrator",
+ "module": "Innomat",
+ "name": "Acceptance Report Time Entry",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "ASC"
+}
