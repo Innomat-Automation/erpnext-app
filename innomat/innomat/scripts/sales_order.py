@@ -117,13 +117,14 @@ def create_project(sales_order,combine_bom):
                     "by_effort": i.by_effort
                 })
                 new_task.insert()
-            if i.need_task:
+            i_item = frappe.get_doc("Item",i.item_code)    
+            if i_item.need_task:
                 new_task = frappe.get_doc({
                     "doctype": "Task",
                     "subject": i.item_name,
                     "project": new_project.name,
                     "status": "Open",
-                    "expected_time": (i.hours * i.qty),
+                    "expected_time": (i_item.hours * i.qty),
                     "description": i.description,
                     "sales_order": sales_order,
                     "sales_order_item": i.name,
