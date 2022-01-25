@@ -117,7 +117,7 @@ def create_project(sales_order,combine_bom):
                     "by_effort": i.by_effort
                 })
                 new_task.insert()
-            if bom_item.need_task:
+            if i.need_task:
                 new_task = frappe.get_doc({
                     "doctype": "Task",
                     "subject": i.item_name,
