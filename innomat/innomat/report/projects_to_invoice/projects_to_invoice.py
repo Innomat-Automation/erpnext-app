@@ -16,6 +16,7 @@ def execute(filters=None):
 def get_columns():
     return [
         {"label": _("Project"), "fieldname": "project", "fieldtype": "Link", "options": "Project", "width": 120},
+        {"label": _("Status Light"), "fieldname": "status_light", "fieldtype": "Data", "width": 100},
         {"label": _("Sales Order"), "fieldname": "sales_order", "fieldtype": "Link", "options": "Sales Order", "width": 80},
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 80},
         {"label": _("Customer name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 120},
@@ -44,6 +45,7 @@ def get_data(filters):
         """SELECT 
                 `projects`.`project`,
                 `tabProject`.`sales_order`,
+                `tabProject`.`status_light` AS `status_light`,
                 `tabProject`.`customer`,
                 `tabProject`.`customer_name`,
                 (SELECT SUM(`tabSales Order Item`.`base_amount`) 

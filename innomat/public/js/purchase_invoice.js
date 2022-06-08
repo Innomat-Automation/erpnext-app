@@ -7,5 +7,13 @@ frappe.ui.form.on("Purchase Invoice", {
                 frappe.msgprint("Nur alphanumerische Zeichen und +?/-:/()., erlaubt");
             }
 
+    },
+    "validate": function(frm) {
+        if(!frm.doc.bill_no.match("^[ A-Za-z0-9\+\?\/\\-\:\(\)\.\,\']+$"))
+            {
+                frappe.msgprint("Nur alphanumerische Zeichen und +?/-:/()., erlaubt");
+                frappe.validate = false;
+            }
+
     }
 });
