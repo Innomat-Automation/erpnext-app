@@ -150,6 +150,7 @@ def get_data(filters):
            WHERE `projects`.`project` IS NOT NULL
              AND `projects`.`project` != ""
              AND `projects`.`date` <= "{date}"
+             AND (akonto_amount > 0 OR unpaid_akonto_amount > 0 OR dn_amount > 0 OR draft_dn_amount > 0 OR ts_amount > 0)
            GROUP BY `projects`.`project`
            ORDER BY  `projects`.`project` ASC
             ;""".format(company=company, date=date), as_dict=True)
