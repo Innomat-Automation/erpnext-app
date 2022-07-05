@@ -35,24 +35,26 @@ def get_data(filters):
 
     
     # prepare query
-    sql_query = """SELECT 
+    sql_query = """SELECT
 					`tabProject`.`name` as project, 
 					`tabProject`.`sales_order`,
 					@akonto1 := (SELECT IFNULL(SUM(`tabSales Order Akonto`.`amount`), 0)
 					FROM `tabSales Order Akonto`
 					LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabSales Order Akonto`.`parent`
+					LEFT JOIN `tabPayment Entry` ON `tabPayment Entry`.`name` = `tabSales Order Akonto`.`payment`
 					WHERE `tabSales Order`.`docstatus` = 1
 					AND `tabSales Order`.`name` = `tabProject`.`sales_order`
-        			AND (`tabSales Order Akonto`.`payment` <> "")
+					AND (`tabPayment Entry`.`posting_date` < "{to_date}")
 					AND (`tabSales Order Akonto`.`file` IS NOT NULL AND `tabSales Order Akonto`.`file` <> "")
         			AND (`tabSales Order Akonto`.`amount` > 0)
 					AND (`tabSales Order Akonto`.`date` < "{to_date}")) AS akonto_paid,
 					@akonto2 := (SELECT IFNULL(SUM(`tabSales Order Akonto`.`amount`), 0)
 					FROM `tabSales Order Akonto`
 					LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabSales Order Akonto`.`parent`
+					LEFT JOIN `tabPayment Entry` ON `tabPayment Entry`.`name` = `tabSales Order Akonto`.`payment`
 					WHERE `tabSales Order`.`docstatus` = 1
 					AND `tabSales Order`.`name` = `tabProject`.`sales_order`
-        			AND (`tabSales Order Akonto`.`payment` IS NULL OR `tabSales Order Akonto`.`payment` = "")
+					AND (`tabPayment Entry`.`posting_date` > "{to_date}" OR `tabSales Order Akonto`.`payment` IS NULL OR `tabSales Order Akonto`.`payment` = "")
 					AND (`tabSales Order Akonto`.`file` IS NOT NULL AND `tabSales Order Akonto`.`file` <> "")
         			AND (`tabSales Order Akonto`.`amount` > 0)
 					AND (`tabSales Order Akonto`.`date` < "{to_date}")) AS akonto_open,
@@ -74,7 +76,7 @@ def get_data(filters):
                      WHERE `tabPurchase Invoice Item`.`docstatus` = 1
                        AND `tabPurchase Invoice Item`.`project` = `tabProject`.`name`
 					   AND `tabPurchase Invoice`.`posting_date` <= "{to_date}") AS `purchase_invoice`,
-					@purinvoces2 := @purinvoces1 * 1.15 AS `purchase_invoice_paid`,
+					@purinvoces2 := @purinvoces1 * 1.15 AS `purchase_invoice_calc`,
 					@result := @hours2 + @purinvoces2 AS `geleistet`,
 					@difference := @akonto1 + @akonto2 + @salinvoces1 - @result AS `diff`
 		   FROM `tabProject`
