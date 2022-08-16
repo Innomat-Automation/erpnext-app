@@ -1,6 +1,6 @@
 
 
-# Copyright (c) 2019-2021, asprotec ag and contributors
+# Copyright (c) 2019-2022, asprotec ag and contributors
 # For license information, please see license.txt
 
 import frappe
@@ -8,8 +8,9 @@ from frappe import _
 from frappe.utils.file_manager import save_file
 from datetime import datetime, timedelta
 from innomat.innomat.utils import get_project_key
-
-
+from frappe.model.mapper import get_mapped_doc
+from frappe.contacts.doctype.address.address import get_company_address
+from frappe.model.utils import get_fetch_values
 
 """
 Create a new project with tasks from a sales order
@@ -172,11 +173,91 @@ def create_project(sales_order,combine_bom):
 
    
 """
-This function will create the next akonto invoice and store/attach the pdf
+This function will create the next akonto invoice
 """
 @frappe.whitelist()
-def create_akonto(sales_order):
-    sales_order = frappe.get_doc("Sales Order", sales_order)
+def create_akonto(source_name, target_doc=None, ignore_permissions=False):
+    def postprocess(source, target):
+        set_missing_values(source, target)
+        #Get the advance paid Journal Entries in Sales Invoice Advance
+        if target.get("allocate_advances_automatically"):
+            target.set_advances()
+
+    def set_missing_values(source, target):
+        target.is_pos = 0
+        target.ignore_pricing_rule = 1
+        target.is_akonto = 1
+        
+        target.flags.ignore_permissions = True
+        target.run_method("set_missing_values")
+        
+        """if True: #try:
+            akonto_item = frappe.get_doc("Item", frappe.get_value("Innomat Settings", "Innomat Settings", "akonto_item"))
+            income_account = frappe.get_value("Company", target.company, "default_income_account")
+            cost_center = frappe.get_value("Company", target.company, "cost_center")
+            for default in akonto_item.item_defaults:
+                if default.company == target.company and default.income_account:
+                    income_account = default.income_account
+            target.append("items", {
+                'item_code': akonto_item.item_code,
+                'item_name': akonto_item.item_name,
+                'description': akonto_item.description,
+                'uom': akonto_item.stock_uom,
+                'qty': 1,
+                'sales_order': source,
+                'income_account': income_account,
+                'cost_center': cost_center,
+                'idx': 1
+            })"""
+        #except:
+        #    frappe.throw( _("Please configure the Akonto Item under Innomat Settings") )
+        #target.run_method("set_missing_values")
+        
+        #target.run_method("set_po_nos")
+        target.run_method("calculate_taxes_and_totals")
+
+        # set company address
+        target.update(get_company_address(target.company))
+        if target.company_address:
+            target.update(get_fetch_values("Sales Invoice", 'company_address', target.company_address))
+
+    def update_item(source, target, source_parent):
+        target.amount = flt(source.amount) - flt(source.billed_amt)
+        target.base_amount = target.amount * flt(source_parent.conversion_rate)
+        target.qty = target.amount / flt(source.rate) if (source.rate and source.billed_amt) else source.qty - source.returned_qty
+
+        if source_parent.project:
+            target.cost_center = frappe.db.get_value("Project", source_parent.project, "cost_center")
+        if not target.cost_center and target.item_code:
+            item = get_item_defaults(target.item_code, source_parent.company)
+            item_group = get_item_group_defaults(target.item_code, source_parent.company)
+            target.cost_center = item.get("selling_cost_center") \
+                or item_group.get("selling_cost_center")
+
+    doclist = get_mapped_doc("Sales Order", source_name, {
+        "Sales Order": {
+            "doctype": "Sales Invoice",
+            "field_map": {
+                "party_account_currency": "party_account_currency",
+                "payment_terms_template": "payment_terms_template"
+            },
+            "validation": {
+                "docstatus": ["=", 1]
+            }
+        },
+        "Sales Taxes and Charges": {
+            "doctype": "Sales Taxes and Charges",
+            "add_if_empty": True
+        },
+        "Sales Team": {
+            "doctype": "Sales Team",
+            "add_if_empty": True
+        }
+    }, target_doc, postprocess, ignore_permissions=ignore_permissions)
+
+    return doclist
+    
+    
     for a in (sales_order.akonto or []):
         if not a.creation_date:
             data = {

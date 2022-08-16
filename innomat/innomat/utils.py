@@ -114,5 +114,10 @@ def get_sales_tax_rule(customer, company):
     else:
         return None
 
-
+"""
+Return the akonto item
+"""
+@frappe.whitelist()
+def get_akonto_item():
+    return frappe.get_value("Innomat Settings", "Innomat Settings", "akonto_item")
 

@@ -142,14 +142,9 @@ function get_effective_net_amount(frm) {
 }
 
 function create_akonto(frm) {
-    frappe.call({
-        method:"innomat.innomat.scripts.sales_order.create_akonto",
-        args: {
-            'sales_order': frm.doc.name
-        },
-        callback: function(r) {
-            cur_frm.reload_doc();
-        }
+    frappe.model.open_mapped_doc({
+        'method': 'innomat.innomat.scripts.sales_order.create_akonto',
+        'frm': frm
     });
 }
 

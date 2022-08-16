@@ -52,15 +52,17 @@ DocType: Sales Order,Create delivery,Lieferung erstellen
 DocType: Sales Order,Create part delivery,Teillieferung erstellen
 DocType: Sales Order,Deliver part,Teillieferung
 DocType: Sales Order,% delivered),% geliefert)
-DocType: Sales Invoice,Always Print,Immer andrucken
 DocType: Sales Order,Create akonto,Akonto erstellen
+DocType: Sales Order,Object,Objekt
+DocType: Sales Invoice,Always Print,Immer andrucken
+DocType: Sales Invoice,Is Akonto,Ist eine Akonto-Rechnung
+DocType: Sales Invoice,Akonto References,Akonto-Referenzen
 DocType: Equipment,End Customer,Endkunde
 DocType: Equipment,End Customer Name,Endkundenname
 DocType: Equipment,Copied,Kopiert
 DocType: Equipment,No access,Kein Zugriff
 DocType: Quotation,Sum caption,Summenbeschreibung
 DocType: Quotation,Object,Objekt
-DocType: Sales Order,Object,Objekt
 DocType: Item,ItemState,Artikel Status
 Report: Order Planning,Order Planning,Bestellbestand
 Report: Order Planning,To order,Zu bestellen
@@ -102,3 +104,5 @@ Report: Employee Productivity,"Productivity","Produktivität"
 Report: Employee Productivity,"Total hours YTD","Gesamtstunden YTD"
 Report: Employee Productivity,"Project hours YTD","Projektstunden YTD"
 Report: Employee Productivity,"Productivity YTD","Produktivität YTD"
+DocType: Innomat Settings,Innomat Settings,Innomat-Einstellungen
+DocType: Innomat Settings,Akonto Item,Akontoartikel
