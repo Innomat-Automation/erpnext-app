@@ -114,5 +114,34 @@ def get_sales_tax_rule(customer, company):
     else:
         return None
 
+"""
+Return the akonto item
+"""
+@frappe.whitelist()
+def get_akonto_item():
+    return frappe.get_value("Innomat Settings", "Innomat Settings", "akonto_item")
 
-
+"""
+Find and return all akonto invoices that are not used
+"""
+@frappe.whitelist()
+def fetch_akonto(sales_order):
+    open_akontos = frappe.db.sql("""
+        SELECT 
+            `tabSales Invoice`.`posting_date` AS `date`,
+            `tabSales Invoice`.`name` AS `sales_invoice`,
+            `tabSales Invoice`.`net_total` AS `net_amount`,
+            `tabSales Invoice`.`total_taxes_and_charges` AS `tax_amount`,
+            `tabSales Invoice Akonto Reference`.`name` AS `reference`
+        FROM `tabSales Invoice`
+        LEFT JOIN `tabSales Invoice Akonto Reference`
+          ON `tabSales Invoice`.`name` = `tabSales Invoice Akonto Reference`.`sales_invoice`
+          AND `tabSales Invoice Akonto Reference`.`docstatus` < 2
+        WHERE `tabSales Invoice`.`sales_order` = "{sales_order}" 
+          AND `tabSales Invoice`.`is_akonto` = 1
+          AND `tabSales Invoice`.`docstatus` < 2
+          AND `tabSales Invoice Akonto Reference`.`name` IS NULL;
+    """.format(sales_order=sales_order), as_dict=True)
+    
+    return open_akontos
+  
