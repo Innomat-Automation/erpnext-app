@@ -16,6 +16,11 @@ frappe.ui.form.on('Sales Invoice', {
                 }
             });
         }
+        if ((frm.doc.docstatus == 0) && (!frm.doc.is_akonto)) {
+            frm.add_custom_button(__("Get Akonto"), function() {
+                fetch_akonto(frm);
+            });
+        }
     },
     customer(frm) {
         fetch_tax_rule(frm);
@@ -26,5 +31,62 @@ frappe.ui.form.on('Sales Invoice', {
     delete_contact(frm){
         frm.set_value("contact_display",'');
         frm.set_value("contact_person",null)
+    },
+    before_save(frm) {
+        apply_discount_from_akonto(frm);
     }
 });
+
+frappe.ui.form.on('Sales Invoice Akonto Reference', {
+    akonto_references_remove: function(frm) {
+        apply_discount_from_akonto(frm);
+    }
+});
+   
+// get all un-used akonto invoices from the same sales order
+function fetch_akonto(frm) {
+    var sales_order = null;
+    for (var i = 0; i < frm.doc.items.length; i++) {
+        if (frm.doc.items[i].sales_order) {
+            sales_order = frm.doc.items[i].sales_order;
+            break;
+        }
+    }
+    
+    frappe.call({
+        "method": "innomat.innomat.utils.fetch_akonto",
+        "args": {
+            "sales_order": sales_order
+        },
+        "callback": function(response) {
+            if (response.message) {
+                for (var a = 0; a < response.message.length; a++) {
+                    var child = cur_frm.add_child('akonto_references');
+                    frappe.model.set_value(child.doctype, child.name, 'date', response.message[a].date);
+                    frappe.model.set_value(child.doctype, child.name, 'sales_invoice', response.message[a].sales_invoice);
+                    frappe.model.set_value(child.doctype, child.name, 'net_amount', response.message[a].net_amount);
+                    frappe.model.set_value(child.doctype, child.name, 'tax_amount', response.message[a].tax_amount);
+                }
+                cur_frm.refresh_field('akonto_references');
+                apply_discount_from_akonto(frm);
+                frappe.show_alert( __("Akonto inserted") );
+            }
+        }
+    });
+
+}
+
+// use the sum of the akonto invoices as discount
+function apply_discount_from_akonto(frm) {
+    var akonto_discount = 0;
+    if (frm.doc.akonto_references) {
+        for (var a = 0; a < frm.doc.akonto_references.length; a++) {
+            akonto_discount += frm.doc.akonto_references[a].net_amount;
+        }
+    } 
+    if (akonto_discount > 0) {
+        cur_frm.set_value("akonto_amount", akonto_discount);
+        cur_frm.set_value("apply_discount_on", "Net Total");
+        cur_frm.set_value("discount_amount", akonto_discount);
+    }
+}

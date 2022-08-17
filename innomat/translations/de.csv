@@ -57,6 +57,8 @@ DocType: Sales Order,Object,Objekt
 DocType: Sales Invoice,Always Print,Immer andrucken
 DocType: Sales Invoice,Is Akonto,Ist eine Akonto-Rechnung
 DocType: Sales Invoice,Akonto References,Akonto-Referenzen
+DocType: Sales Invoice,Get Akonto,Akonto holen
+DocType: Sales Invoice,Akonto inserted,Akonto eingefügt
 DocType: Equipment,End Customer,Endkunde
 DocType: Equipment,End Customer Name,Endkundenname
 DocType: Equipment,Copied,Kopiert
@@ -74,7 +76,6 @@ DocType: BOM,"BOM Template","Stücklistenvorlage"
 DocType: BOM Template,"BOM Template","Stücklistenvorlage"
 DocType: Persistent Session Setting,Persistent Session Setting,Persistente Session-Einstellung
 Report: Ressourcenplanung,Show Tasks,Tasks zeigen
-DocType: Innomat Settings,Quick purchase invoice item,Artikel für Schnellerfassung
 DocType: Purchase Invoice,Quick purchase invoice,Schnellerfassung
 DocType: Service Contract,Service Contract,Wartungsvertrag
 DocType: Service Contract Services,Service Contract Services,Wartungsvertrag Dienstleistungen
@@ -106,3 +107,4 @@ Report: Employee Productivity,"Project hours YTD","Projektstunden YTD"
 Report: Employee Productivity,"Productivity YTD","Produktivität YTD"
 DocType: Innomat Settings,Innomat Settings,Innomat-Einstellungen
 DocType: Innomat Settings,Akonto Item,Akontoartikel
+DocType: Innomat Settings,Quick purchase invoice item,Artikel für Schnellerfassung

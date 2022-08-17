@@ -187,33 +187,10 @@ def create_akonto(source_name, target_doc=None, ignore_permissions=False):
         target.is_pos = 0
         target.ignore_pricing_rule = 1
         target.is_akonto = 1
+        target.sales_order = source.name
         
         target.flags.ignore_permissions = True
         target.run_method("set_missing_values")
-        
-        """if True: #try:
-            akonto_item = frappe.get_doc("Item", frappe.get_value("Innomat Settings", "Innomat Settings", "akonto_item"))
-            income_account = frappe.get_value("Company", target.company, "default_income_account")
-            cost_center = frappe.get_value("Company", target.company, "cost_center")
-            for default in akonto_item.item_defaults:
-                if default.company == target.company and default.income_account:
-                    income_account = default.income_account
-            target.append("items", {
-                'item_code': akonto_item.item_code,
-                'item_name': akonto_item.item_name,
-                'description': akonto_item.description,
-                'uom': akonto_item.stock_uom,
-                'qty': 1,
-                'sales_order': source,
-                'income_account': income_account,
-                'cost_center': cost_center,
-                'idx': 1
-            })"""
-        #except:
-        #    frappe.throw( _("Please configure the Akonto Item under Innomat Settings") )
-        #target.run_method("set_missing_values")
-        
-        #target.run_method("set_po_nos")
         target.run_method("calculate_taxes_and_totals")
 
         # set company address
