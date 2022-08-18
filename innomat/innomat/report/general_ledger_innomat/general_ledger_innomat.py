@@ -118,16 +118,24 @@ def get_result(filters, account_details):
 
 def get_gl_entries(filters):
 	currency_map = get_currency(filters)
-	select_fields = """, debit, credit, debit_in_account_currency,
-		credit_in_account_currency """
+	select_fields = """, gl.debit, gl.credit, gl.debit_in_account_currency,
+		gl.credit_in_account_currency, 
+		sin.customer_name as customer_name,
+		sin.taxes_and_charges as sales_taxes_and_charges, 
+		sin.total_taxes_and_charges as sales_total_taxes_and_charges, 
+		sin.currency as sales_currency, 
+		pin.supplier_name as supplier_name,
+		pin.taxes_and_charges as purchase_taxes_and_charges, 
+		pin.total_taxes_and_charges as purchase_total_taxes_and_charges, 
+		pin.currency as purchase_currency  """
 
 	if filters.get("group_by") == _("Group by Account"):
-		order_by_statement = "order by account, posting_date"
+		order_by_statement = "order by gl.account, gl.posting_date"
 	else:
-		order_by_statement = "order by posting_date, account"
+		order_by_statement = "order by gl.posting_date, gl.account"
 
 	if filters.get("group_by") == _("Group by Voucher"):
-		order_by_statement = "order by posting_date, voucher_type, voucher_no"
+		order_by_statement = "order by gl.posting_date, gl.voucher_type, gl.voucher_no"
 
 	if filters.get("include_default_book_entries"):
 		filters['company_fb'] = frappe.db.get_value("Company",
@@ -136,12 +144,14 @@ def get_gl_entries(filters):
 	gl_entries = frappe.db.sql(
 		"""
 		select
-			posting_date, account, party_type, party,
-			voucher_type, voucher_no, cost_center, project,
-			against_voucher_type, against_voucher, account_currency,
-			remarks, against, is_opening {select_fields}
-		from `tabGL Entry`
-		where company=%(company)s {conditions}
+			gl.posting_date, gl.account, gl.party_type, gl.party,
+			gl.voucher_type, gl.voucher_no, gl.cost_center, gl.project,
+			gl.against_voucher_type, gl.against_voucher, gl.account_currency,
+			gl.remarks, gl.against, gl.is_opening {select_fields}
+		from `tabGL Entry` as gl
+		left join `tabSales Invoice` as sin on sin.name = gl.voucher_no
+		left join `tabPurchase Invoice` as pin on pin.name = gl.voucher_no
+		where gl.company=%(company)s {conditions}
 		{order_by_statement}
 		""".format(
 			select_fields=select_fields, conditions=get_conditions(filters),
@@ -159,39 +169,39 @@ def get_conditions(filters):
 	conditions = []
 	if filters.get("account"):
 		lft, rgt = frappe.db.get_value("Account", filters["account"], ["lft", "rgt"])
-		conditions.append("""account in (select name from tabAccount
+		conditions.append("""gl.account in (select name from tabAccount
 			where lft>=%s and rgt<=%s and docstatus<2)""" % (lft, rgt))
 
 	if filters.get("cost_center"):
 		filters.cost_center = get_cost_centers_with_children(filters.cost_center)
-		conditions.append("cost_center in %(cost_center)s")
+		conditions.append("gl.cost_center in %(cost_center)s")
 
 	if filters.get("voucher_no"):
-		conditions.append("voucher_no=%(voucher_no)s")
+		conditions.append("gl.voucher_no=%(voucher_no)s")
 
 	if filters.get("group_by") == "Group by Party" and not filters.get("party_type"):
-		conditions.append("party_type in ('Customer', 'Supplier')")
+		conditions.append("gl.party_type in ('Customer', 'Supplier')")
 
 	if filters.get("party_type"):
-		conditions.append("party_type=%(party_type)s")
+		conditions.append("gl.party_type=%(party_type)s")
 
 	if filters.get("party"):
-		conditions.append("party in %(party)s")
+		conditions.append("gl.party in %(party)s")
 
 	if not (filters.get("account") or filters.get("party") or
 		filters.get("group_by") in [ _("Group by Account"), _("Group by Party")]):
-		conditions.append("posting_date >=%(from_date)s")
+		conditions.append("gl.posting_date >=%(from_date)s")
 
-	conditions.append("(posting_date <=%(to_date)s or is_opening = 'Yes')")
+	conditions.append("(gl.posting_date <=%(to_date)s or gl.is_opening = 'Yes')")
 
 	if filters.get("project"):
-		conditions.append("project in %(project)s")
+		conditions.append("gl.project in %(project)s")
 
 	if filters.get("finance_book"):
 		if filters.get("include_default_book_entries"):
-			conditions.append("finance_book in (%(finance_book)s, %(company_fb)s)")
+			conditions.append("gl.finance_book in (%(finance_book)s, %(company_fb)s)")
 		else:
-			conditions.append("finance_book in (%(finance_book)s)")
+			conditions.append("gl.finance_book in (%(finance_book)s)")
 
 	from frappe.desk.reportview import build_match_conditions
 	match_conditions = build_match_conditions("GL Entry")
@@ -472,16 +482,53 @@ def get_columns(filters):
 			"width": 100
 		},
 		{
-			"label": _("Tax Id"),
-			"fieldname": "tax_id",
-			"width": 400
-		},
-		{
 			"label": _("Remarks"),
 			"fieldname": "remarks",
 			"width": 400
+		},
+		{
+			"label": _("Customer Name"),
+			"fieldname": "customer_name",
+			"width": 200
+		},
+		{
+			"label": _("Sales Taxes and Charges"),
+			"fieldname": "sales_taxes_and_charges",
+			"width": 200
 		}
+		,
+		{
+			"label": _("Sales Total Taxes and Charges"),
+			"fieldname": "sales_total_taxes_and_charges",
+			"width": 50
+		},
+		{
+			"label": _("Sales Currency"),
+			"fieldname": "sales_currency",
+			"width": 50
+		},
+		{
+			"label": _("Supplier Name"),
+			"fieldname": "supplier_name",
+			"width": 200
+		},
+		{
+			"label": _("Purchase Taxes and Charges"),
+			"fieldname": "purchase_taxes_and_charges",
+			"width": 200
+		},
+		{
+			"label": _("Purchase Total Taxes and Charges"),
+			"fieldname": "purchase_total_taxes_and_charges",
+			"width": 50
+		},
+		{
+			"label": _("Purchase Currency"),
+			"fieldname": "purchase_currency",
+			"width": 50
+		}
+
+
 	])
 
 	return columns
-

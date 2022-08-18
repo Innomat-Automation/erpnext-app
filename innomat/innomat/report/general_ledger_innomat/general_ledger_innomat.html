@@ -35,12 +35,12 @@
 <table class="table table">
 	<thead>
 		<tr>
-			<th style="width: 12%">{%= __("Date") %}</th>
-			<th style="width: 25%">{%= __("Party") %}</th>
-            <th style="width: 15%">{%= __("Ref") %}</th>
-			<th style="width: 15%">{%= __("Debit") %}</th>
-			<th style="width: 15%">{%= __("Credit") %}</th>
-			<th style="width: 18%">{%= __("Balance (Dr - Cr)") %}</th>
+			<th style="width: 12%; font-size: 10px">{%= __("Date") %}</th>
+			<th style="width: 25%; font-size: 10px">{%= __("Party") %}</th>
+            <th style="width: 15%; font-size: 10px">{%= __("Ref") %}</th>
+			<th style="width: 15%; font-size: 10px">{%= __("Debit") %}</th>
+			<th style="width: 15%; font-size: 10px">{%= __("Credit") %}</th>
+			<th style="width: 18%; font-size: 10px">{%= __("Balance (Dr - Cr)") %}</th>
 		</tr>
 	</thead>
 	<tbody>
@@ -49,10 +49,26 @@
 			{% if(data[i].posting_date) { %}
 				<td style="font-size: 10px">{%= frappe.datetime.str_to_user(data[i].posting_date) %}</td>
 				<td style="font-size: 10px">
+					{% if(data[i].supplier_name) { %}
+					<b>{%= data[i].supplier_name %}</b><br>
+					{% } %}
+					{% if(data[i].customer_name) { %}
+					<b>{%= data[i].customer_name %}</b><br>
+					{% } %}
     			    {%= data[i].remarks %}
 					{% if(data[i].bill_no) { %}
 						<br>{%= __("Supplier Invoice No") %}: {%= data[i].bill_no %}
 					{% } %}
+					{% if(data[i].bill_no) { %}
+					<br>{%= __("Supplier Invoice No") %}: {%= data[i].bill_no %}
+					{% } %}
+					{% if(data[i].sales_taxes_and_charges) { %}
+					<br><b><i>{%= data[i].sales_taxes_and_charges %} {%= data[i].sales_total_taxes_and_charges %} {%= data[i].sales_currency %}</i></b>
+					{% } %}
+					{% if(data[i].purchase_taxes_and_charges) { %}
+					<br><b><i>{%= data[i].purchase_taxes_and_charges %} {%= data[i].purchase_total_taxes_and_charges %} {%= data[i].purchase_currency %}</i></b>
+					{% } %}
+
 					</td>
                     <td style="font-size: 10px">
                         {{ __("Against") }}: {%= data[i].against %}
@@ -64,7 +80,7 @@
 						{%= format_currency(data[i].credit, filters.presentation_currency) %}</td>
 			{% } else { %}
 				<td></td>
-				<td><b>{%= frappe.format(data[i].account, {fieldtype: "Link"}) || "&nbsp;" %}</b></td>
+				<td style="font-size: 12px"><b>{%= frappe.format(data[i].account, {fieldtype: "Link"}) || "&nbsp;" %}</b></td>
                 <td></td>
 				<td style="text-align: right;font-size: 10px">
 					{%= data[i].account && format_currency(data[i].debit, filters.presentation_currency) %}
