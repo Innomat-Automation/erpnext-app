@@ -12,7 +12,7 @@ def get_data():
 			"label": _("Innomat")
 		},
 		{
-			"module_name": "innomat_accounting",
+			"module_name": "Innomat Accounting",
 			"color": "grey",
 			"icon": "icon accounting-blue",
 			"type": "module",
