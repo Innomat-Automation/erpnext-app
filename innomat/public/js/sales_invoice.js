@@ -1,3 +1,7 @@
+
+{% include "erpnext/public/js/controllers/taxes_and_totals.js" %}
+
+
 frappe.ui.form.on('Sales Invoice', {
     refresh(frm) {
         if ((frm.doc.__islocal) && (frm.doc.is_akonto === 1)) {
@@ -34,6 +38,11 @@ frappe.ui.form.on('Sales Invoice', {
     },
     before_save(frm) {
         apply_discount_from_akonto(frm);
+    },
+    additional_discount_percentage_akonto(frm){
+        frm.doc.additional_discount_amount_akonto = flt(frm.doc.total * flt(frm.doc.additional_discount_percentage_akonto) / 100, precision("additional_discount_amount_akonto"));
+        apply_discount_from_akonto(frm);
+		frm.refresh();
     }
 });
 
@@ -84,6 +93,7 @@ function apply_discount_from_akonto(frm) {
             akonto_discount += frm.doc.akonto_references[a].net_amount;
         }
     } 
+    akonto_discount += frm.doc.additional_discount_amount_akonto
     if (akonto_discount > 0) {
         cur_frm.set_value("akonto_amount", akonto_discount);
         cur_frm.set_value("apply_discount_on", "Net Total");
