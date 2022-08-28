@@ -13,7 +13,8 @@
   "column_main",
   "file",
   "creation_date",
-  "payment"
+  "payment",
+  "sales_invoice"
  ],
  "fields": [
   {
@@ -46,7 +47,6 @@
    "allow_on_submit": 1,
    "fieldname": "payment",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "label": "Payment",
    "options": "Payment Entry",
    "read_only": 1
@@ -80,6 +80,7 @@
    "default": "1",
    "fieldname": "print_total_and_percent",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Print Total and Percent"
   },
   {
@@ -90,10 +91,18 @@
    "label": "Netto",
    "options": "currency",
    "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "sales_invoice",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Sales Invoice",
+   "options": "Sales Invoice"
   }
  ],
  "istable": 1,
- "modified": "2022-01-06 21:41:52.415813",
+ "modified": "2022-08-28 17:35:12.660301",
  "modified_by": "Administrator",
  "module": "Innomat",
  "name": "Sales Order Akonto",
