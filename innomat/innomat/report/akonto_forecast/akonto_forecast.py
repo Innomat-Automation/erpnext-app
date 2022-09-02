@@ -36,6 +36,7 @@ def get_data(filters):
         `tabSales Order`.`docstatus` = 1
         AND (`tabSales Order Akonto`.`payment` IS NULL OR `tabSales Order Akonto`.`payment` = "")
         AND (`tabSales Order Akonto`.`amount` > 0)
+        AND (`tabSales Order Akonto`.`sales_invoice` IS NULL OR `tabSales Order Akonto`.`sales_invoice` = "")
       ORDER BY -`tabSales Order Akonto`.`creation_date` DESC, `tabSales Order Akonto`.`date` ASC;
       """
     
