@@ -69,6 +69,12 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
             "taxes_and_charges": get_sales_tax_rule(pj.customer, pj.company),
             "currency": currency
         })
+        # if Sales order exist get discount
+        if pj.sales_order and pj.sales_order != "":
+            sales_order = frappe.get_doc("Sales Order",pj.sales_order)
+            new_sinv.additional_discount_percentage_akonto = sales_order.additional_discount_percentage
+            new_sinv.additional_discount_amount_akonto = sales_order.discount_amount
+        
         cost_center = frappe.get_value("Company", pj.company, "cost_center")
         for t in time_logs:
             description = "{0} ({1})".format(t['from_time'].strftime("%d.%m.%Y"), t['employee_name'])

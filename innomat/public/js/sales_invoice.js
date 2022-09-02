@@ -94,9 +94,7 @@ function apply_discount_from_akonto(frm) {
         }
     } 
     akonto_discount += frm.doc.additional_discount_amount_akonto
-    if (akonto_discount > 0) {
-        cur_frm.set_value("akonto_amount", akonto_discount);
-        cur_frm.set_value("apply_discount_on", "Net Total");
-        cur_frm.set_value("discount_amount", akonto_discount);
-    }
+    cur_frm.set_value("akonto_amount", akonto_discount);
+    cur_frm.set_value("apply_discount_on", "Net Total");
+    cur_frm.set_value("discount_amount", akonto_discount);
 }
