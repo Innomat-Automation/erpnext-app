@@ -16,7 +16,9 @@ def execute(filters=None):
 def get_columns():
     return [
         {"label": _("Project"), "fieldname": "project", "fieldtype": "Link", "options": "Project", "width": 120},
+        {"label": _("Finished"), "fieldname": "finished", "fieldtype": "Check", "width": 10},
         {"label": _("Status Light"), "fieldname": "status_light", "fieldtype": "Data", "width": 100},
+        {"label": _("Task"), "fieldname": "tasks", "fieldtype": "Integer", "width": 20},
         {"label": _("Sales Order"), "fieldname": "sales_order", "fieldtype": "Link", "options": "Sales Order", "width": 80},
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 80},
         {"label": _("Customer name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 120},
@@ -45,6 +47,7 @@ def get_data(filters):
         """SELECT 
                 `projects`.`project`,
                 `tabProject`.`sales_order`,
+                `tabProject`.`finished`,
                 `tabProject`.`status_light` AS `status_light`,
                 `tabProject`.`customer`,
                 `tabProject`.`customer_name`,
@@ -52,6 +55,11 @@ def get_data(filters):
                  FROM `tabSales Order Item` 
                  WHERE `tabSales Order Item`.`parent` = `tabProject`.`sales_order`
                    AND `tabSales Order Item`.`by_effort` = 0) AS `volume`, 
+                (SELECT COUNT(`tabTask`.`subject`) 
+                 FROM `tabTask` 
+                 WHERE `tabTask`.`project` = `projects`.`project`
+                   AND `tabTask`.`status` != "Cancelled"
+                   AND `tabTask`.`status` != "Completed") AS `tasks`, 
                 SUM(`projects`.`akonto_amount`) AS `akonto_amount`,
                 SUM(`projects`.`unpaid_akonto_amount`) AS `unpaid_akonto_amount`,
                 SUM(`projects`.`dn_amount`) AS `dn_amount`,
