@@ -84,3 +84,35 @@ def get_sales_akonto(fromdate,todate,company):
     frappe.local.response.filename = "result.pdf"
     frappe.local.response.filecontent = outputStream.getvalue() # custom function
     frappe.local.response.type = "pdf"
+
+@frappe.whitelist()
+def set_akonto(project,sales_invoice):
+    prj = frappe.get_doc("Project",project)
+    if(prj and prj.sales_order and prj.sales_order != ""):
+        order = frappe.get_doc("Sales Order",prj.sales_order)
+        if (order and order.akonto and len(order.akonto) > 0):
+            for i in order.akonto:
+                if not i.sales_invoice or i.sales_invoice == "":
+                    i.sales_invoice = sales_invoice;
+                    order.save();
+                    return order.name + " aktualisiert";
+    
+    return "Kein Auftrag aktualisiert"
+
+
+@frappe.whitelist()
+def del_akonto(project,sales_invoice):
+    prj = frappe.get_doc("Project",project)
+    if(prj and prj.sales_order and prj.sales_order != ""):
+        order = frappe.get_doc("Sales Order",prj.sales_order)
+        if (order and order.akonto and len(order.akonto) > 0):
+            for i in order.akonto:
+                if i.sales_invoice == sales_invoice:
+                    i.sales_invoice = None;
+                    order.save();
+                    return order.name + " aktualisiert";
+    
+    return "Kein Auftrag aktualisiert"
+
+
+

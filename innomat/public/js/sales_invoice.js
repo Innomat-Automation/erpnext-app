@@ -4,18 +4,27 @@
 
 frappe.ui.form.on('Sales Invoice', {
     refresh(frm) {
-        if ((frm.doc.__islocal) && (frm.doc.is_akonto === 1)) {
+        if ((frm.doc.__islocal) && (frm.doc.is_akonto === 1) && (frm.doc.items.length == 0)) {
             // this is a new akonto invoice: insert akonto item
             frappe.call({
                 'method': 'innomat.innomat.utils.get_akonto_item',
+                "args": {
+                    "project": frm.doc.project
+                },
                 'callback': function(r) {
                     if (r.message) {
                         // render links into html string
                         var child = cur_frm.add_child('items');
-                        frappe.model.set_value(child.doctype, child.name, 'item_code', r.message);
-                        frappe.model.set_value(child.doctype, child.name, 'qty', 1);
+                        frappe.model.set_value(child.doctype, child.name, 'item_code', r.message["item"]);
                         cur_frm.refresh_field('items');
-                        cur_frm.clear_table("sales_item_groups");
+
+                        setTimeout(function() {
+                            frappe.model.set_value(child.doctype, child.name, 'qty', 1);
+                            frappe.model.set_value(child.doctype, child.name, 'rate', r.message["amount"]);
+                            frappe.model.set_value(child.doctype, child.name, 'description', r.message["text"]);
+                            cur_frm.refresh_field('items');
+                            cur_frm.clear_table("sales_item_groups");
+                        }, 1000);
                     }
                 }
             });
@@ -24,6 +33,9 @@ frappe.ui.form.on('Sales Invoice', {
             frm.add_custom_button(__("Get Akonto"), function() {
                 fetch_akonto(frm);
             });
+        }
+        if (frm.doc.__islocal && frm.doc.additional_discount_percentage_akonto == 0 && frm.doc.additional_discount_percentage > 0) {
+            frm.doc.additional_discount_percentage_akonto = frm.doc.additional_discount_percentage;
         }
     },
     customer(frm) {
@@ -43,7 +55,42 @@ frappe.ui.form.on('Sales Invoice', {
         frm.doc.additional_discount_amount_akonto = flt(frm.doc.total * flt(frm.doc.additional_discount_percentage_akonto) / 100, precision("additional_discount_amount_akonto"));
         apply_discount_from_akonto(frm);
 		frm.refresh();
+    },
+    on_submit(frm) {
+        frappe.call({
+            'method': 'innomat.innomat.scripts.invoices.set_akonto',
+            "args": {
+                "project": frm.doc.project,
+                "sales_invoice": frm.doc.name
+            },
+            'callback': function(r) {
+                frappe.msgprint({
+                    title: __('Notification'),
+                    indicator: 'green',
+                    message: r.message
+                });
+            }
+        });
+    },
+    before_cancel(frm) {
+        frappe.call({
+            'method': 'innomat.innomat.scripts.invoices.del_akonto',
+            "args": {
+                "project": frm.doc.project,
+                "sales_invoice": frm.doc.name
+            },
+            'callback': function(r) {
+                if (r.message) {
+                    frappe.msgprint({
+                        title: __('Notification'),
+                        indicator: 'green',
+                        message: r.message
+                    });
+                }
+            }
+        });
     }
+
 });
 
 frappe.ui.form.on('Sales Invoice Akonto Reference', {
@@ -98,3 +145,4 @@ function apply_discount_from_akonto(frm) {
     cur_frm.set_value("apply_discount_on", "Net Total");
     cur_frm.set_value("discount_amount", akonto_discount);
 }
+

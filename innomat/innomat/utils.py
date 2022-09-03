@@ -1,6 +1,7 @@
 # Copyright (c) 2019-2021, libracore and contributors
 # For license information, please see license.txt
 
+from locale import currency
 import frappe
 from frappe import _
 import json 
@@ -118,8 +119,24 @@ def get_sales_tax_rule(customer, company):
 Return the akonto item
 """
 @frappe.whitelist()
-def get_akonto_item():
-    return frappe.get_value("Innomat Settings", "Innomat Settings", "akonto_item")
+def get_akonto_item(project = ""):
+    data = dict()
+    data['item'] = frappe.get_value("Innomat Settings", "Innomat Settings", "akonto_item")
+    data['amount'] = 0;
+    if(project and project != ""):
+        prj = frappe.get_doc("Project",project)
+        if(prj and prj.sales_order and prj.sales_order != ""):
+            sales_order = frappe.get_doc("Sales Order",prj.sales_order)
+            if (sales_order and sales_order.akonto and len(sales_order.akonto) > 0):
+                for i in sales_order.akonto:
+                    if not i.sales_invoice or i.sales_invoice == "":
+                        data['amount'] = i.netto;
+                        data['text'] = "Anzahlung {percent}% auf {currency} {total} gemäss {ab}".format(percent=i.percent,currency=sales_order.currency,total=sales_order.net_total,ab=sales_order.name)
+                        if(i.remarks and i.remarks != ""):
+                             data['text'] += "<br>" + i.remarks
+                        break
+
+    return data
 
 """
 Find and return all akonto invoices that are not used
