@@ -128,3 +128,9 @@ DocType: Innomat Settings,Quick purchase invoice item,Artikel für Schnellerfass
 Report: General Ledger Innomat,"General Ledger Innomat","Hauptbuch Innomat"
 DocType: Sales Invoice,"Additional Discount Percentage Akonto", "Zusätzlicher Rabatt in %"
 DocType: Sales Invoice,"Additional Discount Amount Akonto", "Zusätzlicher Rabatt Betrag"
+Report: Kennzahlen,from that Akonto Revenue,davon Akonto Umsatz
+Report: Kennzahlen,from that Receivables,davon Forderungen
+Report: Kennzahlen,from that Payables,davon Verbindlichkeiten
+Report: Kennzahlen,Expected Receivables,Nicht verrechnete Kundenaufträge
+Report: Kennzahlen,Expected Payables,Nicht verrechnete Lieferantenaufträge
+Report: Kennzahlen,Open Quotation Volume,Offene Angebote
