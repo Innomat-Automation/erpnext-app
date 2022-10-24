@@ -10,5 +10,12 @@ def get_data():
 			"icon": "octicon octicon-briefcase",
 			"type": "module",
 			"label": _("Innomat")
+		},
+		{
+			"module_name": "Innomat Accounting",
+			"color": "grey",
+			"icon": "icon accounting-blue",
+			"type": "module",
+			"label": _("Innomat Accounting")
 		}
 	]

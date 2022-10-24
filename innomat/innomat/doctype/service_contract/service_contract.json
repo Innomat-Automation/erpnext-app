@@ -30,6 +30,7 @@
    "fieldname": "title",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Title",
    "reqd": 1,
    "unique": 1
@@ -68,6 +69,7 @@
    "fieldname": "customer_name",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Customer Name",
    "options": "customer.customer_name",
    "read_only": 1
@@ -134,7 +136,7 @@
    "reqd": 1
   }
  ],
- "modified": "2022-01-13 23:03:32.405477",
+ "modified": "2022-09-02 22:33:43.799285",
  "modified_by": "Administrator",
  "module": "Innomat",
  "name": "Service Contract",

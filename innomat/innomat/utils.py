@@ -1,6 +1,7 @@
 # Copyright (c) 2019-2021, libracore and contributors
 # For license information, please see license.txt
 
+from locale import currency
 import frappe
 from frappe import _
 import json 
@@ -114,5 +115,50 @@ def get_sales_tax_rule(customer, company):
     else:
         return None
 
+"""
+Return the akonto item
+"""
+@frappe.whitelist()
+def get_akonto_item(project = ""):
+    data = dict()
+    data['item'] = frappe.get_value("Innomat Settings", "Innomat Settings", "akonto_item")
+    data['amount'] = 0;
+    if(project and project != ""):
+        prj = frappe.get_doc("Project",project)
+        if(prj and prj.sales_order and prj.sales_order != ""):
+            sales_order = frappe.get_doc("Sales Order",prj.sales_order)
+            if (sales_order and sales_order.akonto and len(sales_order.akonto) > 0):
+                for i in sales_order.akonto:
+                    if not i.sales_invoice or i.sales_invoice == "":
+                        data['amount'] = i.netto;
+                        data['text'] = "Anzahlung {percent}% auf {currency} {total} gemäss {ab}".format(percent=i.percent,currency=sales_order.currency,total=sales_order.net_total,ab=sales_order.name)
+                        if(i.remarks and i.remarks != ""):
+                             data['text'] += "<br>" + i.remarks
+                        break
 
+    return data
 
+"""
+Find and return all akonto invoices that are not used
+"""
+@frappe.whitelist()
+def fetch_akonto(sales_order):
+    open_akontos = frappe.db.sql("""
+        SELECT 
+            `tabSales Invoice`.`posting_date` AS `date`,
+            `tabSales Invoice`.`name` AS `sales_invoice`,
+            `tabSales Invoice`.`net_total` AS `net_amount`,
+            `tabSales Invoice`.`total_taxes_and_charges` AS `tax_amount`,
+            `tabSales Invoice Akonto Reference`.`name` AS `reference`
+        FROM `tabSales Invoice`
+        LEFT JOIN `tabSales Invoice Akonto Reference`
+          ON `tabSales Invoice`.`name` = `tabSales Invoice Akonto Reference`.`sales_invoice`
+          AND `tabSales Invoice Akonto Reference`.`docstatus` < 2
+        WHERE `tabSales Invoice`.`sales_order` = "{sales_order}" 
+          AND `tabSales Invoice`.`is_akonto` = 1
+          AND `tabSales Invoice`.`docstatus` < 2
+          AND `tabSales Invoice Akonto Reference`.`name` IS NULL;
+    """.format(sales_order=sales_order), as_dict=True)
+    
+    return open_akontos
+  

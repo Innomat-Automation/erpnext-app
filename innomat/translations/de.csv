@@ -1,5 +1,22 @@
 Module: Innomat,Tag,Tag
 Module: Innomat,of,von
+Module: Innomat,Group By,Gruppieren nach
+Module: Innomat,Show Opening Entries,Eröffnungsbeiträge anzeigen
+Module: Innomat,Group by Party,Gruppieren nach Parteien
+Module: Innomat,Group by Voucher,Gruppieren nach Beleg
+Module: Innomat,Invalid {0}: {1},Ungültige(r/s) {0}: {1}
+Module: Innomat,Debit ({0}),Soll ({0})
+Module: Innomat,Select an account to print in account currency,"Wählen Sie ein Konto aus, das in der Kontowährung gedruckt werden soll"
+Module: Innomat,Closing (Opening + Total),Schließen (Eröffnung + Gesamt)
+Module: Innomat,"To filter based on Party, select Party Type first","Um auf der Grundlage von Gruppen zu filtern, bitte zuerst den Gruppentyp wählen"
+Module: Innomat,"Can not filter based on Account, if grouped by Account","Wenn nach Konto gruppiert wurde, kann nicht auf Grundlage des Kontos gefiltert werden."
+Module: Innomat,Group by Voucher (Consolidated),Gruppieren nach Beleg (konsolidiert)
+Module: Innomat,"Can not filter based on Voucher No, if grouped by Voucher","Wenn nach Beleg gruppiert wurde, kann nicht auf Grundlage von Belegen gefiltert werden."
+Module: Innomat,Credit ({0}),Guthaben ({0})
+Module: Innomat,Balance ({0}),Saldo ({0})
+Module: Innomat,Account {0} does not exists,Konto {0} existiert nicht
+Module: Innomat,Group by Account,Gruppieren nach Konto
+Module: Innomat,Innomat Accounting,Innomat Buchhaltung
 DocType: Quotation,Is optional,Optional
 DocType: Quotation,BOM Rate,Stücklistenkostenbasis
 DocType: Quotation,Calculation Margin,Kalkulationsmarge
@@ -52,15 +69,19 @@ DocType: Sales Order,Create delivery,Lieferung erstellen
 DocType: Sales Order,Create part delivery,Teillieferung erstellen
 DocType: Sales Order,Deliver part,Teillieferung
 DocType: Sales Order,% delivered),% geliefert)
-DocType: Sales Invoice,Always Print,Immer andrucken
 DocType: Sales Order,Create akonto,Akonto erstellen
+DocType: Sales Order,Object,Objekt
+DocType: Sales Invoice,Always Print,Immer andrucken
+DocType: Sales Invoice,Is Akonto,Ist eine Akonto-Rechnung
+DocType: Sales Invoice,Akonto References,Akonto-Referenzen
+DocType: Sales Invoice,Get Akonto,Akonto holen
+DocType: Sales Invoice,Akonto inserted,Akonto eingefügt
 DocType: Equipment,End Customer,Endkunde
 DocType: Equipment,End Customer Name,Endkundenname
 DocType: Equipment,Copied,Kopiert
 DocType: Equipment,No access,Kein Zugriff
 DocType: Quotation,Sum caption,Summenbeschreibung
 DocType: Quotation,Object,Objekt
-DocType: Sales Order,Object,Objekt
 DocType: Item,ItemState,Artikel Status
 Report: Order Planning,Order Planning,Bestellbestand
 Report: Order Planning,To order,Zu bestellen
@@ -72,7 +93,6 @@ DocType: BOM,"BOM Template","Stücklistenvorlage"
 DocType: BOM Template,"BOM Template","Stücklistenvorlage"
 DocType: Persistent Session Setting,Persistent Session Setting,Persistente Session-Einstellung
 Report: Ressourcenplanung,Show Tasks,Tasks zeigen
-DocType: Innomat Settings,Quick purchase invoice item,Artikel für Schnellerfassung
 DocType: Purchase Invoice,Quick purchase invoice,Schnellerfassung
 DocType: Service Contract,Service Contract,Wartungsvertrag
 DocType: Service Contract Services,Service Contract Services,Wartungsvertrag Dienstleistungen
@@ -102,3 +122,15 @@ Report: Employee Productivity,"Productivity","Produktivität"
 Report: Employee Productivity,"Total hours YTD","Gesamtstunden YTD"
 Report: Employee Productivity,"Project hours YTD","Projektstunden YTD"
 Report: Employee Productivity,"Productivity YTD","Produktivität YTD"
+DocType: Innomat Settings,Innomat Settings,Innomat-Einstellungen
+DocType: Innomat Settings,Akonto Item,Akontoartikel
+DocType: Innomat Settings,Quick purchase invoice item,Artikel für Schnellerfassung
+Report: General Ledger Innomat,"General Ledger Innomat","Hauptbuch Innomat"
+DocType: Sales Invoice,"Additional Discount Percentage Akonto", "Zusätzlicher Rabatt in %"
+DocType: Sales Invoice,"Additional Discount Amount Akonto", "Zusätzlicher Rabatt Betrag"
+Report: Kennzahlen,from that Akonto Revenue,davon Akonto Umsatz
+Report: Kennzahlen,from that Receivables,davon Forderungen
+Report: Kennzahlen,from that Payables,davon Verbindlichkeiten
+Report: Kennzahlen,Expected Receivables,Nicht verrechnete Kundenaufträge
+Report: Kennzahlen,Expected Payables,Nicht verrechnete Lieferantenaufträge
+Report: Kennzahlen,Open Quotation Volume,Offene Angebote

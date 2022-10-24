@@ -31,6 +31,7 @@
    "fieldname": "title",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Title",
    "reqd": 1,
    "unique": 1
@@ -134,7 +135,7 @@
    "options": "Service Contract"
   }
  ],
- "modified": "2022-01-13 22:02:45.222733",
+ "modified": "2022-09-02 22:49:30.003976",
  "modified_by": "Administrator",
  "module": "Innomat",
  "name": "Equipment",

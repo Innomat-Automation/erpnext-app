@@ -153,6 +153,12 @@ def get_data():
                    },
                    {
                        "type": "doctype",
+                       "name": "Remote Access",
+                       "label": _("Remote Access"),
+                       "description": _("Remote Access")
+                   },
+                   {
+                       "type": "doctype",
                        "name": "Acceptance Report",
                        "label": _("Acceptance Report"),
                        "description": _("Acceptance Report")
