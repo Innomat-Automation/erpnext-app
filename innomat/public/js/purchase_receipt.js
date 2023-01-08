@@ -1,22 +1,8 @@
 
 
-frappe.ui.form.on("Purchase Invoice", {
-    "bill_no": function(frm) {
-        if(!frm.doc.bill_no.match("^[ A-Za-z0-9\+\?\/\\-\:\(\)\.\,\']+$"))
-            {
-                frappe.msgprint("Nur alphanumerische Zeichen und +?/-:/()., erlaubt");
-            }
 
-    },
-    "validate": function(frm) {
-        if(!frm.doc.bill_no.match("^[ A-Za-z0-9\+\?\/\\-\:\(\)\.\,\']+$"))
-            {
-                frappe.msgprint("Nur alphanumerische Zeichen und +?/-:/()., erlaubt");
-                frappe.validate = false;
-            }
-
-    },
-    "refresh": function(frm) {
+frappe.ui.form.on('Purchase Receipt', {
+    refresh(frm) {
         if (frm.doc.docstatus === 1) {
             frm.add_custom_button(__("Update Project Link"), function() {
                 var field = new Array();
@@ -31,7 +17,7 @@ frappe.ui.form.on("Purchase Invoice", {
                     primary_action(values) {
                         d.hide();
                         frappe.call({
-                            "method": "innomat.innomat.scripts.purchase_invoice.update_projects",
+                            "method": "innomat.innomat.scripts.purchase_receipt.update_projects",
                             "args": {
                                 "data": values,
                                 "invoice" : frm.doc.name
@@ -50,7 +36,7 @@ frappe.ui.form.on("Purchase Invoice", {
                 frappe.confirm(__("Delete all Project links"),
                 () => {
                     frappe.call({
-                        "method": "innomat.innomat.scripts.purchase_invoice.delete_projects",
+                        "method": "innomat.innomat.scripts.purchase_receipt.delete_projects",
                         "args": {
                             "invoice" : frm.doc.name
                         },
@@ -66,3 +52,4 @@ frappe.ui.form.on("Purchase Invoice", {
         }
     }
 });
+
