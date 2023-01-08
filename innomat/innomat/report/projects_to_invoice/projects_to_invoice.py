@@ -78,7 +78,7 @@ def get_data(filters):
                 (SELECT `tabProject`.`name`
                  FROM `tabProject` 
                  WHERE `tabProject`.`sales_order` = `tabSales Order Akonto`.`parent`) AS `project`,
-                `tabSales Order Akonto`.`amount` AS `akonto_amount`,
+                `tabSales Order Akonto`.`netto` AS `akonto_amount`,
                 0 AS `unpaid_akonto_amount`,
                 0 AS `dn_amount`,
                 0 AS `draft_dn_amount`,
@@ -86,7 +86,8 @@ def get_data(filters):
                 `tabSales Order Akonto`.`date` AS `date`
             FROM `tabSales Order Akonto`
             LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabSales Order Akonto`.`parent`
-            WHERE `tabSales Order Akonto`.`file` IS NULL
+            WHERE `tabSales Order Akonto`.`sales_invoice` IS NULL
+              AND `tabSales Order Akonto`.`payment` IS NULL /* Migration alte nicht anzeigen */ 
               AND `tabSales Order`.`company` = "{company}"
             
             /* unpaid akonto */
@@ -95,16 +96,18 @@ def get_data(filters):
                  FROM `tabProject` 
                  WHERE `tabProject`.`sales_order` = `tabSales Order Akonto`.`parent`) AS `project`,
                  0 AS `akonto_amount`,
-                `tabSales Order Akonto`.`amount` AS `unpaid_akonto_amount`,
+                `tabSales Order Akonto`.`netto` AS `unpaid_akonto_amount`,
                 0 AS `dn_amount`,
                 0 AS `draft_dn_amount`,
                 0 AS `ts_amount`,
-                `tabSales Order Akonto`.`creation_date` AS `date`
+                `tabSales Order Akonto`.`date` AS `date`
             FROM `tabSales Order Akonto`
             LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabSales Order Akonto`.`parent`
-            WHERE `tabSales Order Akonto`.`file` IS NOT NULL
-              AND `tabSales Order Akonto`.`payment` IS NULL
+            LEFT JOIN `tabSales Invoice` ON `tabSales Invoice`.`name` = `tabSales Order Akonto`.`sales_invoice`
+            WHERE `tabSales Order Akonto`.`sales_invoice` IS NOT NULL
               AND `tabSales Order`.`company` = "{company}"
+              AND `tabSales Invoice`.`status` = "Unpaid"
+              AND `tabSales Invoice`.`is_akonto` = 1
                       
             /* uninvoice delivery notes */
             UNION SELECT 
