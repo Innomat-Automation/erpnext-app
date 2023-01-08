@@ -50,6 +50,7 @@ def get_data(filters):
                     `tabProject`.`title` AS `project_name`,
                     `tabProject`.`project_manager` AS `project_manager`,
                     `tabProject`.`project_manager_name` AS `project_manager_name`,
+                    `tabProject`.`finished` AS `finished`,
                     `tabProject`.`status_light` AS `status_light`,
                     `tabProject`.`expected_start_date` AS `start_date`,
                     `tabProject`.`expected_end_date` AS `end_date`,
