@@ -56,14 +56,14 @@ def get_internal_data(filters):
 		accumulated_values=False,
 		ignore_closing_entries=True, ignore_accumulated_values_for_fy= True)
 
-    if 'total' in ytd_revenue[1] and 'total' in py_revenue[1] :
+    if len(ytd_expenses) > 1 and len(py_revenue) > 1 and 'total' in ytd_revenue[1] and 'total' in py_revenue[1] :
         data.append({
             'description': _("Revenue"),
             'ytd': ytd_revenue[1].total,
             'py': py_revenue[1].total
         })
 
-    if 'total' in ytd_revenue[4] and 'total' in py_revenue[4] :
+    if len(ytd_expenses) > 4 and len(py_revenue) > 4 and  'total' in ytd_revenue[4] and 'total' in py_revenue[4] :
         data.append({
             'description': _("from that Akonto Revenue"),
             'ytd': ytd_revenue[4].total,
@@ -152,7 +152,7 @@ def get_internal_data(filters):
 		accumulated_values=False,
 		ignore_closing_entries=True, ignore_accumulated_values_for_fy= True)
 
-    if 'total' in ytd_revenue[-2] and 'total' in py_revenue[-2] :
+    if len(ytd_expenses) > 2 and len(py_revenue) > 2 and 'total' in ytd_revenue[-2] and 'total' in py_revenue[-2] :
         data.append({
             'description': _("Expenses"),
             'ytd': ytd_expenses[-2]['total'],
