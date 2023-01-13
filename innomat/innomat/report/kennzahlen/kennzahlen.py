@@ -56,18 +56,20 @@ def get_internal_data(filters):
 		accumulated_values=False,
 		ignore_closing_entries=True, ignore_accumulated_values_for_fy= True)
 
-    data.append({
-        'description': _("Revenue"),
-        'ytd': ytd_revenue[1].total,
-        'py': py_revenue[1].total
-    })
+    if 'total' in ytd_revenue[1] and 'total' in py_revenue[1] :
+        data.append({
+            'description': _("Revenue"),
+            'ytd': ytd_revenue[1].total,
+            'py': py_revenue[1].total
+        })
 
-    data.append({
-        'description': _("from that Akonto Revenue"),
-        'ytd': ytd_revenue[4].total,
-        'py': py_revenue[4]['total']
-    })
-
+    if 'total' in ytd_revenue[4] and 'total' in py_revenue[4] :
+        data.append({
+            'description': _("from that Akonto Revenue"),
+            'ytd': ytd_revenue[4].total,
+            'py': py_revenue[4]['total']
+        })
+    
    
     # receivables
     ytd_receivables = frappe.db.sql("""
@@ -150,11 +152,12 @@ def get_internal_data(filters):
 		accumulated_values=False,
 		ignore_closing_entries=True, ignore_accumulated_values_for_fy= True)
 
-    data.append({
-        'description': _("Expenses"),
-        'ytd': ytd_expenses[-2]['total'],
-        'py': py_expenses[-2]['total']
-    })
+    if 'total' in ytd_revenue[-2] and 'total' in py_revenue[-2] :
+        data.append({
+            'description': _("Expenses"),
+            'ytd': ytd_expenses[-2]['total'],
+            'py': py_expenses[-2]['total']
+        })
         
     # payables 
     ytd_payables = frappe.db.sql("""
