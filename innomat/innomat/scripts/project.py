@@ -309,45 +309,76 @@ This function will update  the project cost values
 def update_project_costs():
     projects = frappe.get_all("Project", filters={'status': 'Open'}, fields=['name', 'sales_order'])
     for p in projects:
-        if p['sales_order']:
-            planning_data = get_sales_order_materials(p['sales_order'])
-            planned_cost = planning_data['total_cost']
-            planned_hours = planning_data['total_hours']
-            planned_hours_budget = planning_data['total_hours_budget']
-        else:
-            planned_cost = 0
-            planned_hours = 0
-            planned_hours_budget = 0
-        actual_cost = get_project_material_cost(p['name'])
-        actual_time_costs = get_project_time_cost(p['name'])
-        project = frappe.get_doc("Project", p['name'])
-        # only update it required
-        if project.planned_material_cost != planned_cost or project.actual_material_cost != actual_cost or project.planned_hours != planned_hours or project.stundenbudget_plan != planned_hours_budget or project.stundenbudget_aktuell != actual_time_costs:
-            project.planned_material_cost = planned_cost
-            project.actual_material_cost = actual_cost
-            project.planned_hours = planned_hours
-            project.stundenbudget_plan = planned_hours_budget
-            project.stundenbudget_aktuell = actual_time_costs
-            try:
-                project.save()
-            except Exception as err:
-                frappe.log_error(err, "Update material cost {0}".format(p['name']))
-    frappe.db.commit()
+        update_project(p)
     return
+
+
+def update_project(p):
+    if p['sales_order']:
+        planning_data = get_sales_order_materials(p['sales_order'])
+        planned_cost = planning_data['total_mat']
+        services_offered = planning_data['total_services']
+        planned_hours = planning_data['total_hours']
+        planned_hours_budget = planning_data['total_hours_budget']
+    else:
+        planned_cost = 0
+        planned_hours = 0
+        planned_hours_budget = 0
+        services_offered = 0
+    actual_cost = get_project_material_cost(p['name'])
+    actual_time_costs = get_project_time_cost(p['name'])
+    sum_services = get_project_service_cost(p['name'])
+    sum_expense_claim = get_expense_claims_cost(p['name'])
+    project = frappe.get_doc("Project", p['name'])
+    # only update it required
+    if project.planned_hours != planned_hours or project.stundenbudget_plan != planned_hours_budget or project.planned_material_cost != planned_cost or project.services_offered != services_offered or project.stundenbudget_aktuell != actual_time_costs or project.actual_material_cost != actual_cost or project.sum_services != sum_services or project.sum_expense_claim != sum_expense_claim:
+        project.planned_hours = planned_hours
+        project.stundenbudget_plan = planned_hours_budget
+        project.planned_material_cost = planned_cost
+        project.services_offered = services_offered
+        project.stundenbudget_aktuell = actual_time_costs
+        project.actual_material_cost = actual_cost
+        project.sum_services = sum_services
+        project.sum_expense_claim = sum_expense_claim;
+        
+        try:
+            project.save()
+        except Exception as err:
+            frappe.log_error(err, "Update material cost {0}".format(p['name']))
+    frappe.db.commit()
 
 """
 Get project material cost based on purchase orders
 """
-def get_project_material_cost(project):
-    data = frappe.db.sql("""SELECT SUM(`base_net_total`) AS `cost`
-                            FROM `tabPurchase Order`
-                            WHERE `tabPurchase Order`.`docstatus` = 1
-                              AND `tabPurchase Order`.`project` = "{project}"
+def get_project_service_cost(project):
+    data = frappe.db.sql("""SELECT SUM(`net_amount`) AS `cost`
+                            FROM `tabPurchase Invoice Item`
+                            LEFT JOIN `tabPurchase Invoice` ON `tabPurchase Invoice Item`.`parent` = `tabPurchase Invoice`.`name`
+                            LEFT JOIN `tabItem` ON `tabPurchase Invoice Item`.`item_code` = `tabItem`.`item_code`
+                            WHERE `tabPurchase Invoice`.`docstatus` = 1
+                              AND `tabPurchase Invoice Item`.`project` = "{project}"
+                              AND `tabItem`.`is_stock_item` = 0
                         ;""".format(project=project), as_dict=True)
+
     if data and len(data) > 0:
         return data[0]['cost']
     else:
         return 0
+
+def get_project_material_cost(project):
+    data = frappe.db.sql("""SELECT SUM(`credit_in_account_currency`) AS `cost`
+                            FROM `tabGL Entry`
+                            LEFT JOIN `tabDelivery Note` ON `tabGL Entry`.`voucher_no` = `tabDelivery Note`.`name`
+                            WHERE `tabGL Entry`.`docstatus` = 1
+                              AND `tabDelivery Note`.`docstatus` = 1
+                              AND `tabDelivery Note`.`project` = "{project}"
+                        ;""".format(project=project), as_dict=True)
+
+    if data and len(data) > 0:
+        return data[0]['cost']
+    else:
+        return 0
+
 
 """
 Get project time cost
@@ -359,19 +390,34 @@ def get_project_time_cost(project):
             LEFT JOIN `tabEmployee` ON `tabEmployee`.`name` = `tabTimesheet`.`employee`
             WHERE `tabTimesheet`.`docstatus` = 1
               AND `tabTimesheet Detail`.`project` = "{project}"
-              AND `tabTimesheet Detail`.`by_effort` = 0
+              AND (`tabTimesheet Detail`.`by_effort` = 0 
+                OR (`tabTimesheet Detail`.`by_effort` = 1 AND `tabTimesheet Detail`.`do_not_invoice` = 1)
+            )
         ;""".format(project=project), as_dict=True)
     if data and len(data) > 0:
         return data[0]['cost']
     else:
         return 0
 
+
+def get_expense_claims_cost(project):
+    data = frappe.db.sql("""SELECT SUM(`tabExpense Claim Detail`.`amount` * `tabExpense Claim Detail`.`qty`) AS `cost`
+            FROM `tabExpense Claim Detail` 
+            WHERE `tabExpense Claim Detail`.`docstatus` = 1
+              AND `tabExpense Claim Detail`.`project` = "{project}"
+        ;""".format(project=project), as_dict=True)
+    if data and len(data) > 0:
+        return data[0]['cost']
+    else:
+        return 0
+    
+
 """
 Get all required material with costs from a sales order (based on BOM or purchase item
 """
 def get_sales_order_materials(sales_order):
     sales_order= frappe.get_doc("Sales Order", sales_order)
-    data = {'total_cost': 0, 'total_hours': 0, 'total_hours_budget': 0, 'items': []}
+    data = {'total_mat' : 0, 'total_services': 0, 'total_hours': 0, 'total_hours_budget': 0, 'items': []}
     for item in sales_order.items:
         if "h" in item.uom:
             if item.by_effort == 0:
@@ -396,7 +442,11 @@ def get_sales_order_materials(sales_order):
                             'qty': item.qty * i.qty, 
                             'cost': item.qty * i.amount
                         })
-                        data['total_cost'] += item.qty * i.amount
+                        itemlink = frappe.get_doc("Item",i.item_code)
+                        if itemlink.is_stock_item:
+                            data['total_mat'] += item.qty * i.amount
+                        else:
+                            data['total_services'] += item.qty * i.amount
             else:
                 # no BOM, use valuation rate
                 value = frappe.get_value("Item", item.item_code, "valuation_rate")
@@ -407,7 +457,11 @@ def get_sales_order_materials(sales_order):
                     'qty': item.qty, 
                     'cost': item.qty * value
                 })
-                data['total_cost'] += item.qty * value
-    return data
 
+                itemlink = frappe.get_doc("Item",item.item_code)
+                if itemlink.is_stock_item:
+                    data['total_mat'] += item.qty * item.amount
+                else:
+                    data['total_services'] += item.qty * item.amount
+    return data
     
