@@ -442,8 +442,8 @@ def get_sales_order_materials(sales_order):
                             'qty': item.qty * i.qty, 
                             'cost': item.qty * i.amount
                         })
-                        itemlink = frappe.get_doc("Item",i.item_code)
-                        if itemlink.is_stock_item:
+
+                        if frappe.get_value("Item", item.item_code, "is_stock_item"):
                             data['total_mat'] += item.qty * i.amount
                         else:
                             data['total_services'] += item.qty * i.amount
@@ -458,10 +458,9 @@ def get_sales_order_materials(sales_order):
                     'cost': item.qty * value
                 })
 
-                itemlink = frappe.get_doc("Item",item.item_code)
-                if itemlink.is_stock_item:
-                    data['total_mat'] += item.qty * item.amount
+                if frappe.get_value("Item", item.item_code, "is_stock_item"):
+                    data['total_mat'] += item.qty * value
                 else:
-                    data['total_services'] += item.qty * item.amount
+                    data['total_services'] += item.qty * value
     return data
     
