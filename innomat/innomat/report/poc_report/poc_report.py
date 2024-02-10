@@ -22,6 +22,7 @@ def get_columns():
         {"label": _("Akonto gezahlt"), "fieldname": "akonto_paid", "fieldtype": "Currency", "width": 120},        
         {"label": _("Akonto offen"), "fieldname": "akonto_open", "fieldtype": "Currency", "width": 120},
         {"label": _("Paid Sales Invoice"), "fieldname": "invoice", "fieldtype": "Currency", "width": 120},
+		{"label": _("Delivery Note"), "fieldname": "delivery_note", "fieldtype": "Currency", "width": 120},
         {"label": _("Hours"), "fieldname": "hours", "fieldtype": "Float", "width": 120},
         {"label": _("Stunden berechnet"), "fieldname": "hours_calc", "fieldtype": "Currency", "width": 120},
         {"label": _("Purchase Invoice"), "fieldname": "purchase_invoice", "fieldtype": "Currency", "width": 120},
@@ -36,15 +37,15 @@ def get_data(filters):
     else:
         filters = dict(filters)
 	
-    sql_query = """SELECT `project`,title,customer_name,sales_order,sales_price,akonto_paid,akonto_open,invoice,hours,hours_calc,purchase_invoice,purchase_invoice_calc,geleistet,diff FROM
+    sql_query = """SELECT `project`,title,customer_name,sales_order,sales_price,akonto_paid,akonto_open,invoice,delivery_note,hours,hours_calc,purchase_invoice,purchase_invoice_calc,geleistet,diff FROM
 					(SELECT
 					`tabProject`.`sales_order` As sa,
 					`tabProject`.`name` as project, 
 					`tabProject`.`title` as title, 
 					`tabProject`.`customer_name` as customer_name, 
 					`tabProject`.`sales_order` as sales_order,
-					`tabSales Order`.`base_rounded_total` as sales_price,
-					@akonto1 := (SELECT IFNULL(SUM(`tabSales Order Akonto`.`amount`), 0)
+					`tabSales Order`.`base_total` as sales_price,
+					@akonto1 := (SELECT IFNULL(SUM(`tabSales Invoice`.`base_total`), 0)
 					FROM `tabSales Order Akonto`
 					LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabSales Order Akonto`.`parent`
 					LEFT JOIN `tabSales Invoice` ON `tabSales Invoice`.`name` = `tabSales Order Akonto`.`sales_invoice`
@@ -54,7 +55,7 @@ def get_data(filters):
 					AND `tabSales Invoice`.`status` = "Paid"
 					AND `tabSales Invoice`.`posting_date` <= "{to_date}"
 					AND `tabSales Invoice`.`is_akonto` = 1) as akonto_paid,
-					@akonto2 := (SELECT IFNULL(SUM(`tabSales Invoice`.`base_rounded_total`), 0)
+					@akonto2 := (SELECT IFNULL(SUM(`tabSales Invoice`.`base_total`), 0)
 					FROM `tabSales Order Akonto`
 					LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabSales Order Akonto`.`parent`
 					LEFT JOIN `tabSales Invoice` ON `tabSales Invoice`.`name` = `tabSales Order Akonto`.`sales_invoice`
@@ -64,12 +65,23 @@ def get_data(filters):
 					AND (`tabSales Invoice`.`status` = "Unpaid" OR `tabSales Invoice`.`status` = "Overdue")
 					AND `tabSales Invoice`.`posting_date` <= "{to_date}"
 					AND `tabSales Invoice`.`is_akonto` = 1) as akonto_open,
-					@salinvoces1 := (SELECT IFNULL(SUM(`tabSales Invoice`.`base_rounded_total`), 0)
+					@salinvoces1 := (SELECT IFNULL(SUM(`tabSales Invoice`.`base_total`), 0)
                      FROM `tabSales Invoice`
                      WHERE `tabSales Invoice`.`docstatus` = 1
                        AND `tabSales Invoice`.`project` = `tabProject`.`name`
 					   AND `tabSales Invoice`.`is_akonto` = 0
 					   AND `tabSales Invoice`.`posting_date` <= "{to_date}") AS `invoice`,
+					@delivernote1 := (SELECT IFNULL(SUM(`gl_entry`.`dn_sum`), 0)
+                     FROM `tabDelivery Note`
+					 LEFT JOIN (
+						SELECT `voucher_no`, SUM(`debit`) AS `dn_sum`
+        				FROM `tabGL Entry`
+						WHERE `voucher_type` = 'Delivery Note'
+        				GROUP BY `voucher_no`
+					) AS `gl_entry` ON `gl_entry`.`voucher_no` = `tabDelivery Note`.`name`
+                     WHERE `tabDelivery Note`.`docstatus` = 1
+                       AND `tabDelivery Note`.`project` = `tabProject`.`name`
+					   AND `tabDelivery Note`.`posting_date` <= "{to_date}") AS `delivery_note`,
 					@hours1 := (SELECT IFNULL(SUM(`tabTimesheet Detail`.`hours`), 0)
                      FROM `tabTimesheet Detail`
                      WHERE `tabTimesheet Detail`.`docstatus` = 1
@@ -81,13 +93,20 @@ def get_data(filters):
 					 LEFT JOIN `tabPurchase Invoice` ON `tabPurchase Invoice Item`.parent = `tabPurchase Invoice`.`name`
                      WHERE `tabPurchase Invoice Item`.`docstatus` = 1
                        AND `tabPurchase Invoice Item`.`project` = `tabProject`.`name`
+					   AND `tabPurchase Invoice Item`.`received_qty` = 0
 					   AND `tabPurchase Invoice`.`posting_date` <= "{to_date}") AS `purchase_invoice`,
 					@purinvoces2 := @purinvoces1 * 1.15 AS `purchase_invoice_calc`,
-					@result := @hours2 + @purinvoces2 AS `geleistet`,
+					@result := @delivernote1 + @hours2 + @purinvoces2 AS `geleistet`,
 					@difference := @result - (@akonto1 + @akonto2 + @salinvoces1) AS `diff`
 		   	FROM `tabProject`
 			LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabProject`.`sales_order`
-		   	WHERE `tabProject`.`status` = 'Open' 
+			LEFT JOIN (
+				SELECT `project`, MAX(`posting_date`) AS `latest_posting_date`
+        		FROM `tabSales Invoice`
+        		GROUP BY `project`
+			) AS `latest_sales_invoice` ON `latest_sales_invoice`.`project` = `tabProject`.`name`
+		   	WHERE (`tabProject`.`status` = 'Open' OR `latest_posting_date` >= "{to_date}")
+		   	AND `tabProject`.`creation` <= "{to_date}"
 		   	AND `tabProject`.`company` = "{company}") As complete
 		   	WHERE diff != 0.0;""".format(to_date=filters['to_date'], company=filters['company'])
  
