@@ -44,8 +44,8 @@ def get_data(filters):
 					`tabProject`.`title` as title, 
 					`tabProject`.`customer_name` as customer_name, 
 					`tabProject`.`sales_order` as sales_order,
-					`tabSales Order`.`base_total` as sales_price,
-					@akonto1 := (SELECT IFNULL(SUM(`tabSales Invoice`.`base_total`), 0)
+					`tabSales Order`.`base_net_total` as sales_price,
+					@akonto1 := (SELECT IFNULL(SUM(`tabSales Invoice`.`base_net_total`), 0)
 					FROM `tabSales Order Akonto`
 					LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabSales Order Akonto`.`parent`
 					LEFT JOIN `tabSales Invoice` ON `tabSales Invoice`.`name` = `tabSales Order Akonto`.`sales_invoice`
@@ -55,7 +55,7 @@ def get_data(filters):
 					AND `tabSales Invoice`.`status` = "Paid"
 					AND `tabSales Invoice`.`posting_date` <= "{to_date}"
 					AND `tabSales Invoice`.`is_akonto` = 1) as akonto_paid,
-					@akonto2 := (SELECT IFNULL(SUM(`tabSales Invoice`.`base_total`), 0)
+					@akonto2 := (SELECT IFNULL(SUM(`tabSales Invoice`.`base_net_total`), 0)
 					FROM `tabSales Order Akonto`
 					LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabSales Order Akonto`.`parent`
 					LEFT JOIN `tabSales Invoice` ON `tabSales Invoice`.`name` = `tabSales Order Akonto`.`sales_invoice`
@@ -65,7 +65,7 @@ def get_data(filters):
 					AND (`tabSales Invoice`.`status` = "Unpaid" OR `tabSales Invoice`.`status` = "Overdue")
 					AND `tabSales Invoice`.`posting_date` <= "{to_date}"
 					AND `tabSales Invoice`.`is_akonto` = 1) as akonto_open,
-					@salinvoces1 := (SELECT IFNULL(SUM(`tabSales Invoice`.`base_total`), 0)
+					@salinvoces1 := (SELECT IFNULL(SUM(`tabSales Invoice`.`base_net_total`), 0)
                      FROM `tabSales Invoice`
                      WHERE `tabSales Invoice`.`docstatus` = 1
                        AND `tabSales Invoice`.`project` = `tabProject`.`name`

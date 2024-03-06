@@ -66,7 +66,7 @@ def get_internal_data(filters):
     if len(ytd_revenue) > 4 and len(py_revenue) > 4 and  'total' in ytd_revenue[4] and 'total' in py_revenue[4] :
         data.append({
             'description': _("from that Akonto Revenue"),
-            'ytd': ytd_revenue[4].total,
+            'ytd': ytd_revenue[4]['total'],
             'py': py_revenue[4]['total']
         })
     

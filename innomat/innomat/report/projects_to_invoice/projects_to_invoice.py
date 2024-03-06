@@ -17,6 +17,7 @@ def get_columns():
     return [
         {"label": _("Project"), "fieldname": "project", "fieldtype": "Link", "options": "Project", "width": 120},
         {"label": _("Finished"), "fieldname": "finished", "fieldtype": "Check", "width": 10},
+        {"label": _("Status"), "fieldname": "status", "fieldtype": "Select", "width": 100},
         {"label": _("Status Light"), "fieldname": "status_light", "fieldtype": "Data", "width": 100},
         {"label": _("Task"), "fieldname": "tasks", "fieldtype": "Integer", "width": 20},
         {"label": _("Sales Order"), "fieldname": "sales_order", "fieldtype": "Link", "options": "Sales Order", "width": 80},
@@ -47,6 +48,7 @@ def get_data(filters):
         """SELECT 
                 `projects`.`project`,
                 `tabProject`.`sales_order`,
+                `tabProject`.`status`,
                 `tabProject`.`finished`,
                 `tabProject`.`status_light` AS `status_light`,
                 `tabProject`.`customer`,
