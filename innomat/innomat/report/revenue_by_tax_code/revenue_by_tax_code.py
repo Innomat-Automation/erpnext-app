@@ -29,7 +29,7 @@ def get_data(filters, short=False):
             `tabSales Invoice Item`.`income_account`,
             `tabSales Invoice`.`posting_date`,
             `tabSales Invoice`.`name`,
-            `tabSales Invoice Item`.`base_net_amount`,
+            SUM(`tabSales Invoice Item`.`base_net_amount`) AS `base_net_amount`,
             "CHF" AS `currency`
         FROM `tabSales Invoice Item`
         LEFT JOIN `tabSales Invoice` ON `tabSales Invoice`.`name` = `tabSales Invoice Item`.`parent`
