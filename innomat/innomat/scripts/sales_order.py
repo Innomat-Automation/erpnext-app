@@ -19,9 +19,10 @@ Create a new project with tasks from a sales order
 def create_project(sales_order,combine_bom):
     key = get_project_key()
     so = frappe.get_doc("Sales Order", sales_order)
-    cost_center = frappe.get_value("Company", so.company, "cost_center")
+    # cost_center = frappe.get_value("Company", so.company, "cost_center")
+    cost_center = so.cost_center
     company_key = "IN"
-    if "Asprotec" in so.company:
+    if "Frauenfeld" in cost_center or "Asprotec" in so.company:
         company_key = "AS"
     # create project 
     new_project = frappe.get_doc({
@@ -155,7 +156,8 @@ def create_project(sales_order,combine_bom):
             'customer': so.customer,
             'company': so.company,
             'project': new_project.name,
-            'currency': so.currency
+            'currency': so.currency,
+            'cost_center': cost_center
         })
         for item in dn_items:
             new_dn.append('items', item)
