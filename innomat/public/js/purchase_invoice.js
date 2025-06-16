@@ -71,5 +71,16 @@ frappe.ui.form.on("Purchase Invoice", {
                 () => {});
             });
         }
+    },
+    "before_save": function(frm) {
+        apply_cost_center(frm);
     }
 });
+
+function apply_cost_center(frm) {
+    if (frm.doc.items) {
+        for (let i = 0; i < frm.doc.items.length; i++) {
+	        frappe.model.set_value(frm.doc.items[i].doctype, frm.doc.items[i].name, 'cost_center', frm.doc.cost_center);
+	    }
+    }
+}
