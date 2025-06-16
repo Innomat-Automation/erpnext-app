@@ -1,5 +1,14 @@
 frappe.ui.form.on('Purchase Order', {
     refresh(frm) {
+        // prepare filters
+        cur_frm.fields_dict['cost_center'].get_query = function(doc) {
+            return {
+                filters: {
+                    "company": frm.doc.company
+                }
+            }
+        };
+        
         if (frm.doc.docstatus === 0) {
             frm.add_custom_button(__("Order Planning"), function() {
                 if (frm.doc.supplier) {
