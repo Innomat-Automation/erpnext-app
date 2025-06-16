@@ -117,7 +117,7 @@ function recalculate_akonto(frm, cdt, cdn) {
         frappe.model.set_value(cdt, cdn, 'netto', gross_amount);
         frappe.model.set_value(cdt, cdn, 'amount', akonto.netto * tax_rate);
         cur_frm.refresh_field('akonto');
-    }frappe
+    }
 }
 
 function get_tax_rate(frm) {
