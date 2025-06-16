@@ -4,6 +4,15 @@
 
 frappe.ui.form.on('Sales Invoice', {
     refresh(frm) {
+        // prepare filters
+        cur_frm.fields_dict['cost_center'].get_query = function(doc) {
+            return {
+                filters: {
+                    "company": frm.doc.company
+                }
+            }
+        };
+	    
         if ((frm.doc.__islocal) && (frm.doc.is_akonto === 1) && (frm.doc.items.length == 0)) {
             // this is a new akonto invoice: insert akonto item
             frappe.call({
