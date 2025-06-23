@@ -161,4 +161,10 @@ def fetch_akonto(sales_order):
     """.format(sales_order=sales_order), as_dict=True)
     
     return open_akontos
-  
+
+
+def apply_cost_center(doc,event):
+    for item in doc.items:
+        item.cost_center = doc.cost_center
+    return
+        
