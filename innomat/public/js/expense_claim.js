@@ -21,6 +21,19 @@ frappe.ui.form.on('Expense Claim', {
     },
     on_submit(frm) {
         create_expense_notes(frm);
+    },
+    employee(frm) {
+        frappe.call({
+            "method": "frappe.client.get",
+            "args": {
+                "doctype": "Employee",
+                "name": frm.doc.employee
+            },
+            "callback": function(response) {
+                let employee = response.message;
+                cur_frm.set_value("cost_center", employee.department);      // hack: department == cost center
+            }
+        });
     }
 });
 
