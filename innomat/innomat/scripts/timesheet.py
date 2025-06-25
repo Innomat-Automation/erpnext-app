@@ -51,7 +51,7 @@ def create_dn(project, item, qty, description, timesheet):
         "currency": currency
     })
     if project.startswith("A"):
-        new_dn.cost_center = "Frauenfed - I"
+        new_dn.cost_center = "Frauenfeld - I"
     else:
         new_dn.cost_center = "Herisau - I"
     item_dict = {
@@ -83,7 +83,7 @@ def create_on_call_fee(project, date, timesheet):
         "currency": currency
     })
     if project.startswith("A"):
-            new_dn.cost_center = "Frauenfed - I"
+            new_dn.cost_center = "Frauenfeld - I"
     else:
         new_dn.cost_center = "Herisau - I"
     item_dict = {
@@ -134,7 +134,7 @@ def create_travel_notes(timesheet, travel_key):
             "currency": currency
         })
         if k.startswith("A"):
-            new_dn.cost_center = "Frauenfed - I"
+            new_dn.cost_center = "Frauenfeld - I"
         else:
             new_dn.cost_center = "Herisau - I"
         for value in v:
