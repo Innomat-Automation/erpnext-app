@@ -40,7 +40,7 @@ def create_expense_notes(expense_claim, expense_key):
     dns = []
     for k, v in travel.items():
         pj = frappe.get_doc("Project", k)
-        if project.startswith("A"):
+        if k.startswith("A"):
             cost_center = "Frauenfed - I"
         else:
             cost_center = "Herisau - I"
