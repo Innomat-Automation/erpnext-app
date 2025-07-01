@@ -41,7 +41,7 @@ def create_expense_notes(expense_claim, expense_key):
     for k, v in travel.items():
         pj = frappe.get_doc("Project", k)
         if k.startswith("A"):
-            cost_center = "Frauenfed - I"
+            cost_center = "Frauenfeld - I"
         else:
             cost_center = "Herisau - I"
         currency = get_currency(pj)
