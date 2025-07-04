@@ -50,6 +50,7 @@ def create_sinv_from_service_contract(contract):
             "po_date" : contract_doc.po_date,
             "service_contract": contract,
             "company": contract_doc.company,
+            "cost_center": contract_doc.cost_center,
             "taxes_and_charges": get_sales_tax_rule(contract_doc.customer, contract_doc.company),
             "currency": currency
         })
