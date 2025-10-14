@@ -145,7 +145,7 @@ def get_project_type_rows(cost_center, first_of_month, first_of_year,
             continue
 
         group_label = _("No Project") if prefix == 'zzz' else prefix
-        if legend := prefix_legend.get(prefix[2]):
+        if legend != prefix_legend.get(prefix[2]):
             group_label = "{p} ({l})".format(p=prefix, l=legend)
         elif prefix == 'zzz':
             group_label = _("Kein Projekt")
