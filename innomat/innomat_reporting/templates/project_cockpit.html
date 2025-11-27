@@ -64,6 +64,10 @@
             text-align: center;
         }
 
+        .right {
+            text-align: right;
+        }
+
         .vs-column {
             text-align: center;
             font-weight: bold;
@@ -277,12 +281,6 @@
 
         <script type="text/javascript">
             (function() {
-                // Verhindere Mehrfachausführung
-                if (window.chartInitialized) {
-                    return;
-                }
-                window.chartInitialized = true;
-
                 function initChart() {
                     // Prüfen ob Chart.js geladen ist
                     if (typeof Chart === 'undefined') {
@@ -401,149 +399,6 @@
                     initChart();
                 }
             })();
-        </script>hours_cost) }}</td>
-                    <td class="right">{{ "{:,.0f}".format(forecast.hours_cost) }}</td>
-                    <td class="right">{{ "{:,.0f}".format(budget.hours_cost) }}</td>
-                </tr>
-                <tr>
-                    <td>Direktkosten</td>
-                    <td class="right">{{ "{:,.0f}".format(actual.direct_cost) }}</td>
-                    <td class="right">{{ "{:,.0f}".format(forecast.direct_cost) }}</td>
-                    <td class="right">{{ "{:,.0f}".format(budget.direct_cost) }}</td>
-                </tr>
-                <tr>
-                    <td><strong>Selbstkosten</strong></td>
-                    <td class="right"><strong>{{ "{:,.0f}".format(actual.hk) }}</strong></td>
-                    <td class="right"><strong>{{ "{:,.0f}".format(forecast.hk) }}</strong></td>
-                    <td class="right"><strong>{{ "{:,.0f}".format(budget.hk) }}</strong></td>
-                </tr>
-                <tr>
-                    <td>Ertrag</td>
-                    <td class="right">{{ "{:,.0f}".format(billing.invoiced) }}</td>
-                    <td class="right">{{ "{:,.0f}".format(ebit.revenue) }}</td>
-                    <td class="right">{{ "{:,.0f}".format(ebit.revenue) }}</td>
-                </tr>
-                <tr>
-                    <td><strong>EBIT</strong></td>
-                    <td class="right {{ 'highlight-negative' if (billing.invoiced - actual.hk) < 0 else 'highlight-positive' }}">
-                        <strong>{{ "{:,.0f}".format(billing.invoiced - actual.hk) }}</strong>
-                    </td>
-                    <td class="right {{ 'highlight-negative' if ebit.forecast < 0 else 'highlight-positive' }}">
-                        <strong>{{ "{:,.0f}".format(ebit.forecast) }}</strong>
-                    </td>
-                    <td class="right {{ 'highlight-negative' if ebit.budget < 0 else 'highlight-positive' }}">
-                        <strong>{{ "{:,.0f}".format(ebit.budget) }}</strong>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-
-        <!-- Grafik: Controlling / Forecast -->
-        <div style="background-color: white; padding: 20px; margin-top: 20px; border: 1px solid #000;">
-            <h3 style="text-align: center; margin-top: 0;">Controlling / Forecast ({{ doc.name }}) - EBIT integriert</h3>
-            <canvas id="controllingChart" style="max-height: 400px;"></canvas>
-        </div>
-
-        <script>
-            const ctx = document.getElementById('controllingChart').getContext('2d');
-
-            // Daten vorbereiten
-            const categories = ['Material', 'Personal', 'Selbstkosten', 'Ertrag', 'EBIT'];
-            const istData = [
-                {{ actual.material_cost }},
-                {{ actual.hours_cost }},
-                {{ actual.hk }},
-                {{ billing.invoiced }},
-                {{ billing.invoiced - actual.hk }}
-            ];
-            const forecastData = [
-                {{ forecast.material_cost }},
-                {{ forecast.hours_cost }},
-                {{ forecast.hk }},
-                {{ ebit.revenue }},
-                {{ ebit.forecast }}
-            ];
-            const budgetData = [
-                {{ budget.material_cost }},
-                {{ budget.hours_cost }},
-                {{ budget.hk }},
-                {{ ebit.revenue }},
-                {{ ebit.budget }}
-            ];
-
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: categories,
-                    datasets: [
-                        {
-                            label: 'Ist',
-                            data: istData,
-                            backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                            borderColor: 'rgba(54, 162, 235, 1)',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Forecast',
-                            data: forecastData,
-                            backgroundColor: 'rgba(255, 159, 64, 0.7)',
-                            borderColor: 'rgba(255, 159, 64, 1)',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Budget',
-                            data: budgetData,
-                            backgroundColor: 'rgba(75, 192, 192, 0.7)',
-                            borderColor: 'rgba(75, 192, 192, 1)',
-                            borderWidth: 1
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                        title: {
-                            display: false
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    label += new Intl.NumberFormat('de-CH', {
-                                        style: 'currency',
-                                        currency: 'CHF',
-                                        minimumFractionDigits: 0,
-                                        maximumFractionDigits: 0
-                                    }).format(context.parsed.y);
-                                    return label;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: function(value) {
-                                    return new Intl.NumberFormat('de-CH', {
-                                        style: 'currency',
-                                        currency: 'CHF',
-                                        minimumFractionDigits: 0,
-                                        maximumFractionDigits: 0
-                                    }).format(value);
-                                }
-                            }
-                        }
-                    }
-                }
-            });
         </script>
     </div>
 </body>

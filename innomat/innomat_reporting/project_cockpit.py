@@ -104,14 +104,22 @@ def calculate_budget_from_bom(project):
 
 def get_actual_costs(project):
     """
-    Holt Ist-Kosten aus den Projekt-Feldern
+    Holt Ist-Kosten aus den Projekt-Feldern und Timesheets
+    Berechnet Personalkosten anhand tatsächlicher Mitarbeiter-Stundensätze
+    Materialkosten aus gebuchten Purchase Orders
 
     Returns:
         dict: Ist-Kosten nach Kategorie
     """
+    # Personalkosten aus Timesheets mit echten Stundensätzen berechnen
+    hours_cost = calculate_actual_hours_cost(project.name)
+
+    # Materialkosten aus Purchase Orders
+    material_cost = calculate_actual_material_cost(project.name)
+
     actual = {
-        "hours_cost": project.stundenbudget_aktuell or 0,
-        "material_cost": project.actual_material_cost or 0,
+        "hours_cost": hours_cost,
+        "material_cost": material_cost,
         "services_cost": project.sum_services or 0,
         "expense_claims": project.sum_expense_claim or 0,
         "direct_cost": 0,
@@ -126,6 +134,59 @@ def get_actual_costs(project):
     actual["hk"] = actual["direct_cost"] + actual["overhead"]
 
     return actual
+
+
+def calculate_actual_material_cost(project_name):
+    """
+    Berechnet Ist-Materialkosten aus gebuchten Purchase Orders
+
+    Returns:
+        float: Gesamte Materialkosten
+    """
+    # Alle Purchase Order Items zum Projekt holen (nur submitted)
+    material_cost = frappe.db.sql("""
+        SELECT SUM(poi.base_net_amount)
+        FROM `tabPurchase Order Item` poi
+        INNER JOIN `tabPurchase Order` po ON poi.parent = po.name
+        WHERE poi.project = %s
+        AND po.docstatus = 1
+    """, (project_name,))[0][0] or 0
+
+    return material_cost
+
+
+def calculate_actual_hours_cost(project_name):
+    """
+    Berechnet Ist-Personalkosten basierend auf echten Mitarbeiter-Stundensätzen
+
+    Returns:
+        float: Gesamte Personalkosten
+    """
+    # Alle Timesheets zum Projekt holen
+    timesheet_details = frappe.db.sql("""
+        SELECT
+            td.hours,
+            ts.employee,
+            td.name
+        FROM `tabTimesheet Detail` td
+        INNER JOIN `tabTimesheet` ts ON td.parent = ts.name
+        WHERE td.project = %s
+        AND td.docstatus = 1
+    """, (project_name,), as_dict=True)
+
+    total_cost = 0
+
+    for detail in timesheet_details:
+        # Mitarbeiter-Stundensatz holen
+        employee_rate = frappe.db.get_value("Employee",
+            detail.employee,
+            "internal_rate_per_hour") or 0
+
+        # Kosten berechnen
+        cost = detail.hours * employee_rate
+        total_cost += cost
+
+    return total_cost
 
 
 def calculate_progress(project, budget):
@@ -159,6 +220,7 @@ def calculate_progress(project, budget):
 def calculate_forecast(actual, progress, budget):
     """
     Berechnet Forecast basierend auf Ist-Kosten und Fortschritt
+    Material-Forecast: max(Ist, Budget) wegen fehlender Vergleichbarkeit
 
     Returns:
         dict: Forecast-Werte
@@ -179,19 +241,19 @@ def calculate_forecast(actual, progress, budget):
 
     # Forecast berechnen
     if progress_decimal > 0 and progress_decimal < 1:
-        forecast["hk"] = actual["hk"] / progress_decimal
-        # Forecast für Einzelpositionen
+        # Personal und Services proportional
         forecast["hours_cost"] = actual["hours_cost"] / progress_decimal
-        forecast["material_cost"] = actual["material_cost"] / progress_decimal
         forecast["services_cost"] = actual["services_cost"] / progress_decimal
+
+        # Material: max(Ist, Budget) - da Vergleich schwierig
+        forecast["material_cost"] = max(actual["material_cost"], budget["material_cost"])
+
     elif progress_decimal >= 1:
-        forecast["hk"] = actual["hk"]
         forecast["hours_cost"] = actual["hours_cost"]
         forecast["material_cost"] = actual["material_cost"]
         forecast["services_cost"] = actual["services_cost"]
     else:
         # Kein Fortschritt: Forecast = Budget
-        forecast["hk"] = budget["hk"]
         forecast["hours_cost"] = budget["hours_cost"]
         forecast["material_cost"] = budget["material_cost"]
         forecast["services_cost"] = budget["services_cost"]
@@ -200,6 +262,7 @@ def calculate_forecast(actual, progress, budget):
     forecast["direct_cost"] = (forecast["hours_cost"] + forecast["material_cost"] +
                                forecast["services_cost"])
     forecast["overhead"] = forecast["hours_cost"] * OVERHEAD_RATE
+    forecast["hk"] = forecast["direct_cost"] + forecast["overhead"]
 
     # Restkosten
     forecast["etc"] = forecast["hk"] - actual["hk"]
@@ -373,6 +436,7 @@ def calculate_cost_structure(budget, forecast, actual):
 def calculate_role_details(project, budget):
     """
     Berechnet Stunden und Kosten pro Rolle (FC, BU, Ist)
+    Forecast berücksichtigt Mitarbeiter-spezifische Stundensätze
 
     Returns:
         list: Liste mit Rollen-Details
@@ -387,15 +451,26 @@ def calculate_role_details(project, budget):
         # Budget-Daten
         bu_cost = budget["cost_by_item"].get(item_code, 0)
 
-        # Ist-Stunden aus Timesheets holen
-        ist_hours = get_actual_hours_for_item(project.name, item_code)
-        ist_cost = ist_hours * (item.valuation_rate or 0)
+        # Ist-Stunden und Kosten aus Timesheets holen (mit echten Stundensätzen)
+        ist_data = get_actual_hours_and_cost_for_item(project.name, item_code)
+        ist_hours = ist_data["hours"]
+        ist_cost = ist_data["cost"]
 
-        # Forecast berechnen (proportional zum Gesamtfortschritt)
+        # Forecast berechnen
         progress = calculate_progress(project, budget)
+
         if progress["decimal"] > 0 and progress["decimal"] < 1:
-            fc_hours = ist_hours / progress["decimal"]
-            fc_cost = ist_cost / progress["decimal"]
+            # Prüfen ob nur ein Mitarbeiter an diesem Task arbeitet
+            single_employee_rate = get_single_employee_rate_for_item(project.name, item_code)
+
+            if single_employee_rate:
+                # Forecast mit spezifischem Mitarbeiter-Stundensatz
+                fc_hours = ist_hours / progress["decimal"]
+                fc_cost = fc_hours * single_employee_rate
+            else:
+                # Standard-Forecast (proportional zum Fortschritt)
+                fc_hours = ist_hours / progress["decimal"]
+                fc_cost = ist_cost / progress["decimal"]
         elif progress["decimal"] >= 1:
             fc_hours = ist_hours
             fc_cost = ist_cost
@@ -423,9 +498,12 @@ def calculate_role_details(project, budget):
     return roles
 
 
-def get_actual_hours_for_item(project_name, item_code):
+def get_actual_hours_and_cost_for_item(project_name, item_code):
     """
-    Holt Ist-Stunden für einen bestimmten Item Code aus Timesheets
+    Holt Ist-Stunden und Kosten für einen Item Code mit echten Mitarbeiter-Stundensätzen
+
+    Returns:
+        dict: {"hours": float, "cost": float}
     """
     # Tasks mit diesem Item Code finden
     tasks = frappe.get_all("Task",
@@ -433,13 +511,69 @@ def get_actual_hours_for_item(project_name, item_code):
         fields=["name"])
 
     if not tasks:
-        return 0
+        return {"hours": 0, "cost": 0}
 
     task_names = [t.name for t in tasks]
 
-    # Timesheets zu diesen Tasks finden
-    total_hours = frappe.db.get_value("Timesheet Detail",
-        {"task": ["in", task_names], "docstatus": 1},
-        "sum(hours)") or 0
+    # Timesheets zu diesen Tasks mit Mitarbeiter-Info holen
+    timesheet_details = frappe.db.sql("""
+        SELECT
+            td.hours,
+            ts.employee
+        FROM `tabTimesheet Detail` td
+        INNER JOIN `tabTimesheet` ts ON td.parent = ts.name
+        WHERE td.task IN %s
+        AND td.docstatus = 1
+    """, (task_names,), as_dict=True)
 
-    return total_hours
+    total_hours = 0
+    total_cost = 0
+
+    for detail in timesheet_details:
+        total_hours += detail.hours
+
+        # Mitarbeiter-Stundensatz holen
+        employee_rate = frappe.db.get_value("Employee",
+            detail.employee,
+            "internal_rate_per_hour") or 0
+
+        total_cost += detail.hours * employee_rate
+
+    return {"hours": total_hours, "cost": total_cost}
+
+
+def get_single_employee_rate_for_item(project_name, item_code):
+    """
+    Prüft ob nur ein Mitarbeiter an Tasks für diesen Item Code arbeitet
+    Gibt dessen Stundensatz zurück, sonst None
+
+    Returns:
+        float or None: Stundensatz wenn nur ein Mitarbeiter, sonst None
+    """
+    # Tasks mit diesem Item Code finden
+    tasks = frappe.get_all("Task",
+        filters={"project": project_name, "item_code": item_code},
+        fields=["name"])
+
+    if not tasks:
+        return None
+
+    task_names = [t.name for t in tasks]
+
+    # Alle Mitarbeiter holen, die an diesen Tasks arbeiten
+    employees = frappe.db.sql("""
+        SELECT DISTINCT ts.employee
+        FROM `tabTimesheet Detail` td
+        INNER JOIN `tabTimesheet` ts ON td.parent = ts.name
+        WHERE td.task IN %s
+        AND td.docstatus = 1
+    """, (task_names,), as_dict=True)
+
+    # Nur wenn genau ein Mitarbeiter
+    if len(employees) == 1:
+        employee_rate = frappe.db.get_value("Employee",
+            employees[0].employee,
+            "internal_rate_per_hour") or 0
+        return employee_rate
+
+    return None
