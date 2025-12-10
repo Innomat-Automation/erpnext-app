@@ -1,0 +1,57 @@
+.col-xx-1, .col-xx-2, .col-xx-3, .col-xx-4, .col-xx-5, .col-xx-6, .col-xx-7, .col-xx-8, .col-xx-9, .col-xx-10, .col-xx-11, .col-xx-12, .col-xx-13, .col-xx-14, .col-xx-15, .col-xx-16 {
+  position: relative;
+  min-height: 1px;
+  padding-right: 15px;
+  padding-left: 15px;
+}
+.col-xx-1, .col-xx-2, .col-xx-3, .col-xx-4, .col-xx-5, .col-xx-6, .col-xx-7, .col-xx-8, .col-xx-9, .col-xx-10, .col-xx-11, .col-xx-12, .col-xx-13, .col-xx-14, .col-xx-15, .col-xx-16 {
+  float: left;
+}
+.col-xx-16 {
+  width: 100%;
+}
+.col-xx-15 {
+  width: 93.75%;
+}
+.col-xx-14 {
+  width: 87.5%;
+}
+.col-xx-13 {
+  width: 81.25%;
+}
+.col-xx-12 {
+  width: 75%;
+}
+.col-xx-11 {
+  width: 68.75%;
+}
+.col-xx-10 {
+  width: 62.5%;
+}
+.col-xx-9 {
+  width: 56.25%;
+}
+.col-xx-8 {
+  width: 50%;
+}
+.col-xx-7 {
+  width: 43.75%;
+}
+.col-xx-6 {
+  width: 37.5%;
+}
+.col-xx-5 {
+  width: 31.25%;
+}
+.col-xx-4 {
+  width: 25%;
+}
+.col-xx-3 {
+  width: 18.75%;
+}
+.col-xx-2 {
+  width: 12.5%;
+}
+.col-xx-1 {
+  width: 6.25%;
+}

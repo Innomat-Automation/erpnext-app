@@ -15,9 +15,12 @@ app_license = "AGPL"
 # ------------------
 
 # include js, css files in header of desk.html
-# app_include_css = "/assets/innomat/css/innomat.css"
-# app_include_js = "/assets/innomat/js/innomat.js"
-app_include_js = ["/assets/innomat/js/innomat_common.js"]
+app_include_css = ["/assets/innomat/css/16col_bootstrap.css"]
+app_include_js = ["/assets/innomat/js/innomat_common.js",
+                  "/assets/innomat/js/16col_grid.js",
+                  "/assets/innomat/js/16col_grid_row.js",
+                  "/assets/innomat/js/16col_grid_row_form.js",
+                  "/assets/innomat/js/16col_table.js"]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/innomat/css/innomat.css"
@@ -43,7 +46,7 @@ doctype_js = {
     "Quotation" : "public/js/quotation.js",
     "User" : "public/js/user.js",
     "Work Order" : "public/js/work_order.js",
-    "Supplier" : "public/js/supplier.js"
+    "Supplier" : "public/js/supplier.js",
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 doctype_list_js = {
