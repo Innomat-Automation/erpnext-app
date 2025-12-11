@@ -1,0 +1,148 @@
+{
+ "creation": "2025-09-30 13:21:45.567478",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "account",
+  "budget_01",
+  "budget_02",
+  "budget_03",
+  "budget_04",
+  "budget_05",
+  "budget_06",
+  "budget_07",
+  "budget_08",
+  "budget_09",
+  "budget_10",
+  "budget_11",
+  "budget_12",
+  "annual_budget"
+ ],
+ "fields": [
+  {
+   "columns": 1,
+   "fieldname": "account",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Account",
+   "options": "Account",
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "budget_01",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Jan",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "columns": 1,
+   "fieldname": "budget_02",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Feb",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "columns": 1,
+   "fieldname": "budget_03",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Mar",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "columns": 1,
+   "fieldname": "budget_04",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Apr",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "columns": 1,
+   "fieldname": "budget_05",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "May",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "columns": 1,
+   "fieldname": "budget_06",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Jun",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "columns": 1,
+   "fieldname": "budget_07",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Jul",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "columns": 1,
+   "fieldname": "budget_08",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Aug",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "columns": 1,
+   "fieldname": "budget_09",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Sep",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "columns": 1,
+   "fieldname": "budget_10",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Oct",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "columns": 1,
+   "fieldname": "budget_11",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Nov",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "columns": 1,
+   "fieldname": "budget_12",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Dec",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "columns": 1,
+   "fieldname": "annual_budget",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Year",
+   "options": "Company:company:default_currency",
+   "read_only": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2025-11-27 18:42:04.966189",
+ "modified_by": "Administrator",
+ "module": "Innomat Reporting",
+ "name": "Innomat Budget Account",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

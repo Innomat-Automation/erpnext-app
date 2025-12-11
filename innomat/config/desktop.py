@@ -17,5 +17,12 @@ def get_data():
 			"icon": "icon accounting-blue",
 			"type": "module",
 			"label": _("Innomat Accounting")
+		},
+		{
+			"module_name": "Innomat Reporting",
+			"color": "grey",
+			"icon": "icon accounting-blue",
+			"type": "module",
+			"label": _("Innomat Reporting")
 		}
 	]

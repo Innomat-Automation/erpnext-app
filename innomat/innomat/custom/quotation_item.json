@@ -374,6 +374,30 @@
  ],
  "custom_perms": [],
  "doctype": "Quotation Item",
- "property_setters": [],
+ "property_setters": [
+  {
+   "_assign": null,
+   "_comments": null,
+   "_liked_by": null,
+   "_user_tags": null,
+   "creation": "2025-11-27 15:59:06.568327",
+   "default_value": null,
+   "doc_type": "Quotation Item",
+   "docstatus": 0,
+   "doctype_or_field": "DocField",
+   "field_name": "item_group",
+   "idx": 0,
+   "modified": "2025-11-27 15:59:06.568327",
+   "modified_by": "Administrator",
+   "name": "Quotation Item-item_group-hidden",
+   "owner": "Administrator",
+   "parent": null,
+   "parentfield": null,
+   "parenttype": null,
+   "property": "hidden",
+   "property_type": "Check",
+   "value": "0"
+  }
+ ],
  "sync_on_migrate": 1
 }
