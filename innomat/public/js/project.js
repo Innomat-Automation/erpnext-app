@@ -36,11 +36,17 @@ frappe.ui.form.on('Project', {
                     }
                 });
             }
-            
+
         }
     },
     before_save(frm) {
         if (frm.doc.__islocal) {
+            if(frm.doc.company.startsWith("Innomat") && !frm.doc.department) {
+                frappe.msgprint(__("Bei Innomat-Projekten bitte die Abteilung (Standort) angeben"));
+                frm.scroll_to_field('department');
+                frappe.validated=false;
+                return;
+            }
             get_project_key(frm);
         }
         set_project_manager(frm);
@@ -57,11 +63,14 @@ function get_project_key(frm) {
         'callback': function(r) {
             cur_frm.set_value('project_key', r.message);
             var company_key = "IN";
-            if ((frm.doc.department.indexOf('Frauenfeld') >= 0) || (frm.doc.company.indexOf('Asprotec') >= 0)) {
+            if (frm.doc.department && frm.doc.department.includes('Frauenfeld')) {
                 company_key = "AS";
             }
+            else if(frm.doc.company) {
+                company_key = frm.doc.company.substr(0,2).toUpperCase();
+            }
             cur_frm.set_value('project_name', company_key + frm.doc.project_type.charAt(0) + r.message);
-            cur_frm.set_value('title', frm.doc.project_name + " " + (frm.doc.title || ""));s
+            cur_frm.set_value('title', frm.doc.project_name + " " + (frm.doc.title || ""));
         }
     });
 }
