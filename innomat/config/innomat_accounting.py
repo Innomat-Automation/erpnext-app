@@ -41,6 +41,12 @@ def get_data():
 					"is_query_report": True,
 					"doctype": "Sales Invoice"
 				},
+				{
+					"type": "report",
+					"name": "Revenue by Tax Code",
+					"is_query_report": True,
+					"doctype": "Sales Invoice"
+				},
 			]
 		},
 		{

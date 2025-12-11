@@ -1,6 +1,6 @@
 
 
-# Copyright (c) 2019-2021, asprotec ag and contributors
+# Copyright (c) 2019-2025, asprotec ag and contributors
 # For license information, please see license.txt
 
 
@@ -40,13 +40,18 @@ def create_expense_notes(expense_claim, expense_key):
     dns = []
     for k, v in travel.items():
         pj = frappe.get_doc("Project", k)
+        if k.startswith("A"):
+            cost_center = "Frauenfeld - I"
+        else:
+            cost_center = "Herisau - I"
         currency = get_currency(pj)
         new_dn = frappe.get_doc({
             "doctype": "Delivery Note",
             "customer": pj.customer,
             "project": k,
             "company": pj.company,
-            "currency": currency
+            "currency": currency,
+            "cost_center": cost_center
         })
         for value in v:
             description = "Spesen {0}".format(value['date'].strftime("%d.%m.%Y"))
@@ -59,7 +64,8 @@ def create_expense_notes(expense_claim, expense_key):
                 'description': description,
                 'against_expense_claim': expense_claim,
                 'ec_detail': value['ec_detail'],
-                'sales_item_group': "Service"
+                'sales_item_group': "Service",
+                'cost_center': cost_center                              # technically covered by before_save:innomat.innomat.utils.apply_cost_center
             }
             
             row = new_dn.append('items', item_dict)

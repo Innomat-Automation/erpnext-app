@@ -108,7 +108,7 @@ Fetch correct sales tax rule
 @frappe.whitelist()
 def get_sales_tax_rule(customer, company):
     territory = frappe.get_value("Customer", customer, "territory")
-    tax_code = "302" if territory == "Schweiz" else "000"
+    tax_code = "303" if territory == "Schweiz" else "000"
     rules = frappe.get_all("Sales Taxes and Charges Template", filters={'tax_code': tax_code, 'company': company}, fields=['name'],order_by='modified desc')
     if rules and len(rules) > 0:
         return rules[0]['name']
@@ -161,4 +161,10 @@ def fetch_akonto(sales_order):
     """.format(sales_order=sales_order), as_dict=True)
     
     return open_akontos
-  
+
+
+def apply_cost_center(doc,event):
+    for item in doc.items:
+        item.cost_center = doc.cost_center
+    return
+        

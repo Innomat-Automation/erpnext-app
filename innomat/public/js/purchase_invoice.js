@@ -1,5 +1,3 @@
-
-
 frappe.ui.form.on("Purchase Invoice", {
     "bill_no": function(frm) {
         if(!frm.doc.bill_no.match("^[ A-Za-z0-9\+\?\/\\-\:\(\)\.\,\']+$"))
@@ -17,6 +15,15 @@ frappe.ui.form.on("Purchase Invoice", {
 
     },
     "refresh": function(frm) {
+        // prepare filters
+        cur_frm.fields_dict['cost_center'].get_query = function(doc) {
+            return {
+                filters: {
+                    "company": frm.doc.company
+                }
+            }
+        };
+        
         if (frm.doc.docstatus === 1) {
             frm.add_custom_button(__("Update Project Link"), function() {
                 var field = new Array();
@@ -64,5 +71,16 @@ frappe.ui.form.on("Purchase Invoice", {
                 () => {});
             });
         }
+    },
+    "before_save": function(frm) {
+        apply_cost_center(frm);
     }
 });
+
+function apply_cost_center(frm) {
+    if (frm.doc.items) {
+        for (let i = 0; i < frm.doc.items.length; i++) {
+	        frappe.model.set_value(frm.doc.items[i].doctype, frm.doc.items[i].name, 'cost_center', frm.doc.cost_center);
+	    }
+    }
+}

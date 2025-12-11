@@ -50,6 +50,10 @@ def create_dn(project, item, qty, description, timesheet):
         "company": pj.company,
         "currency": currency
     })
+    if project.startswith("A"):
+        new_dn.cost_center = "Frauenfeld - I"
+    else:
+        new_dn.cost_center = "Herisau - I"
     item_dict = {
         'item_code': item,
         'qty': qty,
@@ -78,6 +82,10 @@ def create_on_call_fee(project, date, timesheet):
         "company": pj.company,
         "currency": currency
     })
+    if project.startswith("A"):
+            new_dn.cost_center = "Frauenfeld - I"
+    else:
+        new_dn.cost_center = "Herisau - I"
     item_dict = {
         'item_code': frappe.get_value("Innomat Settings", "Innomat Settings", "on_call_fee_item"),
         'qty': 1,
@@ -125,6 +133,10 @@ def create_travel_notes(timesheet, travel_key):
             "company": pj.company,
             "currency": currency
         })
+        if k.startswith("A"):
+            new_dn.cost_center = "Frauenfeld - I"
+        else:
+            new_dn.cost_center = "Herisau - I"
         for value in v:
             if "wagen" in value['travel_type']:
                 description = "Anfahrt {0}".format(value['date'].strftime("%d.%m.%Y"))

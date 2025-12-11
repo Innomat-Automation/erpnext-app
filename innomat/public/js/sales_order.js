@@ -1,5 +1,14 @@
 frappe.ui.form.on('Sales Order', {
     refresh(frm) {
+        // prepare filters
+        cur_frm.fields_dict['cost_center'].get_query = function(doc) {
+            return {
+                filters: {
+                    "company": frm.doc.company
+                }
+            }
+        };
+        
         if (frm.doc.docstatus === 1) {
             // create project button if there is no linked project yet
             frappe.call({
@@ -117,7 +126,7 @@ function recalculate_akonto(frm, cdt, cdn) {
         frappe.model.set_value(cdt, cdn, 'netto', gross_amount);
         frappe.model.set_value(cdt, cdn, 'amount', akonto.netto * tax_rate);
         cur_frm.refresh_field('akonto');
-    }frappe
+    }
 }
 
 function get_tax_rate(frm) {

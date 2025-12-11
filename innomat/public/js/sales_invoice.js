@@ -4,6 +4,15 @@
 
 frappe.ui.form.on('Sales Invoice', {
     refresh(frm) {
+        // prepare filters
+        cur_frm.fields_dict['cost_center'].get_query = function(doc) {
+            return {
+                filters: {
+                    "company": frm.doc.company
+                }
+            }
+        };
+	    
         if ((frm.doc.__islocal) && (frm.doc.is_akonto === 1) && (frm.doc.items.length == 0)) {
             // this is a new akonto invoice: insert akonto item
             frappe.call({
@@ -50,6 +59,8 @@ frappe.ui.form.on('Sales Invoice', {
     },
     before_save(frm) {
         apply_discount_from_akonto(frm);
+
+	apply_cost_center(frm);
     },
     additional_discount_percentage_akonto(frm){
         frm.doc.additional_discount_amount_akonto = flt(frm.doc.total * flt(frm.doc.additional_discount_percentage_akonto) / 100, precision("additional_discount_amount_akonto"));
@@ -146,3 +157,10 @@ function apply_discount_from_akonto(frm) {
     cur_frm.set_value("discount_amount", akonto_discount);
 }
 
+function apply_cost_center(frm) {
+    if (frm.doc.items) {
+        for (let i = 0; i < frm.doc.items.length; i++) {
+	    frappe.model.set_value(frm.doc.items[i].doctype, frm.doc.items[i].name, 'cost_center', frm.doc.cost_center);
+	}
+    }
+}

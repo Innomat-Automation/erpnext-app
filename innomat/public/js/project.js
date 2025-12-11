@@ -57,7 +57,7 @@ function get_project_key(frm) {
         'callback': function(r) {
             cur_frm.set_value('project_key', r.message);
             var company_key = "IN";
-            if (frm.doc.company.indexOf('Asprotec') >= 0) {
+            if ((frm.doc.department.indexOf('Frauenfeld') >= 0) || (frm.doc.company.indexOf('Asprotec') >= 0)) {
                 company_key = "AS";
             }
             cur_frm.set_value('project_name', company_key + frm.doc.project_type.charAt(0) + r.message);

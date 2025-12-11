@@ -10,10 +10,6 @@ frappe.ui.form.on('Expense Claim', {
                     query: "innomat.innomat.filters.projects_for_employee"
                 };
         };
-        
-        if (frm.doc.docstatus === 0) {
-            set_cost_center(frm);
-        }
     },
     validate(frm) {
         frm.doc.expenses.forEach(function(expense) {
@@ -26,8 +22,18 @@ frappe.ui.form.on('Expense Claim', {
     on_submit(frm) {
         create_expense_notes(frm);
     },
-    company(frm) {
-        set_cost_center(frm);
+    employee(frm) {
+        frappe.call({
+            "method": "frappe.client.get",
+            "args": {
+                "doctype": "Employee",
+                "name": frm.doc.employee
+            },
+            "callback": function(response) {
+                let employee = response.message;
+                cur_frm.set_value("cost_center", employee.department);      // hack: department == cost center
+            }
+        });
     }
 });
 
@@ -65,17 +71,5 @@ function create_expense_notes(frm) {
     });
 }
 
-function set_cost_center(frm) {
-    frappe.call({
-        "method": "frappe.client.get",
-        "args": {
-            "doctype": "Company",
-            "name": frm.doc.company
-        },
-        "callback": function(response) {
-            var company = response.message;
-            cur_frm.set_value("cost_center", company.cost_center);
-        }
-    });
-}
+
 

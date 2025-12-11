@@ -111,7 +111,20 @@ doctype_list_js = {
 doc_events = {
     "Sales Invoice": {
         "on_cancel": "innomat.innomat.scripts.project.unset_project_invoiced",
-        "on_trash": "innomat.innomat.scripts.project.unset_project_invoiced"
+        "on_trash": "innomat.innomat.scripts.project.unset_project_invoiced",
+        "before_save": "innomat.innomat.utils.apply_cost_center"
+    },
+    "Delivery Note": {
+        "before_save": "innomat.innomat.utils.apply_cost_center"
+    },
+    "Purchase Order": {
+        "before_save": "innomat.innomat.utils.apply_cost_center"
+    },
+    "Purchase Receipt": {
+        "before_save": "innomat.innomat.utils.apply_cost_center"
+    },
+    "Purchase Invoice": {
+        "before_save": "innomat.innomat.utils.apply_cost_center"
     }
  }
 

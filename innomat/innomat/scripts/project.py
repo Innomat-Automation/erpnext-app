@@ -69,6 +69,10 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
             "taxes_and_charges": get_sales_tax_rule(pj.customer, pj.company),
             "currency": currency
         })
+        if project.startswith("A"):
+            new_sinv.cost_center = "Frauenfeld - I"
+        else:
+            new_sinv.cost_center = "Herisau - I"
         # if Sales order exist get discount
         if pj.sales_order and pj.sales_order != "":
             sales_order = frappe.get_doc("Sales Order",pj.sales_order)
