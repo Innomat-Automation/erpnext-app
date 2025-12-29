@@ -381,7 +381,7 @@ function unclose_completed_tasks(frm) {
 }
 
 function is_generic_project(proj) {
-    return proj && (proj.startsWith('ALI00') || proj.startsWith('INI00') || proj.startsWith('ASI00'));
+    return proj && proj.substr(3,2) == '00';
 }
 
 // Fetch company and default project for the selected employee
