@@ -1,10 +1,10 @@
 const travel_key = "Reisetätigkeit";
-         
+
 frappe.ui.form.on('Timesheet', {
     refresh(frm) {
         // filter projects by employee (team member)
-        frm.fields_dict.time_logs.grid.get_field('project').get_query =   
-            function(doc, cdt, cdn) {    
+        frm.fields_dict.time_logs.grid.get_field('project').get_query =
+            function(doc, cdt, cdn) {
                 return {
                     filters: {'employee': frm.doc.employee},
                     query: "innomat.innomat.filters.projects_for_employee"
@@ -39,7 +39,7 @@ frappe.ui.form.on('Timesheet', {
         }
         // hide salary buttons
         $('button[data-label="Create%20Salary%20Slip"]').hide();
-        $('button[data-label="Gehaltsabrechnung%20erstellen"]').hide(); 
+        $('button[data-label="Gehaltsabrechnung%20erstellen"]').hide();
     },
     validate(frm) {
         // get lock date
@@ -63,17 +63,14 @@ frappe.ui.form.on('Timesheet', {
                 frappe.msgprint( __("Row {0} is before lock date").replace("{0}", (i+1)), __("Validation") );
                 frappe.validated=false;
             }
-            // check that projects are set (and only) for activities with project
-            if ((frm.doc.time_logs[i].with_project === 1) && (!frm.doc.time_logs[i].project)) {
-                frappe.msgprint( __("Project required for {0} in row {1}").replace("{0}", frm.doc.time_logs[i].activity_type).replace("{1}", (i+1)), __("Validation") );
+            // check that generic projects are only used for activities where with_project = False
+            if ((frm.doc.time_logs[i].with_project === 1) && is_generic_project(frm.doc.time_logs[i].project)) {
+                frappe.msgprint( __("Generic projects (with numbers starting with 00) are not allowed for activity '{0}' in row {1}", [frm.doc.time_logs[i].activity_type, (i+1)]), __("Validation") );
                 frappe.validated=false;
-            } else if ((frm.doc.time_logs[i].with_project === 0) && (frm.doc.time_logs[i].project)) {
-                frappe.model.set_value(frm.doc.time_logs[i].doctype, frm.doc.time_logs[i].name, "project", null);
-                frappe.model.set_value(frm.doc.time_logs[i].doctype, frm.doc.time_logs[i].name, "project_title", null);
-                frappe.model.set_value(frm.doc.time_logs[i].doctype, frm.doc.time_logs[i].name, "project_type", null);
-                frappe.model.set_value(frm.doc.time_logs[i].doctype, frm.doc.time_logs[i].name, "task", null);
-                frappe.model.set_value(frm.doc.time_logs[i].doctype, frm.doc.time_logs[i].name, "task_name", null);
-                continue;
+            } else if ((frm.doc.time_logs[i].with_project === 0) && !is_generic_project(frm.doc.time_logs[i].project)) {
+                // and the other way around - don't allow specific projects where they aren't expected
+                frappe.msgprint( __("Specific projects are not allowed for activity '{0}' in row {1}. Please select a generic project (with number starting with 00) instead.", [frm.doc.time_logs[i].activity_type, (i+1)]), __("Validation") );
+                frappe.validated=false;
             }
             // check that if project type is "Project", task is selected
             if ((frm.doc.time_logs[i].activity_type === travel_key) && (!frm.doc.time_logs[i].task)) {
@@ -120,7 +117,7 @@ frappe.ui.form.on('Timesheet', {
     on_submit(frm) {
         // on submitting timesheet, create travel delivery notes and close tasks marked completed
         create_travel_notes(frm);
-        
+
         close_completed_tasks(frm);
     },
     after_cancel(frm) {
@@ -128,9 +125,9 @@ frappe.ui.form.on('Timesheet', {
         unclose_completed_tasks(frm);
     },
     employee(frm) {
-        // when switching the employee, make sure the employee's company is selected
+        // when switching the employee, make sure the employee's company and default project is set
         if (frm.doc.employee) {
-            pull_employee_company(frm);
+            fetch_employee_default_project(frm);
         }
     }
 });
@@ -142,6 +139,17 @@ frappe.ui.form.on('Timesheet Detail', {
     },
     activity_type(frm, cdt, cdn) {
         pull_external_text_from_activity(frm, cdt, cdn);
+        // Easiest to fetch this directly as it isn't reliably loaded yet
+        frappe.db.get_value("Activity Type", locals[cdt][cdn].activity_type, "with_project").then(r => {
+            if(r.message) {
+                if(r.message.with_project === 0){
+                    frappe.model.set_value(cdt, cdn, "project", frm.doc.employee_default_project);
+                } else {
+                   frappe.model.set_value(cdt, cdn, "project", '');
+                }
+                frappe.model.set_value(cdt, cdn, "with_project", r.message.with_project); // Also set with_project here as the fetching does not seem reliable otherwise
+            }
+        });
     },
     time_logs_add(frm, cdt, cdn) {
         var row_idx = frappe.model.get_value(cdt, cdn, 'idx');
@@ -212,13 +220,13 @@ function pull_external_text_from_template(frm, cdt, cdn) {
                 }
                 frappe.prompt([
                         {
-                            'fieldname': 'template', 
-                            'fieldtype': 'Select', 
-                            'label': __('Template'), 
+                            'fieldname': 'template',
+                            'fieldtype': 'Select',
+                            'label': __('Template'),
                             'options': templates.join('\n'),
                             'default': templates[0],
                             'reqd': 1
-                        } 
+                        }
                     ],
                     function(values){
                         var text = "";
@@ -227,7 +235,7 @@ function pull_external_text_from_template(frm, cdt, cdn) {
                                 text = response.message[j].text;
                                 break;
                             }
-                        } 
+                        }
                         frappe.model.set_value(cdt, cdn, "external_remarks", text);
                         frappe.model.set_value(cdt, cdn, "template_character_count", text.length);
                     },
@@ -269,8 +277,8 @@ function create_dn(frm) {
         primary_action_label: __('OK'),
         title: __('Delivered Material')
     });
-    d.fields_dict['project'].get_query =   
-        function(doc) {    
+    d.fields_dict['project'].get_query =
+        function(doc) {
             return {
                 filters: {'employee': frm.doc.employee},
                 query: "innomat.innomat.filters.projects_for_employee"
@@ -303,8 +311,8 @@ function create_on_call_fee(frm) {
         primary_action_label: __('OK'),
         title: __('On Call Fee')
     });
-    d.fields_dict['project'].get_query =   
-        function(doc) {    
+    d.fields_dict['project'].get_query =
+        function(doc) {
             return {
                 filters: {'employee': frm.doc.employee},
                 query: "innomat.innomat.filters.projects_for_employee"
@@ -332,7 +340,7 @@ function create_service_report(frm) {
         if ((frm.doc.time_logs[i].project) && (!projects.includes(frm.doc.time_logs[i].project))) {
             projects.push(frm.doc.time_logs[i].project);
         }
-    } 
+    }
     frappe.prompt([
             {'fieldname': 'project', 'fieldtype': 'Select', 'label': __('Project'), 'reqd': 1, 'options': projects.join("\n")}
         ],
@@ -372,17 +380,21 @@ function unclose_completed_tasks(frm) {
     });
 }
 
-function pull_employee_company(frm) {
+function is_generic_project(proj) {
+    return proj && (proj.startsWith('ALI00') || proj.startsWith('INI00') || proj.startsWith('ASI00'));
+}
+
+// Fetch company and default project for the selected employee
+function fetch_employee_default_project(frm) {
     frappe.call({
-        method: "frappe.client.get",
-        args: {
-            "doctype": "Employee",
-            "name": frm.doc.employee
+        'method': 'innomat.innomat.scripts.project.get_employee_default_project',
+        'args': {
+            'employee': frm.doc.employee
         },
-        callback: function(response) {
-            var employee = response.message;
-            if (employee) {
-               cur_frm.set_value("company", employee.company);
+        "callback": function(response) {
+            if(response && response.message) {
+                frm.set_value("employee_default_project", response.message['default_project']);
+                frm.set_value("company", response.message['company']);
             }
         }
     });

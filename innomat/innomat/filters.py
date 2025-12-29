@@ -7,16 +7,15 @@ import frappe
 # searches for supplier
 def projects_for_employee(doctype, txt, searchfield, start, page_len, filters):
     return frappe.db.sql(
-        """SELECT `tabProject`.`name`, 
+        """SELECT `tabProject`.`name`,
                 `tabProject`.`title`,
                 `tabProject`.`customer_name`,
                 `tabProject`.`status`,
                 `tabProject`.`priority`
            FROM `tabProject`
            LEFT JOIN `tabProject Member` ON `tabProject Member`.`parent` = `tabProject`.`name`
-           WHERE `tabProject Member`.`employee` = "{e}"
+           WHERE (`tabProject Member`.`employee` = "{e}" OR `tabProject`.`name` LIKE "__I00%")
              AND `tabProject`.`is_active` = "Yes"
              AND (`tabProject`.`title` LIKE "%{s}%" OR `tabProject`.`name` LIKE "%{s}%" OR `tabProject`.`customer_name` LIKE "%{s}%")
              AND `tabProject`.`status` = "Open";
         """.format(e=filters['employee'], s=txt))
-
