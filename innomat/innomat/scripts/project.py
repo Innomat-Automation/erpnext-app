@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from innomat.innomat.utils import get_currency, get_sales_tax_rule, get_project_key
 
 
-""" 
+"""
 Find related draft documents from delivery notes and expense claims
 """
 @frappe.whitelist()
@@ -21,7 +21,7 @@ def find_drafts(project):
         for dn in draft_dns:
             data['delivery_notes'].append(dn['name'])
             data['urls'].append(get_link_to_form("Delivery Note", dn['name']))
-    
+
     expense_claims = frappe.db.sql("""SELECT `tabExpense Claim`.`name`
                                       FROM `tabExpense Claim Detail`
                                       LEFT JOIN `tabExpense Claim` ON `tabExpense Claim Detail`.`parent` = `tabExpense Claim`.`name`
@@ -33,7 +33,7 @@ def find_drafts(project):
         for ec in expense_claims:
             data['expense_claims'].append(ec['name'])
             data['urls'].append(get_link_to_form("Expense Claim", ec['name']))
-    
+
     timesheets = frappe.db.sql("""SELECT `tabTimesheet`.`name`
                                       FROM `tabTimesheet Detail`
                                       LEFT JOIN `tabTimesheet` ON `tabTimesheet Detail`.`parent` = `tabTimesheet`.`name`
@@ -45,7 +45,7 @@ def find_drafts(project):
         for ts in timesheets:
             data['timesheets'].append(ts['name'])
             data['urls'].append(get_link_to_form("Timesheet", ts['name']))
-            
+
     return data
 
 
@@ -78,7 +78,7 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
             sales_order = frappe.get_doc("Sales Order",pj.sales_order)
             new_sinv.additional_discount_percentage_akonto = sales_order.additional_discount_percentage
             new_sinv.additional_discount_amount_akonto = sales_order.discount_amount
-        
+
         cost_center = frappe.get_value("Company", pj.company, "cost_center")
         for t in time_logs:
             description = "{0} ({1})".format(t['from_time'].strftime("%d.%m.%Y"), t['employee_name'])
@@ -99,8 +99,8 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
             })
         # insert sales item groups
         row = new_sinv.append('sales_item_groups', {
-            'group': sales_item_group, 
-            'title': sales_item_group, 
+            'group': sales_item_group,
+            'title': sales_item_group,
             'sum_caption': 'Summe {0}'.format(sales_item_group)})
         # append open delivery note items if there are any
         for d in delivery_notes:
@@ -127,8 +127,8 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
                 'rate': t.rate
             })
         # check and pull down payments
-        payments = frappe.db.sql("""SELECT `tabPayment Entry Reference`.`parent`, `tabPayment Entry Reference`.`allocated_amount`, `tabPayment Entry Reference`.`name` 
-                                    FROM `tabPayment Entry Reference` 
+        payments = frappe.db.sql("""SELECT `tabPayment Entry Reference`.`parent`, `tabPayment Entry Reference`.`allocated_amount`, `tabPayment Entry Reference`.`name`
+                                    FROM `tabPayment Entry Reference`
                                     LEFT JOIN `tabPayment Entry` ON `tabPayment Entry Reference`.`parent` = `tabPayment Entry`.`name`
                                     WHERE `tabPayment Entry`.`docstatus` = 1
                                       AND `tabPayment Entry Reference`.`reference_doctype` = "Sales Order"
@@ -160,7 +160,7 @@ def create_sinvs_for_date_range(from_date, to_date, company):
     # find all service projects in this period
     sql_query = """
         SELECT `tabProject`.`name` AS `project`
-        FROM `tabTimesheet Detail` 
+        FROM `tabTimesheet Detail`
         LEFT JOIN `tabProject` ON `tabTimesheet Detail`.`project` = `tabProject`.`name`
         LEFT JOIN `tabTimesheet` ON `tabTimesheet Detail`.`parent` = `tabTimesheet`.`name`
         LEFT JOIN `tabSales Invoice Item` ON `tabTimesheet Detail`.`name` = `tabSales Invoice Item`.`ts_detail`
@@ -195,7 +195,7 @@ def create_project_from_template(template, company, customer, po_no=None, po_dat
     company_key = "IN"
     if "Asprotec" in company:
         company_key = "AS"
-    # create project 
+    # create project
     new_project = frappe.get_doc({
         "doctype": "Project",
         "project_key": key,
@@ -229,7 +229,7 @@ def create_project_from_template(template, company, customer, po_no=None, po_dat
             "doctype": "Task",
             "subject": t.subject,
             "project": new_project.name,
-            "status": "Open",  
+            "status": "Open",
             "expected_time": (8 * t.duration),  # template duration is in hours
             "description": t.description,
             "item_code": t.item_code,
@@ -249,7 +249,7 @@ def get_uninvoiced_service_time_records(project, from_date=None, to_date=None):
         time_conditions += """ AND DATE(`tabTimesheet Detail`.`from_time`) >= "{from_date}" """.format(from_date=from_date)
     if to_date:
         time_conditions += """ AND DATE(`tabTimesheet Detail`.`from_time`) <= "{to_date}" """.format(to_date=to_date)
-    sql_query = """SELECT 
+    sql_query = """SELECT
            `tabTimesheet Detail`.`activity_type` AS `activity_type`,
            `tabTimesheet Detail`.`from_time` AS `from_time`,
            `tabTimesheet`.`employee` AS `employee`,
@@ -263,7 +263,7 @@ def get_uninvoiced_service_time_records(project, from_date=None, to_date=None):
          LEFT JOIN `tabTimesheet` ON `tabTimesheet Detail`.`parent` = `tabTimesheet`.`name`
          LEFT JOIN `tabTask` ON `tabTimesheet Detail`.`task` = `tabTask`.`name`
          LEFT JOIN `tabSales Invoice Item` ON `tabTimesheet Detail`.`name` = `tabSales Invoice Item`.`ts_detail`
-         WHERE 
+         WHERE
            `tabTimesheet`.`docstatus` = 1
            {time_conditions}
            AND `tabTimesheet Detail`.`project` = "{project}"
@@ -276,13 +276,13 @@ def get_uninvoiced_service_time_records(project, from_date=None, to_date=None):
     return time_logs
 
 def get_uninvoiced_delivery_notes(project):
-    sql_query = """SELECT 
+    sql_query = """SELECT
            `tabDelivery Note`.`name` AS `name`,
            `tabDelivery Note Item`.`name` AS `dn_detail`
          FROM `tabDelivery Note Item`
          LEFT JOIN `tabDelivery Note` ON `tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name`
          LEFT JOIN `tabSales Invoice Item` ON `tabDelivery Note Item`.`name` = `tabSales Invoice Item`.`dn_detail`
-         WHERE 
+         WHERE
            `tabDelivery Note`.`docstatus` = 1
            AND `tabDelivery Note`.`project` = "{project}"
            AND `tabSales Invoice Item`.`dn_detail` IS NULL;
@@ -292,9 +292,9 @@ def get_uninvoiced_delivery_notes(project):
 
 
     return frappe.get_all("Delivery Note", filters={'project': project, 'docstatus': 1, 'status': 'To Bill'}, fields=['name'])
- 
 
-""" 
+
+"""
 This will mark a related project not invoiced when a Sales Invoice is cancelled or trashed (hooks)
 """
 def unset_project_invoiced(sales_invoice, method):
@@ -344,7 +344,7 @@ def update_project(p):
         project.actual_material_cost = actual_cost
         project.sum_services = sum_services
         project.sum_expense_claim = sum_expense_claim;
-        
+
         try:
             project.save()
         except Exception as err:
@@ -389,12 +389,12 @@ Get project time cost
 """
 def get_project_time_cost(project):
     data = frappe.db.sql("""SELECT SUM(`tabTimesheet Detail`.`hours` * `tabEmployee`.`internal_rate_per_hour`) AS `cost`
-            FROM `tabTimesheet Detail` 
+            FROM `tabTimesheet Detail`
             LEFT JOIN `tabTimesheet` ON `tabTimesheet`.`name` = `tabTimesheet Detail`.`parent`
             LEFT JOIN `tabEmployee` ON `tabEmployee`.`name` = `tabTimesheet`.`employee`
             WHERE `tabTimesheet`.`docstatus` = 1
               AND `tabTimesheet Detail`.`project` = "{project}"
-              AND (`tabTimesheet Detail`.`by_effort` = 0 
+              AND (`tabTimesheet Detail`.`by_effort` = 0
                 OR (`tabTimesheet Detail`.`by_effort` = 1 AND `tabTimesheet Detail`.`do_not_invoice` = 1)
             )
         ;""".format(project=project), as_dict=True)
@@ -406,7 +406,7 @@ def get_project_time_cost(project):
 
 def get_expense_claims_cost(project):
     data = frappe.db.sql("""SELECT SUM(`tabExpense Claim Detail`.`amount` * `tabExpense Claim Detail`.`qty`) AS `cost`
-            FROM `tabExpense Claim Detail` 
+            FROM `tabExpense Claim Detail`
             WHERE `tabExpense Claim Detail`.`docstatus` = 1
               AND `tabExpense Claim Detail`.`project` = "{project}"
         ;""".format(project=project), as_dict=True)
@@ -414,7 +414,7 @@ def get_expense_claims_cost(project):
         return data[0]['cost']
     else:
         return 0
-    
+
 
 """
 Get all required material with costs from a sales order (based on BOM or purchase item
@@ -442,8 +442,8 @@ def get_sales_order_materials(sales_order):
                     else:
                         # this is a material position
                         data['items'].append({
-                            'item_code': i.item_code, 
-                            'qty': item.qty * i.qty, 
+                            'item_code': i.item_code,
+                            'qty': item.qty * i.qty,
                             'cost': item.qty * i.amount
                         })
 
@@ -457,8 +457,8 @@ def get_sales_order_materials(sales_order):
                 if not value:
                     value = frappe.get_value("Item", item.item_code, "last_purchase_rate")
                 data['items'].append({
-                    'item_code': item.item_code, 
-                    'qty': item.qty, 
+                    'item_code': item.item_code,
+                    'qty': item.qty,
                     'cost': item.qty * value
                 })
 
@@ -467,4 +467,29 @@ def get_sales_order_materials(sales_order):
                 else:
                     data['total_services'] += item.qty * value
     return data
-    
+
+"""
+Get the default project for an employee's "unproductive" activities. Also return the company alongside it, as this saves a server request on Timesheets.
+"""
+@frappe.whitelist()
+def get_employee_default_project(employee):
+    employee_doc = frappe.get_doc("Employee", employee)
+    if not employee_doc:
+        raise Exception(_("Employee '{0}' not found").format(employee))
+    company = employee_doc.get('company')
+    dept = employee_doc.get('department')
+    if not company:
+        raise Exception(_("Employee '{0}' has no Company assigned").format(employee))
+    company_doc = frappe.get_doc("Company", employee_doc.company)
+    cc = company_doc.get('cost_center')
+    if not cc:
+        raise Exception(_("Company '{0}' has no default cost center assigned").format(company))
+    if dept:
+        dept_doc = frappe.get_doc("Department", dept)
+        if dept_doc.default_cost_center:
+            cc = dept_doc.default_cost_center
+    cc_doc = frappe.get_doc("Cost Center", cc)
+    default_project = cc_doc.get('default_project')
+    if not default_project:
+        raise Exception(_("Cost Center '{0}' has no default project for general operating costs").format(cc))
+    return {'company': company, 'default_project': default_project}
