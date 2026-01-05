@@ -188,13 +188,15 @@ def create_sinvs_for_date_range(from_date, to_date, company):
 Create a project from a project tenplate (not standard way, because of invoicing items!)
 """
 @frappe.whitelist()
-def create_project_from_template(template, company, customer, po_no=None, po_date=None):
+def create_project_from_template(template, company, customer, cost_center, po_no=None, po_date=None):
     key = get_project_key()
     template = frappe.get_doc("Project Template", template)
     customer = frappe.get_doc("Customer", customer)
-    company_key = "IN"
-    if "Asprotec" in company:
+    cost_center_key = "IN"
+    if "Frauenfeld" in cost_center:
         company_key = "AS"
+    if "Hitzkirch" in cost_center:
+        company_key = "ST"
     # create project 
     new_project = frappe.get_doc({
         "doctype": "Project",

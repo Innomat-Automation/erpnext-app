@@ -24,6 +24,8 @@ def create_project(sales_order,combine_bom):
     company_key = "IN"
     if "Frauenfeld" in cost_center or "Asprotec" in so.company:
         company_key = "AS"
+    if "Hitzkirch" in cost_center:
+        company_key = "ST"
     # create project 
     new_project = frappe.get_doc({
         "doctype": "Project",
