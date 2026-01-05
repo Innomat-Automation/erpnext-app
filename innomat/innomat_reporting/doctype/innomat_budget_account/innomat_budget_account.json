@@ -5,6 +5,9 @@
  "engine": "InnoDB",
  "field_order": [
   "account",
+  "account_type",
+  "expense_account_classification",
+  "root_type",
   "budget_01",
   "budget_02",
   "budget_03",
@@ -133,10 +136,34 @@
    "label": "Year",
    "options": "Company:company:default_currency",
    "read_only": 1
+  },
+  {
+   "fetch_from": "account.root_type",
+   "fieldname": "root_type",
+   "fieldtype": "Select",
+   "label": "Root Type",
+   "options": "\nIncome\nExpense",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "account.account_type",
+   "fieldname": "account_type",
+   "fieldtype": "Select",
+   "label": "Account Type",
+   "options": "\nExpense Account\nIncome Account\nDepreciation\nStock Adjustment\nExpenses Included In Valuation\nCost of Goods Sold",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "account.expense_account_classification",
+   "fieldname": "expense_account_classification",
+   "fieldtype": "Select",
+   "label": "Expense Account Classification",
+   "options": "\nInterest\nTax\nOther",
+   "read_only": 1
   }
  ],
  "istable": 1,
- "modified": "2025-11-27 18:42:04.966189",
+ "modified": "2026-01-05 10:37:56.734995",
  "modified_by": "Administrator",
  "module": "Innomat Reporting",
  "name": "Innomat Budget Account",
