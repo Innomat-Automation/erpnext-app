@@ -101,7 +101,8 @@ function create_project_from_template() {
             {'fieldname': 'customer', 'fieldtype': 'Link', 'label': __('Customer'), 'reqd': 1, 'options': 'Customer'},
             {'fieldname': 'po_no', 'fieldtype': 'Data', 'label': __('Customer\'s Purchase Order'), 'reqd': 0},
             {'fieldname': 'po_date', 'fieldtype': 'Date', 'label': __('Customer\'s Purchase Date'), 'reqd': 0},
-            {'fieldname': 'company', 'fieldtype': 'Link', 'label': __('Company'), 'reqd': 1, 'options': 'Company', 'default': frappe.defaults.get_default("Company")}            
+            {'fieldname': 'company', 'fieldtype': 'Link', 'label': __('Company'), 'reqd': 1, 'options': 'Company', 'default': frappe.defaults.get_default("Company")},
+            {'fieldname': 'cost_center', 'fieldtype': 'Link', 'label': __('Cost Center'), 'reqd': 1, 'options': 'Cost Center', 'default': frappe.defaults.get_default("Cost Center")}            
         ],
         function(values){
             frappe.call({
@@ -111,7 +112,8 @@ function create_project_from_template() {
                     'po_no' : values.po_no,
                     'po_date' : values.po_date,
                     'company': values.company,
-                    'customer': values.customer
+                    'customer': values.customer,
+                    'cost_center': values.cost_center
                 },
                 'callback': function(response) {
                     frappe.set_route("Form", "Project", response.message);
