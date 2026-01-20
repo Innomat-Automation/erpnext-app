@@ -69,17 +69,28 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
             "taxes_and_charges": get_sales_tax_rule(pj.customer, pj.company),
             "currency": currency
         })
-        if project.startswith("A"):
-            new_sinv.cost_center = "Frauenfeld - I"
+        if pj.cost_center:
+            new_sinv.cost_center = pj.cost_center
         else:
-            new_sinv.cost_center = "Herisau - I"
+            # The project's cost center is usually set in project.js
+            # The following is a fallback which will not consider all special cases (particularly not internal dev projects)
+            cc = None
+            if pj.department:
+                department_doc = frappe.get_doc("Department", pj.department)
+                cc = department_doc.default_cost_center
+            if not cc:
+                company_doc = frappe.get_doc("Company", pj.company)
+                cc = company_doc.cost_center
+            new_sinv.cost_center = cc
+
         # if Sales order exist get discount
         if pj.sales_order and pj.sales_order != "":
             sales_order = frappe.get_doc("Sales Order",pj.sales_order)
             new_sinv.additional_discount_percentage_akonto = sales_order.additional_discount_percentage
             new_sinv.additional_discount_amount_akonto = sales_order.discount_amount
 
-        cost_center = frappe.get_value("Company", pj.company, "cost_center")
+        # Time logs: Use cost center from Timesheet Detail
+        # Rationale: We periodically make bookings to ensure all salary is debited to the "right" cost centers according to timesheets, so when we bill hours, we can directly credit the cost center given in timesheets.
         for t in time_logs:
             description = "{0} ({1})".format(t['from_time'].strftime("%d.%m.%Y"), t['employee_name'])
             if t.activity_type == "Reisetätigkeit":
@@ -94,7 +105,7 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
                 'against_timesheet': t['timesheet'],
                 'ts_detail': t['ts_detail'],
                 'sales_item_group': sales_item_group,
-                'cost_center': cost_center,
+                'cost_center': t['cost_center'],
                 'sales_order': pj.sales_order
             })
         # insert sales item groups
@@ -114,7 +125,11 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
                     'dn_detail': dn_pos.name,
                     'sales_item_group': dn_pos.sales_item_group,
                     'rate': dn_pos.rate,
-                    'cost_center': cost_center,
+                    # In SINV-Item for materials, we use the project cost center.
+                    # This is correct iff we ensure that material used from "wrong" stock location/department (other department than that of the project) gets transferred to the project's location before it is destocked,
+                    # so that its internal valuation is credited to its original cost center and debited from the project cost center.
+                    # [Note that the project cost center is identical to the department cost center here, as internal projects will never have sales invoices.]
+                    'cost_center': new_sinv.cost_center,
                     'sales_order': pj.sales_order
             })
         # insert taxes
@@ -188,13 +203,14 @@ def create_sinvs_for_date_range(from_date, to_date, company):
 Create a project from a project tenplate (not standard way, because of invoicing items!)
 """
 @frappe.whitelist()
-def create_project_from_template(template, company, customer, po_no=None, po_date=None):
+def create_project_from_template(template, company, customer, cost_center, po_no=None, po_date=None):
     key = get_project_key()
     template = frappe.get_doc("Project Template", template)
     customer = frappe.get_doc("Customer", customer)
-    company_key = "IN"
-    if "Asprotec" in company:
+    company_key = company[0:2].upper()
+    if "Frauenfeld" in cost_center:
         company_key = "AS"
+    department = frappe.get_value("Department", {"default_cost_center": cost_center}, "name") or ''
     # create project
     new_project = frappe.get_doc({
         "doctype": "Project",
@@ -210,7 +226,9 @@ def create_project_from_template(template, company, customer, po_no=None, po_dat
         "customer": customer.name,
         "customer_name": customer.customer_name,
         "title": "{0}{3}{1} {2}".format(company_key, key, (po_no or customer.customer_name), template.project_type[0]),
-        "company": company
+        "company": company,
+        "cost_center": cost_center,
+        "department": department,
     })
 
     if frappe.session.user and frappe.get_value("Employee",{'user_id':frappe.session.user},'name'):
@@ -258,7 +276,8 @@ def get_uninvoiced_service_time_records(project, from_date=None, to_date=None):
            `tabTask`.`item_code` AS `invoicing_item`,
            `tabTimesheet`.`name` AS `timesheet`,
            `tabTimesheet Detail`.`name` AS `ts_detail`,
-           `tabTimesheet Detail`.`external_remarks` AS `external_remarks`
+           `tabTimesheet Detail`.`external_remarks` AS `external_remarks`,
+           `tabTimesheet Detail`.`cost_center` AS `cost_center`
          FROM `tabTimesheet Detail`
          LEFT JOIN `tabTimesheet` ON `tabTimesheet Detail`.`parent` = `tabTimesheet`.`name`
          LEFT JOIN `tabTask` ON `tabTimesheet Detail`.`task` = `tabTask`.`name`
