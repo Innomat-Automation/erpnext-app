@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .overview-container {
+            background-color: #D4E8D4;
+            padding: 20px;
+            border: 2px solid #000;
+        }
+
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .project-info {
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background-color: white;
+        }
+
+        td, th {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #D4E8D4;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 20px 0 10px 0;
+        }
+
+        .highlight-positive {
+            color: #006400;
+        }
+
+        .highlight-negative {
+            color: #DC143C;
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        .right {
+            text-align: right;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 5px;
+        }
+
+        .status-green {
+            background-color: #90EE90;
+        }
+
+        .status-red {
+            background-color: #FFB6C1;
+        }
+    </style>
+</head>
+<body>
+    {# Daten aus Python-Modul laden #}
+    {% set overview = get_project_overview_data(doc.name) %}
+    {% set summary = overview.summary %}
+    {% set costs = overview.costs %}
+    {% set roles = overview.roles %}
+
+    <div class="overview-container">
+        <h1>Projektübersicht (Kompakt)</h1>
+        <div class="project-info">
+            Projektnummer: {{ doc.name }}
+        </div>
+
+        <!-- Zusammenfassung -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Selbstkosten (FC)</th>
+                    <th>Selbstkosten (BU)</th>
+                    <th>Selbstkosten (Ist)</th>
+                    <th>Δ BU−FC (CHF)</th>
+                    <th>Δ BU−FC (%)</th>
+                    <th>ETC (Restkosten)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="right">{{ "{:,.0f}".format(summary.fc) }} CHF</td>
+                    <td class="right">{{ "{:,.0f}".format(summary.bu) }} CHF</td>
+                    <td class="right">{{ "{:,.0f}".format(summary.ist) }} CHF</td>
+                    <td class="right {{ 'highlight-negative' if summary.delta_chf < 0 else 'highlight-positive' }}">
+                        {{ "{:,.0f}".format(summary.delta_chf) }} CHF
+                    </td>
+                    <td class="center {{ 'highlight-negative' if summary.delta_pct < 0 else 'highlight-positive' }}">
+                        {{ "%.1f"|format(summary.delta_pct) }}%
+                    </td>
+                    <td class="right">{{ "{:,.0f}".format(summary.etc) }} CHF</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Ertrag & Marge -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Ertrag (FC)</th>
+                    <th>Marge (FC)</th>
+                    <th>Marge % (FC)</th>
+                    <th>Budgetverbrauch %</th>
+                    <th>Erreichbare Marge (FC)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="right">{{ "{:,.0f}".format(summary.revenue) }} CHF</td>
+                    <td class="right {{ 'highlight-negative' if summary.margin_fc < 0 else 'highlight-positive' }}">
+                        {{ "{:,.0f}".format(summary.margin_fc) }} CHF
+                    </td>
+                    <td class="center {{ 'highlight-negative' if summary.margin_fc_pct < 0 else 'highlight-positive' }}">
+                        {{ "%.1f"|format(summary.margin_fc_pct) }}%
+                    </td>
+                    <td class="center">{{ "%.1f"|format(summary.budget_usage) }}%</td>
+                    <td class="right {{ 'highlight-negative' if summary.margin_fc < 0 else 'highlight-positive' }}">
+                        {{ "{:,.0f}".format(summary.margin_fc) }} CHF
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Kostenstruktur -->
+        <div class="section-title">Kostenstruktur (FC vs. BU)</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Kategorie</th>
+                    <th>FC</th>
+                    <th>BU</th>
+                    <th>Δ BU−FC (CHF)</th>
+                    <th>Δ BU−FC (%)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Total Material</td>
+                    <td class="right">{{ "{:,.0f}".format(costs.material.fc) }} CHF</td>
+                    <td class="right">{{ "{:,.0f}".format(costs.material.bu) }} CHF</td>
+                    <td class="right {{ 'highlight-negative' if costs.material.delta_chf < 0 else 'highlight-positive' if costs.material.delta_chf > 0 else '' }}">
+                        {{ "{:,.0f}".format(costs.material.delta_chf) }} CHF
+                    </td>
+                    <td class="center {{ 'highlight-negative' if costs.material.delta_pct and costs.material.delta_pct < 0 else 'highlight-positive' if costs.material.delta_pct and costs.material.delta_pct > 0 else '' }}">
+                        {% if costs.material.delta_pct %}{{ "%.1f"|format(costs.material.delta_pct) }}%{% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Total Fremdleistungen</td>
+                    <td class="right">{{ "{:,.0f}".format(costs.services.fc) }} CHF</td>
+                    <td class="right">{{ "{:,.0f}".format(costs.services.bu) }} CHF</td>
+                    <td class="right {{ 'highlight-negative' if costs.services.delta_chf < 0 else 'highlight-positive' if costs.services.delta_chf > 0 else '' }}">
+                        {{ "{:,.0f}".format(costs.services.delta_chf) }} CHF
+                    </td>
+                    <td class="center {{ 'highlight-negative' if costs.services.delta_pct and costs.services.delta_pct < 0 else 'highlight-positive' if costs.services.delta_pct and costs.services.delta_pct > 0 else '' }}">
+                        {% if costs.services.delta_pct %}{{ "%.1f"|format(costs.services.delta_pct) }}%{% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Total Personal</td>
+                    <td class="right">{{ "{:,.0f}".format(costs.personnel.fc) }} CHF</td>
+                    <td class="right">{{ "{:,.0f}".format(costs.personnel.bu) }} CHF</td>
+                    <td class="right {{ 'highlight-negative' if costs.personnel.delta_chf < 0 else 'highlight-positive' if costs.personnel.delta_chf > 0 else '' }}">
+                        {{ "{:,.0f}".format(costs.personnel.delta_chf) }} CHF
+                    </td>
+                    <td class="center {{ 'highlight-negative' if costs.personnel.delta_pct and costs.personnel.delta_pct < 0 else 'highlight-positive' if costs.personnel.delta_pct and costs.personnel.delta_pct > 0 else '' }}">
+                        {% if costs.personnel.delta_pct %}{{ "%.1f"|format(costs.personnel.delta_pct) }}%{% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Total Gemeinkosten</td>
+                    <td class="right">{{ "{:,.0f}".format(costs.overhead.fc) }} CHF</td>
+                    <td class="right">{{ "{:,.0f}".format(costs.overhead.bu) }} CHF</td>
+                    <td class="right {{ 'highlight-negative' if costs.overhead.delta_chf < 0 else 'highlight-positive' if costs.overhead.delta_chf > 0 else '' }}">
+                        {{ "{:,.0f}".format(costs.overhead.delta_chf) }} CHF
+                    </td>
+                    <td class="center {{ 'highlight-negative' if costs.overhead.delta_pct and costs.overhead.delta_pct < 0 else 'highlight-positive' if costs.overhead.delta_pct and costs.overhead.delta_pct > 0 else '' }}">
+                        {% if costs.overhead.delta_pct %}{{ "%.1f"|format(costs.overhead.delta_pct) }}%{% endif %}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Rollen - Stunden & Kosten -->
+        <div class="section-title">Rollen – Stunden & Kosten (Auszug)</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Rolle</th>
+                    <th>FC Std</th>
+                    <th>BU Std</th>
+                    <th>Δ Std (BU−FC)</th>
+                    <th>FC CHF</th>
+                    <th>BU CHF</th>
+                    <th>Δ CHF (BU−FC)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for role in roles %}
+                <tr>
+                    <td>{{ role.name }}</td>
+                    <td class="center">{{ "%.1f"|format(role.fc_hours) if role.fc_hours > 0 else "-" }}</td>
+                    <td class="center">
+                        {{ "%.1f"|format(role.bu_hours) if role.bu_hours > 0 else "-" }}
+                        {% if role.delta_hours != 0 %}
+                            <span class="status-dot {{ 'status-red' if role.delta_hours < 0 else 'status-green' }}"></span>
+                        {% else %}
+                            <span class="status-dot status-green"></span>
+                        {% endif %}
+                    </td>
+                    <td class="center {{ 'highlight-negative' if role.delta_hours < 0 else '' }}">
+                        {{ "%.2f"|format(role.delta_hours) if role.delta_hours != 0 else "0" }}
+                    </td>
+                    <td class="right">{{ "{:,.0f}".format(role.fc_cost) if role.fc_cost > 0 else "0" }} CHF</td>
+                    <td class="right">
+                        {{ "{:,.0f}".format(role.bu_cost) if role.bu_cost > 0 else "0" }} CHF
+                        {% if role.delta_cost != 0 %}
+                            <span class="status-dot {{ 'status-red' if role.delta_cost < 0 else 'status-green' }}"></span>
+                        {% else %}
+                            <span class="status-dot status-green"></span>
+                        {% endif %}
+                    </td>
+                    <td class="right {{ 'highlight-negative' if role.delta_cost < 0 else 'highlight-positive' }}">
+                        {{ "{:,.0f}".format(role.delta_cost) if role.delta_cost != 0 else "0" }} CHF
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

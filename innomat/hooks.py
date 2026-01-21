@@ -177,3 +177,11 @@ scheduler_events = {
 after_migrate = [
     'innomat.innomat.updater.cleanup_languages'
 ]
+
+# Jinja environment
+jenv = {
+    "methods": [
+        "get_project_cockpit_data:innomat.innomat_reporting.project_cockpit.get_project_cockpit_data",
+        "get_project_overview_data:innomat.innomat_reporting.project_cockpit.get_project_overview_data"
+    ]
+}

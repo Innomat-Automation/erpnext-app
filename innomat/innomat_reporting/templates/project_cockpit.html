@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .cockpit-container {
+            background-color: #B8D4E8;
+            padding: 20px;
+            border: 2px solid #000;
+        }
+
+        .header {
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .header-info {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            background-color: white;
+        }
+
+        td, th {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .section-header {
+            background-color: #B8D4E8;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .highlight-positive {
+            color: #006400;
+            font-weight: bold;
+        }
+
+        .highlight-negative {
+            color: #DC143C;
+            font-weight: bold;
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        .right {
+            text-align: right;
+        }
+
+        .vs-column {
+            text-align: center;
+            font-weight: bold;
+            font-size: 18px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    {# Berechnungen über Python-Modul durchführen #}
+    {% set cockpit = get_project_cockpit_data(doc.name) %}
+    {% set budget = cockpit.budget %}
+    {% set actual = cockpit.actual %}
+    {% set progress = cockpit.progress %}
+    {% set forecast = cockpit.forecast %}
+    {% set ebit = cockpit.ebit %}
+    {% set billing = cockpit.billing %}
+
+    {# Cost-to-Cost Fortschritt für Header #}
+    {% set ctc_progress = (actual.hk / forecast.hk * 100) if forecast.hk > 0 else 0 %}
+
+    <div class="cockpit-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Projektcontrolling – Cockpit</h1>
+            <div class="header-info">
+                Projektnummer: {{ doc.name }}<br>
+                Fortschritt (in %) Cost-to-cost: <strong>{{ "%.0f"|format(ctc_progress) }}%</strong>
+            </div>
+        </div>
+
+        <!-- Fakturierung & OP -->
+        <table>
+            <tr>
+                <td class="section-header">Fakturierungsgrad SK</td>
+                <td class="section-header">OP Debitoren</td>
+            </tr>
+            <tr>
+                <td class="center">
+                    <strong>{{ "%.0f"|format(billing.billing_rate) }}%</strong>
+                </td>
+                <td class="center">
+                    <strong>{{ "{:,.0f}".format(billing.outstanding) }}</strong>
+                </td>
+            </tr>
+            <tr>
+                <td class="section-header">Mögliche Anzahlungen</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="center">
+                    <strong>{{ "{:,.0f}".format(actual.hk) }}</strong>
+                </td>
+                <td></td>
+            </tr>
+        </table>
+
+        <!-- Budget Vergleich -->
+        <table>
+            <tr>
+                <td class="section-header">Erwartete Gesamtkosten (EAC Budget)</td>
+                <td class="section-header">EBIT (Budget)</td>
+                <td class="vs-column" rowspan="2">VS</td>
+                <td class="section-header">EBIT (Forecast)</td>
+            </tr>
+            <tr>
+                <td class="center">
+                    CHF {{ "{:,.0f}".format(budget.hk) }}
+                </td>
+                <td class="center">
+                    CHF {{ "{:,.0f}".format(ebit.budget) }}<br>
+                    <span class="{{ 'highlight-positive' if ebit.budget_pct > 0 else 'highlight-negative' }}">
+                        {{ "%.1f"|format(ebit.budget_pct) }}%
+                    </span>
+                </td>
+                <td class="center">
+                    <span class="{{ 'highlight-positive' if ebit.forecast > 0 else 'highlight-negative' }}">
+                        CHF {{ "{:,.0f}".format(ebit.forecast) }}
+                    </span><br>
+                    <span class="{{ 'highlight-positive' if ebit.forecast_pct > 0 else 'highlight-negative' }}">
+                        {{ "%.1f"|format(ebit.forecast_pct) }}%
+                    </span>
+                </td>
+            </tr>
+        </table>
+
+        <!-- EAC klassisch (optional) -->
+        <table>
+            <tr>
+                <td class="section-header">EAC (klassisch)</td>
+                <td class="section-header">VAC (klassisch)</td>
+            </tr>
+            <tr>
+                <td class="center">
+                    CHF {{ "{:,.0f}".format(forecast.eac_classic) }}
+                </td>
+                <td class="center">
+                    <span class="{{ 'highlight-positive' if forecast.vac_classic > 0 else 'highlight-negative' }}">
+                        CHF {{ "{:,.0f}".format(forecast.vac_classic) }}
+                    </span>
+                </td>
+            </tr>
+        </table>
+
+        <!-- Fertigstellung & Forecast -->
+        <table>
+            <tr>
+                <td class="section-header" colspan="2">Fertigstellungsgrad SK</td>
+                <td class="center" colspan="2">
+                    <strong>{{ "%.0f"|format(progress.percent) }}%</strong>
+                </td>
+            </tr>
+            <tr>
+                <td class="section-header" colspan="2">Erwartete Gesamtkosten (EAC Forecast)</td>
+                <td class="section-header" colspan="2">Erwartete Abweichung (VAC Forecast)</td>
+            </tr>
+            <tr>
+                <td class="center" colspan="2">
+                    CHF {{ "{:,.0f}".format(forecast.hk) }}
+                </td>
+                <td class="center" colspan="2">
+                    <span class="{{ 'highlight-positive' if forecast.vac > 0 else 'highlight-negative' }}">
+                        CHF {{ "{:,.0f}".format(forecast.vac) }}
+                    </span>
+                </td>
+            </tr>
+            <tr>
+                <td class="section-header">Erwarteter Ertrag (Forecast)</td>
+                <td class="section-header">in % zum Budget</td>
+                <td class="section-header" colspan="2">Erwartete Abweichung in %</td>
+            </tr>
+            <tr>
+                <td class="center">
+                    CHF {{ "{:,.0f}".format(ebit.revenue) }}
+                </td>
+                <td class="center">
+                    100%
+                </td>
+                <td class="center" colspan="2">
+                    {% set cost_variance_pct = (forecast.vac / budget.hk * 100) if budget.hk > 0 else 0 %}
+                    <span class="{{ 'highlight-positive' if cost_variance_pct > 0 else 'highlight-negative' }}">
+                        {{ "%.1f"|format(cost_variance_pct) }}%
+                    </span>
+                </td>
+            </tr>
+        </table>
+
+        <!-- Controlling / Forecast Tabelle mit Ist-Werten -->
+        <table style="margin-top: 30px;">
+            <thead>
+                <tr>
+                    <th>Kategorie</th>
+                    <th>Ist</th>
+                    <th>Forecast</th>
+                    <th>Budget</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Material</td>
+                    <td class="right">{{ "{:,.0f}".format(actual.material_cost) }}</td>
+                    <td class="right">{{ "{:,.0f}".format(forecast.material_cost|default(0)) }}</td>
+                    <td class="right">{{ "{:,.0f}".format(budget.material_cost) }}</td>
+                </tr>
+                <tr>
+                    <td>Personal</td>
+                    <td class="right">{{ "{:,.0f}".format(actual.hours_cost) }}</td>
+                    <td class="right">{{ "{:,.0f}".format(forecast.hours_cost|default(0)) }}</td>
+                    <td class="right">{{ "{:,.0f}".format(budget.hours_cost) }}</td>
+                </tr>
+                <tr>
+                    <td>Direktkosten</td>
+                    <td class="right">{{ "{:,.0f}".format(actual.direct_cost) }}</td>
+                    <td class="right">{{ "{:,.0f}".format(forecast.direct_cost|default(0)) }}</td>
+                    <td class="right">{{ "{:,.0f}".format(budget.direct_cost) }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Selbstkosten</strong></td>
+                    <td class="right"><strong>{{ "{:,.0f}".format(actual.hk) }}</strong></td>
+                    <td class="right"><strong>{{ "{:,.0f}".format(forecast.hk) }}</strong></td>
+                    <td class="right"><strong>{{ "{:,.0f}".format(budget.hk) }}</strong></td>
+                </tr>
+                <tr>
+                    <td>Ertrag</td>
+                    <td class="right">{{ "{:,.0f}".format(billing.invoiced) }}</td>
+                    <td class="right">{{ "{:,.0f}".format(ebit.revenue) }}</td>
+                    <td class="right">{{ "{:,.0f}".format(ebit.revenue) }}</td>
+                </tr>
+                <tr>
+                    <td><strong>EBIT</strong></td>
+                    <td class="right {{ 'highlight-negative' if (billing.invoiced - actual.hk) < 0 else 'highlight-positive' }}">
+                        <strong>{{ "{:,.0f}".format(billing.invoiced - actual.hk) }}</strong>
+                    </td>
+                    <td class="right {{ 'highlight-negative' if ebit.forecast < 0 else 'highlight-positive' }}">
+                        <strong>{{ "{:,.0f}".format(ebit.forecast) }}</strong>
+                    </td>
+                    <td class="right {{ 'highlight-negative' if ebit.budget < 0 else 'highlight-positive' }}">
+                        <strong>{{ "{:,.0f}".format(ebit.budget) }}</strong>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Grafik: Controlling / Forecast -->
+        <div style="background-color: white; padding: 20px; margin-top: 20px; border: 1px solid #000;">
+            <h3 style="text-align: center; margin-top: 0;">Controlling / Forecast ({{ doc.name }}) - EBIT integriert</h3>
+            <div style="position: relative; height: 400px;">
+                <canvas id="controllingChart"></canvas>
+            </div>
+        </div>
+
+        <script type="text/javascript">
+            (function() {
+                function initChart() {
+                    // Prüfen ob Chart.js geladen ist
+                    if (typeof Chart === 'undefined') {
+                        setTimeout(initChart, 100);
+                        return;
+                    }
+
+                    const canvas = document.getElementById('controllingChart');
+                    if (!canvas) {
+                        return;
+                    }
+
+                    // Altes Chart zerstören falls vorhanden
+                    if (window.myControllingChart) {
+                        window.myControllingChart.destroy();
+                    }
+
+                    const ctx = canvas.getContext('2d');
+
+                    // Daten vorbereiten
+                    const categories = ['Material', 'Personal', 'Selbstkosten', 'Ertrag', 'EBIT'];
+                    const istData = [
+                        {{ actual.material_cost|default(0) }},
+                        {{ actual.hours_cost|default(0) }},
+                        {{ actual.hk|default(0) }},
+                        {{ billing.invoiced|default(0) }},
+                        {{ (billing.invoiced|default(0)) - (actual.hk|default(0)) }}
+                    ];
+                    const forecastData = [
+                        {{ forecast.material_cost|default(0) }},
+                        {{ forecast.hours_cost|default(0) }},
+                        {{ forecast.hk|default(0) }},
+                        {{ ebit.revenue|default(0) }},
+                        {{ ebit.forecast|default(0) }}
+                    ];
+                    const budgetData = [
+                        {{ budget.material_cost|default(0) }},
+                        {{ budget.hours_cost|default(0) }},
+                        {{ budget.hk|default(0) }},
+                        {{ ebit.revenue|default(0) }},
+                        {{ ebit.budget|default(0) }}
+                    ];
+
+                    window.myControllingChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: categories,
+                            datasets: [
+                                {
+                                    label: 'Ist',
+                                    data: istData,
+                                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                                    borderColor: 'rgba(54, 162, 235, 1)',
+                                    borderWidth: 1
+                                },
+                                {
+                                    label: 'Forecast',
+                                    data: forecastData,
+                                    backgroundColor: 'rgba(255, 159, 64, 0.7)',
+                                    borderColor: 'rgba(255, 159, 64, 1)',
+                                    borderWidth: 1
+                                },
+                                {
+                                    label: 'Budget',
+                                    data: budgetData,
+                                    backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                                    borderColor: 'rgba(75, 192, 192, 1)',
+                                    borderWidth: 1
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            let label = context.dataset.label || '';
+                                            if (label) {
+                                                label += ': ';
+                                            }
+                                            label += 'CHF ' + context.parsed.y.toLocaleString('de-CH', {
+                                                minimumFractionDigits: 0,
+                                                maximumFractionDigits: 0
+                                            });
+                                            return label;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return 'CHF ' + value.toLocaleString('de-CH', {
+                                                minimumFractionDigits: 0,
+                                                maximumFractionDigits: 0
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // Chart initialisieren
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initChart);
+                } else {
+                    initChart();
+                }
+            })();
+        </script>
+    </div>
+</body>
+</html>
