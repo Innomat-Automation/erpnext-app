@@ -52,7 +52,6 @@ def create_project(sales_order,combine_bom):
                 filters={'item': i.item_code, 'is_default': 1},
                 fields=['name', 'total_hours'])
         if boms and len(boms) > 0:
-            expected_time = boms[0]['total_hours']
             # create one task per BOM position
             bom = frappe.get_doc("BOM", boms[0]['name'])
             for bom_item in bom.items:
@@ -66,6 +65,7 @@ def create_project(sales_order,combine_bom):
                             "project": new_project.name,
                             "status": "Open",
                             "expected_time": (bom_item.qty * i.qty),
+                            "ilv_rate": bom_item.ilv_rate,
                             "description": bom_item.description,
                             "sales_order": sales_order,
                             "sales_order_item": i.name,
@@ -83,6 +83,7 @@ def create_project(sales_order,combine_bom):
                             "project": new_project.name,
                             "status": "Open",
                             "expected_time": (bom_item.hours * i.qty),
+                            "ilv_rate":  bom_item.ilv_rate,
                             "description": bom_item.description,
                             "sales_order": sales_order,
                             "sales_order_item": i.name,
@@ -98,6 +99,7 @@ def create_project(sales_order,combine_bom):
                     "project": new_project.name,
                     "status": "Open",
                     "expected_time": hours,
+                    "ilv_rate": i.ilv_rate,
                     "description": i.description,
                     "sales_order": sales_order,
                     "sales_order_item": i.name,
@@ -113,6 +115,7 @@ def create_project(sales_order,combine_bom):
                     "project": new_project.name,
                     "status": "Open",
                     "expected_time": i.qty,
+                    "ilv_rate": i.ilv_rate,
                     "description": i.description,
                     "sales_order": sales_order,
                     "sales_order_item": i.name,
@@ -128,6 +131,7 @@ def create_project(sales_order,combine_bom):
                     "project": new_project.name,
                     "status": "Open",
                     "expected_time": (i_item.hours * i.qty),
+                    "ilv_rate": i.ilv_rate,
                     "description": i.description,
                     "sales_order": sales_order,
                     "sales_order_item": i.name,

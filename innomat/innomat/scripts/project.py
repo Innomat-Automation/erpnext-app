@@ -243,12 +243,14 @@ def create_project_from_template(template, company, customer, cost_center, po_no
 
     # create tasks for each item
     for t in template.tasks:
+        item = frappe.get_doc("Item", t.item_code)
         new_task = frappe.get_doc({
             "doctype": "Task",
             "subject": t.subject,
             "project": new_project.name,
             "status": "Open",
             "expected_time": (8 * t.duration),  # template duration is in hours
+            "ilv_rate": item.ilv_rate,
             "description": t.description,
             "item_code": t.item_code,
             "by_effort": t.by_effort
