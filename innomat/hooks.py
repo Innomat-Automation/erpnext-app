@@ -182,6 +182,7 @@ after_migrate = [
 jenv = {
     "methods": [
         "get_project_cockpit_data:innomat.innomat_reporting.project_cockpit.get_project_cockpit_data",
-        "get_project_overview_data:innomat.innomat_reporting.project_cockpit.get_project_overview_data"
+        "get_project_overview_data:innomat.innomat_reporting.project_cockpit.get_project_overview_data",
+        "get_project_kpis:innomat.innomat_reporting.kpi.get_project_kpis"
     ]
 }
