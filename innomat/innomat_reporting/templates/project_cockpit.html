@@ -161,8 +161,9 @@
                     CHF {{ "{:,.0f}".format(kpi.prime_cost_forecast()).replace(",","'") }}
                 </td>
                 <td class="center" colspan="2">
-                    <span class="{{ 'highlight-positive' if kpi.prime_cost_budget() > kpi.prime_cost_forecast() else 'highlight-negative' }}">
-                        CHF {{ "{:,.0f}".format(kpi.prime_cost_budget() - kpi.prime_cost_forecast()).replace(",","'") }}
+                    {% set delta_abs = kpi.prime_cost_budget() - kpi.prime_cost_forecast() %}
+                    <span class="{{ 'highlight-positive' if delta_abs > 0 else 'highlight-negative' }}">
+                        CHF {{ "{:,.0f}".format(delta_abs).replace(",","'") }}
                     </span>
                 </td>
             </tr>
@@ -176,12 +177,12 @@
                     CHF {{ "{:,.0f}".format(kpi.revenue_forecast()).replace(",","'") }}
                 </td>
                 <td class="center">
-                    {{ "%.0f"|format(100 * kpi.revenue_forecast() / kpi.revenue_budget()) }}
+                    {{ "%.0f"|format(100 * kpi.revenue_forecast() / kpi.revenue_budget()) }}%
                 </td>
                 <td class="center" colspan="2">
-                    {% set rel_cost_variance = ((kpi.prime_cost_budget() - kpi.prime_cost_forecast()) / kpi.prime_cost_budget()) if kpi.prime_cost_forecast() > 0 else 0 %}
-                    <span class="{{ 'highlight-positive' if rel_cost_variance > 0 else 'highlight-negative' }}">
-                        {{ "%.1f"|format(100 * rel_cost_variance) }}%
+                    {% set delta_rel = (delta_abs / kpi.prime_cost_budget()) if kpi.prime_cost_budget() > 0 else 0 %}
+                    <span class="{{ 'highlight-positive' if delta_rel > 0 else 'highlight-negative' }}">
+                        {{ "%.1f"|format(100 * delta_rel) }}%
                     </span>
                 </td>
             </tr>

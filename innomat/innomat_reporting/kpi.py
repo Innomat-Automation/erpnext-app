@@ -27,7 +27,7 @@ class ProjectKPI:
             #if self.sales_order_doc.items and self.sales_order_doc.items[0].prevdoc_docname:
             #    self.quotation_doc = frappe.get_doc("Quotation", self.sales_order_doc.items[0].prevdoc_docname)
         # Preload task details, needed by several KPI functions
-        self.task_details = self._load_task_durations_and_costs()
+        self.details_by_role = self._load_role_details_from_tasks()
 
     # Fortschritt Cost-to-cost = Kosten IST / Kosten FC (Basis: SK)
     def cost_to_cost_progress(self):
@@ -103,6 +103,10 @@ class ProjectKPI:
     def labor_direct_cost_budget(self):
         return self.prime_cost_to_direct_cost(self.project_doc.planned_hours_ilv)
 
+    # Personalkosten BUDGET (HK, indirekt anhand ILV)
+    def labor_production_cost_budget(self):
+        return self.prime_cost_to_production_cost(self.project_doc.planned_hours_ilv)
+
     # Personalkosten BUDGET (ILV, entspricht SK)
     def labor_prime_cost_budget(self):
         return self.project_doc.planned_hours_ilv
@@ -110,6 +114,10 @@ class ProjectKPI:
     # Gesamtkosten FORECAST, DK
     def direct_cost_forecast(self):
         return self.material_forecast() + self.thirdparty_forecast() + self.labor_direct_cost_forecast()
+
+    # Gesamtkosten FORECAST, HK
+    def production_cost_forecast(self):
+        return self.material_forecast() + self.thirdparty_forecast() + self.labor_production_cost_forecast()
 
     # Gesamtkosten FORECAST, SK
     def prime_cost_forecast(self):
@@ -125,17 +133,20 @@ class ProjectKPI:
 
     # Personalkosten FORECAST, DK
     def labor_direct_cost_forecast(self):
-        # Für eine präzise Kostenschätzung basiert dieser Forecast auf den Tasks (verbleibende Stunden werden so mit realistischen Kostensätzen geschätzt)
-        # Projektstunden ohne Task werden dennoch berücksichtigt, da self.task_details ggf. eine Zeile "Sonstige" enthält.
-        forecast_hours = sum(map(lambda task: task['forecast_direct_cost'], self.task_details))
-        return forecast_hours
+        # Für eine präzise Kostenschätzung basieren die Personalkosten-Forecasts auf den Details je Rolle (verbleibende Stunden werden so mit realistischen Kostensätzen geschätzt)
+        # Projektstunden ohne Task werden dennoch berücksichtigt, da self.details_by_role ggf. eine Zeile "Sonstige" enthält.
+        forecast = sum(map(lambda role: role['forecast_direct_cost'], self.details_by_role))
+        return forecast
+
+    # Personalkosten FORECAST, HK
+    def labor_production_cost_forecast(self):
+        forecast = sum(map(lambda role: role['forecast_production_cost'], self.details_by_role))
+        return forecast
 
     # Personalkosten FORECAST, SK
     def labor_prime_cost_forecast(self):
-        # Für eine präzise Kostenschätzung basiert dieser Forecast auf den Tasks (verbleibende Stunden werden so mit realistischen Kostensätzen geschätzt)
-        # Projektstunden ohne Task werden dennoch berücksichtigt, da self.task_details ggf. eine Zeile "Sonstige" enthält.
-        forecast_hours = sum(map(lambda task: task['forecast_prime_cost'], self.task_details))
-        return forecast_hours
+        forecast = sum(map(lambda role: role['forecast_prime_cost'], self.details_by_role))
+        return forecast
 
     # EBIT IST = "Mögliche Anzahlungen" = Ertrag IST - Total Selbstkosten IST
     def ebit_current(self):
@@ -199,21 +210,26 @@ class ProjectKPI:
     def prime_cost_to_direct_cost(self, value):
         return self.prime_cost_to_production_cost(value) / (1 + 0.01 * self.supplement_gk())
 
-    # Summarische Darstellung der Tasks gruppiert nach Artikel (wird durch Funktion _load_task_details vorberechnet)
-    def task_durations_and_costs(self):
-        return self.task_details
+    # Umrechnung Direktkosten zu Selbstkosten (nur für Budgetwerte)
+    def direct_cost_to_prime_cost(self, value):
+        return value * (1 + 0.01 * self.supplement_gk()) * (1 + 0.01 * self.supplement_vvgk())
 
-    def _load_task_durations_and_costs(self):
+    # Summarische Darstellung der Tasks gruppiert nach Artikel = Rolle (wird durch Funktion _load_role_details_from_tasks vorberechnet)
+    def hours_and_costs_by_role(self):
+        return self.details_by_role
+
+    def _load_role_details_from_tasks(self):
         # Das Stundenbudget sowie die Istwerte für Stunden und Kosten sind auf dem Task bereits vorhanden.
-        # Tasks mit gleichem Dienstleistungsartikel werden zusammengruppiert und die Werte aufsummiert.
+        # Tasks mit gleichem Dienstleistungsartikel (Rolle) werden zusammengruppiert und die Werte aufsummiert.
         # Der ILV-Satz zur Berechnung des Kostenbudgets wird aus dem Artikelstamm gezogen, falls er im Task fehlt.
         # Die Fertigstellung wird summarisch betrachtet - alle Tasks einer Gruppe müssen abgeschlossen oder abgebrochen sein.
-        task_details = frappe.db.sql("""SELECT
-        `tabItem`.`item_name` AS `activity`,
+        details_by_role = frappe.db.sql("""SELECT
+        `tabItem`.`item_name` AS `role`,
         SUM(`tabTask`.`expected_time`) AS `budget_hours`,
         SUM(`tabTask`.`expected_time` * IFNULL(NULLIF(`tabTask`.`ilv_rate`, 0), `tabItem`.`ilv_rate`)) AS `budget_prime_cost`,
         SUM(`tabTask`.`actual_time`) AS `actual_hours`,
         SUM(`tabTask`.`actual_labor_as_prime_cost`) AS `actual_prime_cost`,
+        SUM(`tabTask`.`actual_labor_as_production_cost`) AS `actual_production_cost`,
         SUM(`tabTask`.`actual_labor_as_direct_cost`) AS `actual_direct_cost`,
         IF(SUM(IF(`tabTask`.`status` NOT IN ('Cancelled','Completed'), 1, 0))>0, 0, 1) AS `all_completed`
         FROM
@@ -222,37 +238,47 @@ class ProjectKPI:
         WHERE `tabTask`.`project` = '{project}'
         GROUP BY `tabTask`.`item_code`
         """.format(project=self.project_name), as_dict=True)
-        total_task_hours = 0
-        total_task_costs_p = 0
-        total_task_costs_d = 0
+        total_role_hours = 0
+        total_role_costs_prime = 0
+        total_role_costs_prod = 0
+        total_role_costs_direct = 0
         # Forecast-Werte für offene Tasks berechnen
-        for line in task_details:
+        for line in details_by_role:
+            line['budget_production_cost'] = self.prime_cost_to_production_cost(line['budget_prime_cost'])
+            line['budget_direct_cost'] = self.prime_cost_to_direct_cost(line['budget_prime_cost'])
             if line['all_completed']:
                 line['forecast_hours'] = line['actual_hours']
                 line['forecast_prime_cost'] = line['actual_prime_cost']
+                line['forecast_production_cost'] = line['actual_production_cost']
                 line['forecast_direct_cost'] = line['actual_direct_cost']
             else:
                 prime_fc_rate = 0
+                prod_fc_rate = 0
                 direct_fc_rate = 0
                 if line['budget_hours'] > 0:
                     prime_fc_rate = line['budget_prime_cost'] / line['budget_hours']
+                    prod_fc_rate = self.prime_cost_to_production_cost(prime_fc_rate)
                     direct_fc_rate = self.prime_cost_to_direct_cost(prime_fc_rate)
                 if line['actual_hours'] > 0:
                     prime_fc_rate = line['actual_prime_cost'] / line['actual_hours']
+                    prod_fc_rate = line['actual_direct_cost'] / line['actual_hours']
                     direct_fc_rate = line['actual_direct_cost'] / line['actual_hours']
                 line['forecast_hours'] = max(line['budget_hours'], line['actual_hours'])
                 delta_hours = line['forecast_hours'] - line['actual_hours']
                 line['forecast_prime_cost'] = line['actual_prime_cost'] + delta_hours * prime_fc_rate
+                line['forecast_production_cost'] = line['actual_production_cost'] + delta_hours * prod_fc_rate
                 line['forecast_direct_cost'] = line['actual_direct_cost'] + delta_hours * direct_fc_rate
-            total_task_hours += line['actual_hours']
-            total_task_costs_p += line['actual_prime_cost']
-            total_task_costs_d += line['actual_direct_cost']
+            total_role_hours += line['actual_hours']
+            total_role_costs_prime += line['actual_prime_cost']
+            total_role_costs_prod += line['actual_production_cost']
+            total_role_costs_direct += line['actual_direct_cost']
         # Allfällige Arbeit ohne Task (nur bei internen Projekten erlaubt) als "Sonstige" aufführen
-        other_hours = self.project_doc.actual_time - total_task_hours
-        other_costs_p = self.project_doc.actual_labor_as_prime_cost - total_task_costs_p
-        other_costs_d = self.project_doc.actual_labor_as_direct_cost - total_task_costs_d
-        if other_hours != 0 or other_costs_p != 0 or other_costs_d != 0:
-            other_line = {'activity': 'Sonstige', 'budget_hours': 0, 'budget_prime_cost': 0, 'actual_hours': other_hours, 'actual_prime_cost': other_costs_p, 'actual_direct_cost': other_costs_d, 'forecast_hours': other_hours, 'forecast_prime_cost': other_costs_p, 'forecast_direct_cost': other_costs_d, 'all_completed': 1}
-            task_details.append(other_line)
+        other_hours = self.project_doc.actual_time - total_role_hours
+        other_costs_prime = self.project_doc.actual_labor_as_prime_cost - total_role_costs_prime
+        other_costs_prod = self.project_doc.actual_labor_as_production_cost - total_role_costs_prod
+        other_costs_direct = self.project_doc.actual_labor_as_direct_cost - total_role_costs_direct
+        if other_hours != 0 or other_costs_prime != 0 or other_costs_direct != 0:
+            other_line = {'role': 'Sonstige', 'budget_hours': 0, 'budget_prime_cost': 0, 'budget_production_cost': 0, 'budget_direct_cost': 0, 'actual_hours': other_hours, 'actual_prime_cost': other_costs_prime, 'actual_production_cost': other_costs_prod, 'actual_direct_cost': other_costs_direct, 'forecast_hours': other_hours, 'forecast_prime_cost': other_costs_prime, 'forecast_production_cost': other_costs_prod, 'forecast_direct_cost': other_costs_direct, 'all_completed': 1}
+            details_by_role.append(other_line)
 
-        return task_details
+        return details_by_role

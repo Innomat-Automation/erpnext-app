@@ -73,6 +73,7 @@
             height: 12px;
             border-radius: 50%;
             margin-left: 5px;
+            float:left;
         }
 
         .status-green {
@@ -86,10 +87,7 @@
 </head>
 <body>
     {# Daten aus Python-Modul laden #}
-    {% set overview = get_project_overview_data(doc.name) %}
-    {% set summary = overview.summary %}
-    {% set costs = overview.costs %}
-    {% set roles = overview.roles %}
+    {% set kpi = get_project_kpis(doc.name) %}
 
     <div class="overview-container">
         <h1>Projektübersicht (Kompakt)</h1>
@@ -111,16 +109,18 @@
             </thead>
             <tbody>
                 <tr>
-                    <td class="right">{{ "{:,.0f}".format(summary.fc) }} CHF</td>
-                    <td class="right">{{ "{:,.0f}".format(summary.bu) }} CHF</td>
-                    <td class="right">{{ "{:,.0f}".format(summary.ist) }} CHF</td>
-                    <td class="right {{ 'highlight-negative' if summary.delta_chf < 0 else 'highlight-positive' }}">
-                        {{ "{:,.0f}".format(summary.delta_chf) }} CHF
+                    <td class="right">{{ "{:,.0f}".format(kpi.prime_cost_forecast()).replace(",","'") }} CHF</td>
+                    <td class="right">{{ "{:,.0f}".format(kpi.prime_cost_budget()).replace(",","'") }} CHF</td>
+                    <td class="right">{{ "{:,.0f}".format(kpi.prime_cost_current()).replace(",","'") }} CHF</td>
+                    {% set pc_delta_abs = kpi.prime_cost_budget() - kpi.prime_cost_forecast() %}
+                    {% set pc_delta_rel = (pc_delta_abs / kpi.prime_cost_budget()) if kpi.prime_cost_budget() > 0 else 0 %}
+                    <td class="right {{ 'highlight-negative' if pc_delta_abs < 0 else 'highlight-positive' }}">
+                        {{ "{:,.0f}".format(pc_delta_abs).replace(",","'") }} CHF
                     </td>
-                    <td class="center {{ 'highlight-negative' if summary.delta_pct < 0 else 'highlight-positive' }}">
-                        {{ "%.1f"|format(summary.delta_pct) }}%
+                    <td class="center {{ 'highlight-negative' if pc_delta_rel < 0 else 'highlight-positive' }}">
+                        {{ "%.1f"|format(100 * pc_delta_rel) }}%
                     </td>
-                    <td class="right">{{ "{:,.0f}".format(summary.etc) }} CHF</td>
+                    <td class="right">{{ "{:,.0f}".format(kpi.prime_cost_forecast() - kpi.prime_cost_current()).replace(",","'") }} CHF</td>
                 </tr>
             </tbody>
         </table>
@@ -133,22 +133,20 @@
                     <th>Marge (FC)</th>
                     <th>Marge % (FC)</th>
                     <th>Budgetverbrauch %</th>
-                    <th>Erreichbare Marge (FC)</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td class="right">{{ "{:,.0f}".format(summary.revenue) }} CHF</td>
-                    <td class="right {{ 'highlight-negative' if summary.margin_fc < 0 else 'highlight-positive' }}">
-                        {{ "{:,.0f}".format(summary.margin_fc) }} CHF
+                    <td class="right">{{ "{:,.0f}".format(kpi.revenue_forecast()).replace(",","'") }} CHF</td>
+                    <td class="right {{ 'highlight-negative' if kpi.ebit_forecast() < 0 else 'highlight-positive' }}">
+                        {{ "{:,.0f}".format(kpi.ebit_forecast()).replace(",","'") }} CHF
                     </td>
-                    <td class="center {{ 'highlight-negative' if summary.margin_fc_pct < 0 else 'highlight-positive' }}">
-                        {{ "%.1f"|format(summary.margin_fc_pct) }}%
+                    {% set ebit_fc_rel = kpi.ebit_forecast() / kpi.revenue_forecast() %}
+                    <td class="center {{ 'highlight-negative' if ebit_fc_rel < 0 else 'highlight-positive' }}">
+                        {{ "%.1f"|format(ebit_fc_rel) }}%
                     </td>
-                    <td class="center">{{ "%.1f"|format(summary.budget_usage) }}%</td>
-                    <td class="right {{ 'highlight-negative' if summary.margin_fc < 0 else 'highlight-positive' }}">
-                        {{ "{:,.0f}".format(summary.margin_fc) }} CHF
-                    </td>
+                    {% set budget_usage = kpi.prime_cost_current() / kpi.prime_cost_budget() if kpi.prime_cost_budget() > 0 else 0 %}
+                    <td class="center">{{ "%.1f"|format(100 * budget_usage) }}%</td>
                 </tr>
             </tbody>
         </table>
@@ -168,46 +166,57 @@
             <tbody>
                 <tr>
                     <td>Total Material</td>
-                    <td class="right">{{ "{:,.0f}".format(costs.material.fc) }} CHF</td>
-                    <td class="right">{{ "{:,.0f}".format(costs.material.bu) }} CHF</td>
-                    <td class="right {{ 'highlight-negative' if costs.material.delta_chf < 0 else 'highlight-positive' if costs.material.delta_chf > 0 else '' }}">
-                        {{ "{:,.0f}".format(costs.material.delta_chf) }} CHF
+                    <td class="right">{{ "{:,.0f}".format(kpi.material_forecast()).replace(",","'") }} CHF</td>
+                    <td class="right">{{ "{:,.0f}".format(kpi.material_budget()).replace(",","'") }} CHF</td>
+                    {% set material_delta_abs = kpi.material_budget() - kpi.material_forecast() %}
+                    <td class="right {{ 'highlight-negative' if material_delta_abs < 0 else 'highlight-positive' if material_delta_abs > 0 else '' }}">
+                        {{ "{:,.0f}".format(material_delta_abs).replace(",","'") }} CHF
                     </td>
-                    <td class="center {{ 'highlight-negative' if costs.material.delta_pct and costs.material.delta_pct < 0 else 'highlight-positive' if costs.material.delta_pct and costs.material.delta_pct > 0 else '' }}">
-                        {% if costs.material.delta_pct %}{{ "%.1f"|format(costs.material.delta_pct) }}%{% endif %}
+                    {% set material_delta_rel = material_delta_abs / kpi.material_budget() if kpi.material_budget() > 0 else 0 %}
+                    <td class="center {{ 'highlight-negative' if material_delta_rel and material_delta_rel < 0 else 'highlight-positive' if material_delta_rel and material_delta_rel > 0 else '' }}">
+                        {% if material_delta_rel %}{{ "%.1f"|format(100 * material_delta_rel) }}%{% endif %}
                     </td>
                 </tr>
                 <tr>
                     <td>Total Fremdleistungen</td>
-                    <td class="right">{{ "{:,.0f}".format(costs.services.fc) }} CHF</td>
-                    <td class="right">{{ "{:,.0f}".format(costs.services.bu) }} CHF</td>
-                    <td class="right {{ 'highlight-negative' if costs.services.delta_chf < 0 else 'highlight-positive' if costs.services.delta_chf > 0 else '' }}">
-                        {{ "{:,.0f}".format(costs.services.delta_chf) }} CHF
+                    <td class="right">{{ "{:,.0f}".format(kpi.thirdparty_forecast()).replace(",","'") }} CHF</td>
+                    <td class="right">{{ "{:,.0f}".format(kpi.thirdparty_budget()).replace(",","'") }} CHF</td>
+                    {% set thirdparty_delta_abs = kpi.thirdparty_budget() - kpi.thirdparty_forecast() %}
+                    <td class="right {{ 'highlight-negative' if thirdparty_delta_abs < 0 else 'highlight-positive' if thirdparty_delta_abs > 0 else '' }}">
+                        {{ "{:,.0f}".format(thirdparty_delta_abs).replace(",","'") }} CHF
                     </td>
-                    <td class="center {{ 'highlight-negative' if costs.services.delta_pct and costs.services.delta_pct < 0 else 'highlight-positive' if costs.services.delta_pct and costs.services.delta_pct > 0 else '' }}">
-                        {% if costs.services.delta_pct %}{{ "%.1f"|format(costs.services.delta_pct) }}%{% endif %}
+                    {% set thirdparty_delta_rel = thirdparty_delta_abs / kpi.thirdparty_budget() if kpi.thirdparty_budget() > 0 else 0 %}
+                    <td class="center {{ 'highlight-negative' if thirdparty_delta_rel and thirdparty_delta_rel < 0 else 'highlight-positive' if thirdparty_delta_rel and thirdparty_delta_rel > 0 else '' }}">
+                        {% if thirdparty_delta_rel %}{{ "%.1f"|format(100 * thirdparty_delta_rel) }}%{% endif %}
                     </td>
                 </tr>
                 <tr>
                     <td>Total Personal</td>
-                    <td class="right">{{ "{:,.0f}".format(costs.personnel.fc) }} CHF</td>
-                    <td class="right">{{ "{:,.0f}".format(costs.personnel.bu) }} CHF</td>
-                    <td class="right {{ 'highlight-negative' if costs.personnel.delta_chf < 0 else 'highlight-positive' if costs.personnel.delta_chf > 0 else '' }}">
-                        {{ "{:,.0f}".format(costs.personnel.delta_chf) }} CHF
+                    <td class="right">{{ "{:,.0f}".format(kpi.labor_direct_cost_forecast()).replace(",","'") }} CHF</td>
+                    <td class="right">{{ "{:,.0f}".format(kpi.labor_direct_cost_budget()).replace(",","'") }} CHF</td>
+                    {% set labor_delta_abs = kpi.labor_direct_cost_budget() - kpi.labor_direct_cost_forecast() %}
+                    <td class="right {{ 'highlight-negative' if labor_delta_abs < 0 else 'highlight-positive' if labor_delta_abs > 0 else '' }}">
+                        {{ "{:,.0f}".format(labor_delta_abs).replace(",","'") }} CHF
                     </td>
-                    <td class="center {{ 'highlight-negative' if costs.personnel.delta_pct and costs.personnel.delta_pct < 0 else 'highlight-positive' if costs.personnel.delta_pct and costs.personnel.delta_pct > 0 else '' }}">
-                        {% if costs.personnel.delta_pct %}{{ "%.1f"|format(costs.personnel.delta_pct) }}%{% endif %}
+                    {% set labor_delta_rel = labor_delta_abs / kpi.labor_direct_cost_budget() if kpi.labor_direct_cost_budget() > 0 else 0 %}
+                    <td class="center {{ 'highlight-negative' if labor_delta_rel and labor_delta_rel < 0 else 'highlight-positive' if labor_delta_rel and labor_delta_rel > 0 else '' }}">
+                        {% if labor_delta_rel %}{{ "%.1f"|format(100 * labor_delta_rel) }}%{% endif %}
                     </td>
                 </tr>
                 <tr>
                     <td>Total Gemeinkosten</td>
-                    <td class="right">{{ "{:,.0f}".format(costs.overhead.fc) }} CHF</td>
-                    <td class="right">{{ "{:,.0f}".format(costs.overhead.bu) }} CHF</td>
-                    <td class="right {{ 'highlight-negative' if costs.overhead.delta_chf < 0 else 'highlight-positive' if costs.overhead.delta_chf > 0 else '' }}">
-                        {{ "{:,.0f}".format(costs.overhead.delta_chf) }} CHF
+                    {# Als Delta berechnet, da GK nicht separat gespeichert werden: GK = HK - DK #}
+                    {% set overhead_fc = kpi.labor_production_cost_forecast() - kpi.labor_direct_cost_forecast() %}
+                    {% set overhead_bu = kpi.labor_production_cost_budget() - kpi.labor_direct_cost_budget() %}
+                    <td class="right">{{ "{:,.0f}".format(overhead_fc).replace(",","'") }} CHF</td>
+                    <td class="right">{{ "{:,.0f}".format(overhead_bu).replace(",","'") }} CHF</td>
+                    {% set overhead_delta_abs = overhead_bu - overhead_fc %}
+                    <td class="right {{ 'highlight-negative' if overhead_delta_abs < 0 else 'highlight-positive' if overhead_delta_abs > 0 else '' }}">
+                        {{ "{:,.0f}".format(overhead_delta_abs).replace(",","'") }} CHF
                     </td>
-                    <td class="center {{ 'highlight-negative' if costs.overhead.delta_pct and costs.overhead.delta_pct < 0 else 'highlight-positive' if costs.overhead.delta_pct and costs.overhead.delta_pct > 0 else '' }}">
-                        {% if costs.overhead.delta_pct %}{{ "%.1f"|format(costs.overhead.delta_pct) }}%{% endif %}
+                    {% set overhead_delta_rel = overhead_delta_abs / overhead_bu if overhead_bu > 0 else 0 %}
+                    <td class="center {{ 'highlight-negative' if overhead_delta_rel and overhead_delta_rel < 0 else 'highlight-positive' if overhead_delta_rel and overhead_delta_rel > 0 else '' }}">
+                        {% if overhead_delta_rel %}{{ "%.1f"|format(100 * overhead_delta_rel) }}%{% endif %}
                     </td>
                 </tr>
             </tbody>
@@ -228,32 +237,26 @@
                 </tr>
             </thead>
             <tbody>
-                {% for role in roles %}
+                {% for role in kpi.hours_and_costs_by_role() %}
                 <tr>
-                    <td>{{ role.name }}</td>
-                    <td class="center">{{ "%.1f"|format(role.fc_hours) if role.fc_hours > 0 else "-" }}</td>
+                    <td>{{ role.role }}</td>
+                    <td class="center">{{ "%.2f"|format(role.forecast_hours) if role.forecast_hours > 0 else "-" }}</td>
                     <td class="center">
-                        {{ "%.1f"|format(role.bu_hours) if role.bu_hours > 0 else "-" }}
-                        {% if role.delta_hours != 0 %}
-                            <span class="status-dot {{ 'status-red' if role.delta_hours < 0 else 'status-green' }}"></span>
-                        {% else %}
-                            <span class="status-dot status-green"></span>
-                        {% endif %}
+                        {{ "%.2f"|format(role.budget_hours) if role.budget_hours > 0 else "-" }}
                     </td>
-                    <td class="center {{ 'highlight-negative' if role.delta_hours < 0 else '' }}">
-                        {{ "%.2f"|format(role.delta_hours) if role.delta_hours != 0 else "0" }}
+                    {% set delta_hours = role.budget_hours - role.forecast_hours %}
+                    <td class="center {{ 'highlight-negative' if delta_hours < 0 else '' }}">
+                        <span class="status-dot {{ 'status-red' if delta_hours < 0 else 'status-green' }}"></span>
+                        <span>{{ "%.2f"|format(delta_hours) if delta_hours != 0 else "0" }}</span>
                     </td>
-                    <td class="right">{{ "{:,.0f}".format(role.fc_cost) if role.fc_cost > 0 else "0" }} CHF</td>
+                    <td class="right">{{ "{:,.0f}".format(role.forecast_direct_cost).replace(",","'") if role.forecast_direct_cost > 0 else "0" }} CHF</td>
                     <td class="right">
-                        {{ "{:,.0f}".format(role.bu_cost) if role.bu_cost > 0 else "0" }} CHF
-                        {% if role.delta_cost != 0 %}
-                            <span class="status-dot {{ 'status-red' if role.delta_cost < 0 else 'status-green' }}"></span>
-                        {% else %}
-                            <span class="status-dot status-green"></span>
-                        {% endif %}
+                        {{ "{:,.0f}".format(role.budget_direct_cost).replace(",","'") if role.budget_direct_cost > 0 else "0" }} CHF
                     </td>
-                    <td class="right {{ 'highlight-negative' if role.delta_cost < 0 else 'highlight-positive' }}">
-                        {{ "{:,.0f}".format(role.delta_cost) if role.delta_cost != 0 else "0" }} CHF
+                    {% set delta_cost = role.budget_direct_cost - role.forecast_direct_cost %}
+                    <td class="center {{ 'highlight-negative' if delta_cost < 0 else 'highlight-positive' }}">
+                        <span class="status-dot {{ 'status-red' if delta_cost < 0 else 'status-green' }}"></span>
+                        <span>{{ "{:,.0f}".format(delta_cost).replace(",","'") if delta_cost != 0 else "0" }} CHF</span>
                     </td>
                 </tr>
                 {% endfor %}
