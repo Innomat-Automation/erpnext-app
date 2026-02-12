@@ -3,7 +3,7 @@
 
 import frappe
 from frappe import _
-from innomat.innomat.scripts.project import update_project
+from innomat.innomat.scripts.project import update_project, get_fallback_ilv_rate
 
 # Verwendete Übersetzungen:
 # ist = current, Direktkosten = direct cost, Herstellkosten = production cost, Selbstkosten = prime cost
@@ -72,7 +72,7 @@ class ProjectKPI:
         return self.project_doc.actual_labor_as_direct_cost
 
     # Personalkosten IST, HK
-    def labor_prod_cost_current(self):
+    def labor_production_cost_current(self):
         return self.project_doc.actual_labor_as_production_cost
 
     # Personalkosten IST, SK
@@ -218,15 +218,26 @@ class ProjectKPI:
     def hours_and_costs_by_role(self):
         return self.details_by_role
 
+    # Total Arbeitsstunden über alle Rollen FORECAST
+    def total_hours_forecast(self):
+        forecast = sum(map(lambda role: role['forecast_hours'], self.details_by_role))
+        return forecast
+
+    # Total Arbeitsstunden über alle Rollen BUDGET
+    def total_hours_budget(self):
+        budget = sum(map(lambda role: role['budget_hours'], self.details_by_role))
+        return budget
+
     def _load_role_details_from_tasks(self):
         # Das Stundenbudget sowie die Istwerte für Stunden und Kosten sind auf dem Task bereits vorhanden.
         # Tasks mit gleichem Dienstleistungsartikel (Rolle) werden zusammengruppiert und die Werte aufsummiert.
         # Der ILV-Satz zur Berechnung des Kostenbudgets wird aus dem Artikelstamm gezogen, falls er im Task fehlt.
         # Die Fertigstellung wird summarisch betrachtet - alle Tasks einer Gruppe müssen abgeschlossen oder abgebrochen sein.
+        fallback_ilv_rate = get_fallback_ilv_rate()
         details_by_role = frappe.db.sql("""SELECT
         `tabItem`.`item_name` AS `role`,
         SUM(`tabTask`.`expected_time`) AS `budget_hours`,
-        SUM(`tabTask`.`expected_time` * IFNULL(NULLIF(`tabTask`.`ilv_rate`, 0), `tabItem`.`ilv_rate`)) AS `budget_prime_cost`,
+        SUM(`tabTask`.`expected_time` * IFNULL(NULLIF(IFNULL(NULLIF(`tabTask`.`ilv_rate`, 0), `tabItem`.`ilv_rate`), 0), {fallback_ilv_rate})) AS `budget_prime_cost`,
         SUM(`tabTask`.`actual_time`) AS `actual_hours`,
         SUM(`tabTask`.`actual_labor_as_prime_cost`) AS `actual_prime_cost`,
         SUM(`tabTask`.`actual_labor_as_production_cost`) AS `actual_production_cost`,
@@ -237,7 +248,7 @@ class ProjectKPI:
         LEFT JOIN `tabItem` ON `tabTask`.`item_code` = `tabItem`.`item_code`
         WHERE `tabTask`.`project` = '{project}'
         GROUP BY `tabTask`.`item_code`
-        """.format(project=self.project_name), as_dict=True)
+        """.format(project=self.project_name, fallback_ilv_rate=fallback_ilv_rate), as_dict=True)
         total_role_hours = 0
         total_role_costs_prime = 0
         total_role_costs_prod = 0

@@ -407,7 +407,7 @@ def update_project(p):
     frappe.db.commit()
 
 """
-Get project material cost based on purchase orders
+Get a project's third party services cost (cost of non-stock items) based on purchase invoices
 """
 def get_project_service_cost(project):
     data = frappe.db.sql("""SELECT SUM(`net_amount`) AS `cost`
@@ -424,7 +424,48 @@ def get_project_service_cost(project):
     else:
         return 0
 
+"""
+Get a project's material cost (cost of stock items) from purchase invoices and delivery notes
+Since the stock valuation rate in delivery notes (used for perpetual inventory) is only available as a per-document sum, we make a comparison between Delivery Note Items and Purchase Invoice Items.
+The value of any (stock-kept) PI Items that are not listed in a Delivery Note is then added to the total valuation of the Delivery Notes.
+If no submitted Delivery Notes are available, this will simply return the total value of all (stock-kept) Purchase Invoice Items.
+"""
 def get_project_material_cost(project):
+    total_cost = get_project_material_cost_from_delivery_notes(project)
+    pinv_data = frappe.db.sql("""SELECT `tabPurchase Invoice Item`.`item_code`, SUM(`qty`) AS `total_qty`, AVG(`net_rate`) AS `avg_rate`
+                            FROM `tabPurchase Invoice Item`
+                            LEFT JOIN `tabPurchase Invoice` ON `tabPurchase Invoice Item`.`parent` = `tabPurchase Invoice`.`name`
+                            LEFT JOIN `tabItem` ON `tabPurchase Invoice Item`.`item_code` = `tabItem`.`item_code`
+                            WHERE `tabPurchase Invoice`.`docstatus` = 1
+                              AND `tabPurchase Invoice Item`.`project` = "{project}"
+                              AND `tabItem`.`is_stock_item` = 1
+                            GROUP BY `tabItem`.`item_code`
+                        ;""".format(project=project), as_dict=True)
+    if not pinv_data or len(pinv_data) == 0:
+        return 0
+
+    for item in pinv_data:
+        dn_item_data = frappe.db.sql("""
+        SELECT SUM(`qty`) AS `total_qty`
+        FROM `tabDelivery Note Item`
+        LEFT JOIN `tabDelivery Note` ON `tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name`
+        WHERE `tabDelivery Note`.`docstatus` = 1
+          AND `tabDelivery Note`.`project` = "{project}"
+          AND `tabDelivery Note Item`.`item_code` = "{item_code}"
+        """.format(project=project, item_code=item['item_code']), as_dict=True)
+        if dn_item_data and len(dn_item_data) > 0:
+            delta_qty = item['total_qty'] - (dn_item_data[0]['total_qty'] or 0)
+            if delta_qty > 0:
+                total_cost += item['avg_rate'] * delta_qty
+
+    return total_cost
+
+"""
+The GL entries of delivery notes reflect the valuation of all stock items delivered.
+These entries are created because 'Perpetual Inventory' is enabled.
+Non-stock items are not included and no per-item valuation is stored.
+"""
+def get_project_material_cost_from_delivery_notes(project):
     data = frappe.db.sql("""SELECT SUM(`credit_in_account_currency`) AS `cost`
                             FROM `tabGL Entry`
                             LEFT JOIN `tabDelivery Note` ON `tabGL Entry`.`voucher_no` = `tabDelivery Note`.`name`
@@ -434,7 +475,7 @@ def get_project_material_cost(project):
                         ;""".format(project=project), as_dict=True)
 
     if data and len(data) > 0:
-        return data[0]['cost']
+        return data[0]['cost'] or 0
     else:
         return 0
 
@@ -570,8 +611,10 @@ def get_sales_order_materials(sales_order):
 """
 Return a fallback value for an Item's ILV (Interne Leistungsverrechnung) hourly rate, to be used when no value is present in a Sales Order Item
 """
-def get_fallback_ilv_rate(item_code):
-    rate = frappe.get_value("Item", item_code, "ilv_rate")
+def get_fallback_ilv_rate(item_code=None):
+    rate = None
+    if item_code:
+        rate = frappe.get_value("Item", item_code, "ilv_rate")
     if not rate:
         rate = frappe.get_value("Item", FALLBACK_ITEM_FOR_ILV_RATE, "ilv_rate")
     return rate or 0

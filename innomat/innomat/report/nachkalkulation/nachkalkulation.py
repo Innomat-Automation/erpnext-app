@@ -27,8 +27,8 @@ def get_columns():
         {"label": _("Hours flat (plan)"), "fieldname": "planned_hours", "fieldtype": "Float", "width": 100},
         {"label": _("Hours flat (used)"), "fieldname": "hours_flat", "fieldtype": "Float", "width": 100},
         {"label": _("Hours by effort"), "fieldname": "hours_effective", "fieldtype": "Float", "width": 100},
-        {"label": _("Hours budget"), "fieldname": "stundenbudget_plan", "fieldtype": "Currency", "width": 100},
-        {"label": _("Hours consumed"), "fieldname": "stundenbudget_aktuell", "fieldtype": "Currency", "width": 100}
+        {"label": _("Labor cost budget (ILV)"), "fieldname": "planned_hours_ilv", "fieldtype": "Currency", "width": 100},
+        {"label": _("Labor cost actual (prime cost)"), "fieldname": "actual_labor_as_prime_cost", "fieldtype": "Currency", "width": 100}
     ]
 
 @frappe.whitelist()
@@ -44,8 +44,8 @@ def get_data(filters):
         conditions += """ AND `tabProject`.`project_manager_name` LIKE '%{project_manager_name}%'""".format(project_manager_name=filters['project_manager_name'])
     if 'customer' in filters:
         conditions = """ AND `tabProject`.`customer` = '{customer}'""".format(customer=filters['customer'])
-    
-    sql_query = """SELECT 
+
+    sql_query = """SELECT
                     `tabProject`.`name` AS `project`,
                     `tabProject`.`title` AS `project_name`,
                     `tabProject`.`project_manager` AS `project_manager`,
@@ -55,7 +55,7 @@ def get_data(filters):
                     `tabProject`.`expected_start_date` AS `start_date`,
                     `tabProject`.`expected_end_date` AS `end_date`,
                     (SELECT IFNULL(SUM(`tabTask`.`expected_time`) , 0)
-                     FROM `tabTask` 
+                     FROM `tabTask`
                      WHERE `tabTask`.`project` = `tabProject`.`name`) AS `project_expected_time`,
                     IFNULL(`tabProject`.`planned_material_cost`, 0) AS `planned_material_cost`,
                     IFNULL(`tabProject`.`actual_material_cost`, 0) AS `actual_material_cost`,
@@ -70,17 +70,17 @@ def get_data(filters):
                      WHERE `tabTimesheet Detail`.`docstatus` = 1
                        AND `tabTimesheet Detail`.`project` = `tabProject`.`name`
                        AND `tabTimesheet Detail`. `by_effort` = 1) AS `hours_effective`,
-                    `tabProject`.`stundenbudget_plan` AS `stundenbudget_plan`,
-                    `tabProject`.`stundenbudget_aktuell` AS `stundenbudget_aktuell`
+                    `tabProject`.`planned_hours_ilv` AS `planned_hours_ilv`,
+                    `tabProject`.`actual_labor_as_prime_cost` AS `actual_labor_as_prime_cost`
                 FROM `tabProject`
-                WHERE 
-                  `tabProject`.`status` = "Open" 
+                WHERE
+                  `tabProject`.`status` = "Open"
                   {conditions}
                 ;""".format(
               conditions=conditions)
-    
+
     data = frappe.db.sql(sql_query, as_dict=True)
-    
+
     # processing
     for row in data:
         if row['end_date'] and row['start_date']:
@@ -92,5 +92,5 @@ def get_data(filters):
             row['progress_time'] = progress_time
         if row['project_expected_time']:
             row['progress_tasks'] = 100 * (row['hours_flat'] or 0) / row['project_expected_time']
-        
+
     return data

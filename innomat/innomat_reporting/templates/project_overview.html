@@ -237,9 +237,10 @@
                 </tr>
             </thead>
             <tbody>
+                {% set stats = {'has_by_effort_roles': 0, 'total_bu': 0, } %}
                 {% for role in kpi.hours_and_costs_by_role() %}
                 <tr>
-                    <td>{{ role.role }}</td>
+                    <td>{{ role.role }}{% if role.has_hours_by_effort %}*{% if stats.update('has_by_effort_roles': 1){% endif %}{% endif %}</td>
                     <td class="center">{{ "%.2f"|format(role.forecast_hours) if role.forecast_hours > 0 else "-" }}</td>
                     <td class="center">
                         {{ "%.2f"|format(role.budget_hours) if role.budget_hours > 0 else "-" }}
@@ -260,8 +261,34 @@
                     </td>
                 </tr>
                 {% endfor %}
+                <tr>
+                    <td><b>Total</b></td>
+                    {% set hours_bu = kpi.total_hours_budget() %}
+                    {% set hours_fc = kpi.total_hours_forecast() %}
+                    {% set hours_diff = hours_bu - hours_fc %}
+                    <td class="center"><b>{{ "%.2f"|format(hours_fc) if hours_fc > 0 else "-" }}</b></td>
+                    <td class="center">
+                        <b>{{ "%.2f"|format(hours_bu) if hours_bu > 0 else "-" }}</b>
+                    </td>
+                    <td class="center {{ 'highlight-negative' if hours_diff < 0 else '' }}">
+                        <b><span class="status-dot {{ 'status-red' if hours_diff < 0 else 'status-green' }}"></span>
+                        <span>{{ "%.2f"|format(hours_diff) if hours_diff != 0 else "-" }}</span></b>
+                    </td>
+                    {% set cost_bu = kpi.labor_direct_cost_budget() %}
+                    {% set cost_fc = kpi.labor_direct_cost_forecast() %}
+                    {% set cost_diff = cost_bu - cost_fc %}
+                    <td class="right"><b>{{ "{:,.0f}".format(cost_fc).replace(",","'") if cost_fc > 0 else "0" }} CHF</b></td>
+                    <td class="right">
+                        <b>{{ "{:,.0f}".format(cost_bu).replace(",","'") if cost_bu > 0 else "0" }} CHF</b>
+                    </td>
+                    <td class="center {{ 'highlight-negative' if cost_diff < 0 else 'highlight-positive' }}">
+                        <b><span class="status-dot {{ 'status-red' if cost_diff < 0 else 'status-green' }}"></span>
+                        <span>{{ "{:,.0f}".format(cost_diff).replace(",","'") if cost_diff != 0 else "0" }} CHF</span></b>
+                    </td>
+                </tr>
             </tbody>
         </table>
+        {% if stats.has_by_effort_roles %}{{ _("* Rolle enthält nach Aufwand verrechnete Stunden; bei Mehraufwand wird das Budget angepasst") }}{% endif %}
     </div>
 </body>
 </html>

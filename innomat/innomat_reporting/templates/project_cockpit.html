@@ -110,7 +110,7 @@
             </tr>
             <tr>
                 <td class="center">
-                    <strong>{{ "{:,.0f}".format(kpi.ebit_current()).replace(",","'") }}</strong>
+                    <strong>{{ "{:,.0f}".format([-kpi.ebit_current(), 0]|max).replace(",","'") }}</strong>
                 </td>
                 <td></td>
             </tr>
