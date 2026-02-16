@@ -14,6 +14,22 @@ cur_frm.dashboard.add_transactions([
  */
 frappe.ui.form.on('Project', {
     refresh(frm) {
+        frm.add_custom_button(__("Projektcockpit"), function() {
+            frm.print_preview.refresh_print_options();
+            frm.print_preview.print_sel.val("Projektcockpit");
+            frm.page.set_view("print");
+            frm.print_preview.set_user_lang();
+            frm.print_preview.set_default_print_language();
+            frm.print_preview.preview();
+        });
+        frm.add_custom_button(__("Projektübersicht"), function() {
+            frm.print_preview.refresh_print_options();
+            frm.print_preview.print_sel.val("Projektübersicht");
+            frm.page.set_view("print");
+            frm.print_preview.set_user_lang();
+            frm.print_preview.set_default_print_language();
+            frm.print_preview.preview();
+        });
         set_department_filter(frm);
         // restricted area for account users (elevated)
         if (frappe.user.has_role("Accounts User")) {
