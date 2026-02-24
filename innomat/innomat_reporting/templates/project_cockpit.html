@@ -77,6 +77,11 @@
     </style>
 </head>
 <body>
+    {# Makro für Währungsformatierung ohne Nachkommastellen #}
+    {% macro chf0(value) %}
+        {{ "{:,.0f}".format(value or 0).replace(",", "'") }}
+    {% endmacro %}
+
     {# Berechnungen über Python-Modul durchführen #}
     {% set kpi = get_project_kpis(doc.name) %}
 
@@ -101,7 +106,7 @@
                     <strong>{{ "%.0f"|format(100 * kpi.billed_prime_cost()) }}%</strong>
                 </td>
                 <td class="center">
-                    <strong>{{ "{:,.0f}".format(kpi.outstanding_amount()).replace(",","'") }}</strong>
+                    <strong>{{ chf0(kpi.outstanding_amount()) }}</strong>
                 </td>
             </tr>
             <tr>
@@ -110,7 +115,7 @@
             </tr>
             <tr>
                 <td class="center">
-                    <strong>{{ "{:,.0f}".format([-kpi.ebit_current(), 0]|max).replace(",","'") }}</strong>
+                    <strong>{{ chf0([-kpi.ebit_current(), 0]|max) }}</strong>
                 </td>
                 <td></td>
             </tr>
@@ -126,17 +131,17 @@
             </tr>
             <tr>
                 <td class="center">
-                    CHF {{ "{:,.0f}".format(kpi.prime_cost_budget()).replace(",","'") }}
+                    CHF {{ chf0(kpi.prime_cost_budget()) }}
                 </td>
                 <td class="center">
-                    CHF {{ "{:,.0f}".format(kpi.ebit_budget()).replace(",","'") }}<br>
+                    CHF {{ chf0(kpi.ebit_budget()) }}<br>
                     <span class="{{ 'highlight-positive' if kpi.ebit_budget() > 0 else 'highlight-negative' }}">
                         {{ "%.1f"|format(100 * kpi.ebit_budget() / kpi.revenue_budget()) }}%
                     </span>
                 </td>
                 <td class="center">
                     <span class="{{ 'highlight-positive' if kpi.ebit_forecast() > 0 else 'highlight-negative' }}">
-                        CHF {{ "{:,.0f}".format(kpi.ebit_forecast()).replace(",","'") }}
+                        CHF {{ chf0(kpi.ebit_forecast()) }}
                         <br>
                         {{ "%.1f"|format(100 * kpi.ebit_forecast() / kpi.revenue_forecast()) }}%
                     </span>
@@ -158,12 +163,12 @@
             </tr>
             <tr>
                 <td class="center" colspan="2">
-                    CHF {{ "{:,.0f}".format(kpi.prime_cost_forecast()).replace(",","'") }}
+                    CHF {{ chf0(kpi.prime_cost_forecast()) }}
                 </td>
                 <td class="center" colspan="2">
                     {% set delta_abs = kpi.prime_cost_budget() - kpi.prime_cost_forecast() %}
                     <span class="{{ 'highlight-positive' if delta_abs > 0 else 'highlight-negative' }}">
-                        CHF {{ "{:,.0f}".format(delta_abs).replace(",","'") }}
+                        CHF {{ chf0(delta_abs) }}
                     </span>
                 </td>
             </tr>
@@ -174,7 +179,7 @@
             </tr>
             <tr>
                 <td class="center">
-                    CHF {{ "{:,.0f}".format(kpi.revenue_forecast()).replace(",","'") }}
+                    CHF {{ chf0(kpi.revenue_forecast()) }}
                 </td>
                 <td class="center">
                     {{ "%.0f"|format(100 * kpi.revenue_forecast() / kpi.revenue_budget()) }}%
@@ -201,50 +206,56 @@
             <tbody>
                 <tr>
                     <td>Material</td>
-                    <td class="right">{{ "{:,.0f}".format(kpi.material_current()).replace(",","'") }}</td>
-                    <td class="right">{{ "{:,.0f}".format(kpi.material_forecast()).replace(",","'") }}</td>
-                    <td class="right">{{ "{:,.0f}".format(kpi.material_budget()).replace(",","'") }}</td>
+                    <td class="right">{{ chf0(kpi.material_current()) }}</td>
+                    <td class="right">{{ chf0(kpi.material_forecast()) }}</td>
+                    <td class="right">{{ chf0(kpi.material_budget()) }}</td>
                 </tr>
                 <tr>
                     <td>Fremdleistungen</td>
-                    <td class="right">{{ "{:,.0f}".format(kpi.thirdparty_current()).replace(",","'") }}</td>
-                    <td class="right">{{ "{:,.0f}".format(kpi.thirdparty_forecast()).replace(",","'") }}</td>
-                    <td class="right">{{ "{:,.0f}".format(kpi.thirdparty_budget()).replace(",","'") }}</td>
+                    <td class="right">{{ chf0(kpi.thirdparty_current()) }}</td>
+                    <td class="right">{{ chf0(kpi.thirdparty_forecast()) }}</td>
+                    <td class="right">{{ chf0(kpi.thirdparty_budget()) }}</td>
                 </tr>
                 <tr>
-                    <td>Personal</td>
-                    <td class="right">{{ "{:,.0f}".format(kpi.labor_direct_cost_current()).replace(",","'") }}</td>
-                    <td class="right">{{ "{:,.0f}".format(kpi.labor_direct_cost_forecast()).replace(",","'") }}</td>
-                    <td class="right">{{ "{:,.0f}".format(kpi.labor_direct_cost_budget()).replace(",","'") }}</td>
+                    <td>Personal (pauschal)</td>
+                    <td class="right">{{ chf0(kpi.labor_direct_cost_current()) }}</td>
+                    <td class="right">{{ chf0(kpi.labor_direct_cost_forecast()) }}</td>
+                    <td class="right">{{ chf0(kpi.labor_direct_cost_budget()) }}</td>
+                </tr>
+                <tr>
+                    <td>Personal nach Aufwand</td>
+                    <td class="right">{{ chf0(kpi.labor_direct_cost_by_effort_current()) }}</td>
+                    <td class="right">{{ chf0(kpi.labor_direct_cost_by_effort_forecast()) }}</td>
+                    <td class="right">{{ chf0(kpi.labor_direct_cost_by_effort_budget()) }}</td>
                 </tr>
                 <tr>
                     <td>Direktkosten</td>
-                    <td class="right">{{ "{:,.0f}".format(kpi.direct_cost_current()).replace(",","'") }}</td>
-                    <td class="right">{{ "{:,.0f}".format(kpi.direct_cost_forecast()).replace(",","'") }}</td>
-                    <td class="right">{{ "{:,.0f}".format(kpi.direct_cost_budget()).replace(",","'") }}</td>
+                    <td class="right">{{ chf0(kpi.direct_cost_current()) }}</td>
+                    <td class="right">{{ chf0(kpi.direct_cost_forecast()) }}</td>
+                    <td class="right">{{ chf0(kpi.direct_cost_budget()) }}</td>
                 </tr>
                 <tr>
                     <td><strong>Selbstkosten</strong></td>
-                    <td class="right"><strong>{{ "{:,.0f}".format(kpi.prime_cost_current()).replace(",","'") }}</strong></td>
-                    <td class="right"><strong>{{ "{:,.0f}".format(kpi.prime_cost_forecast()).replace(",","'") }}</strong></td>
-                    <td class="right"><strong>{{ "{:,.0f}".format(kpi.prime_cost_budget()).replace(",","'") }}</strong></td>
+                    <td class="right"><strong>{{ chf0(kpi.prime_cost_current()) }}</strong></td>
+                    <td class="right"><strong>{{ chf0(kpi.prime_cost_forecast()) }}</strong></td>
+                    <td class="right"><strong>{{ chf0(kpi.prime_cost_budget()) }}</strong></td>
                 </tr>
                 <tr>
                     <td>Ertrag</td>
-                    <td class="right">{{ "{:,.0f}".format(kpi.revenue_current()).replace(",","'") }}</td>
-                    <td class="right">{{ "{:,.0f}".format(kpi.revenue_forecast()).replace(",","'") }}</td>
-                    <td class="right">{{ "{:,.0f}".format(kpi.revenue_budget()).replace(",","'") }}</td>
+                    <td class="right">{{ chf0(kpi.revenue_current()) }}</td>
+                    <td class="right">{{ chf0(kpi.revenue_forecast()) }}</td>
+                    <td class="right">{{ chf0(kpi.revenue_budget()) }}</td>
                 </tr>
                 <tr>
                     <td><strong>EBIT</strong></td>
                     <td class="right {{ 'highlight-negative' if kpi.ebit_current() < 0 else 'highlight-positive' }}">
-                        <strong>{{ "{:,.0f}".format(kpi.ebit_current()).replace(",","'") }}</strong>
+                        <strong>{{ chf0(kpi.ebit_current()) }}</strong>
                     </td>
                     <td class="right {{ 'highlight-negative' if kpi.ebit_forecast() < 0 else 'highlight-positive' }}">
-                        <strong>{{ "{:,.0f}".format(kpi.ebit_forecast()).replace(",","'") }}</strong>
+                        <strong>{{ chf0(kpi.ebit_forecast()) }}</strong>
                     </td>
                     <td class="right {{ 'highlight-negative' if kpi.ebit_budget() < 0 else 'highlight-positive' }}">
-                        <strong>{{ "{:,.0f}".format(kpi.ebit_budget()).replace(",","'") }}</strong>
+                        <strong>{{ chf0(kpi.ebit_budget()) }}</strong>
                     </td>
                 </tr>
             </tbody>
@@ -280,7 +291,7 @@
                     const ctx = canvas.getContext('2d');
 
                     // Daten vorbereiten
-                    const categories = ['Material', 'Personal', 'Selbstkosten', 'Ertrag', 'EBIT'];
+                    const categories = ['Material', 'Personal (pauschal)', 'Selbstkosten', 'Ertrag', 'EBIT'];
                     const istData = [
                         {{ kpi.material_current() }},
                         {{ kpi.labor_direct_cost_current() }},

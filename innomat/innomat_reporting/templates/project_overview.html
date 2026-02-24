@@ -86,8 +86,17 @@
     </style>
 </head>
 <body>
+    {# Makro für Währungsformatierung ohne Nachkommastellen #}
+    {% macro chf0(value) %}
+        {{ "{:,.0f}".format(value or 0).replace(",", "'") }}
+    {% endmacro %}
+
     {# Daten aus Python-Modul laden #}
     {% set kpi = get_project_kpis(doc.name) %}
+
+    {# Thresholds für Abweichungen bei Sanity Checks #}
+    {% set cost_thresh = 10 %}
+    {% set hours_thresh = 0.5 %}
 
     <div class="overview-container">
         <h1>Projektübersicht (Kompakt)</h1>
@@ -109,18 +118,18 @@
             </thead>
             <tbody>
                 <tr>
-                    <td class="right">{{ "{:,.0f}".format(kpi.prime_cost_forecast()).replace(",","'") }} CHF</td>
-                    <td class="right">{{ "{:,.0f}".format(kpi.prime_cost_budget()).replace(",","'") }} CHF</td>
-                    <td class="right">{{ "{:,.0f}".format(kpi.prime_cost_current()).replace(",","'") }} CHF</td>
+                    <td class="right">{{ chf0(kpi.prime_cost_forecast()) }} CHF</td>
+                    <td class="right">{{ chf0(kpi.prime_cost_budget()) }} CHF</td>
+                    <td class="right">{{ chf0(kpi.prime_cost_current()) }} CHF</td>
                     {% set pc_delta_abs = kpi.prime_cost_budget() - kpi.prime_cost_forecast() %}
                     {% set pc_delta_rel = (pc_delta_abs / kpi.prime_cost_budget()) if kpi.prime_cost_budget() > 0 else 0 %}
                     <td class="right {{ 'highlight-negative' if pc_delta_abs < 0 else 'highlight-positive' }}">
-                        {{ "{:,.0f}".format(pc_delta_abs).replace(",","'") }} CHF
+                        {{ chf0(pc_delta_abs) }} CHF
                     </td>
                     <td class="center {{ 'highlight-negative' if pc_delta_rel < 0 else 'highlight-positive' }}">
                         {{ "%.1f"|format(100 * pc_delta_rel) }}%
                     </td>
-                    <td class="right">{{ "{:,.0f}".format(kpi.prime_cost_forecast() - kpi.prime_cost_current()).replace(",","'") }} CHF</td>
+                    <td class="right">{{ chf0(kpi.prime_cost_forecast() - kpi.prime_cost_current()) }} CHF</td>
                 </tr>
             </tbody>
         </table>
@@ -137,13 +146,13 @@
             </thead>
             <tbody>
                 <tr>
-                    <td class="right">{{ "{:,.0f}".format(kpi.revenue_forecast()).replace(",","'") }} CHF</td>
+                    <td class="right">{{ chf0(kpi.revenue_forecast()) }} CHF</td>
                     <td class="right {{ 'highlight-negative' if kpi.ebit_forecast() < 0 else 'highlight-positive' }}">
-                        {{ "{:,.0f}".format(kpi.ebit_forecast()).replace(",","'") }} CHF
+                        {{ chf0(kpi.ebit_forecast()) }} CHF
                     </td>
                     {% set ebit_fc_rel = kpi.ebit_forecast() / kpi.revenue_forecast() %}
                     <td class="center {{ 'highlight-negative' if ebit_fc_rel < 0 else 'highlight-positive' }}">
-                        {{ "%.1f"|format(ebit_fc_rel) }}%
+                        {{ "%.1f"|format(100 * ebit_fc_rel) }}%
                     </td>
                     {% set budget_usage = kpi.prime_cost_current() / kpi.prime_cost_budget() if kpi.prime_cost_budget() > 0 else 0 %}
                     <td class="center">{{ "%.1f"|format(100 * budget_usage) }}%</td>
@@ -166,11 +175,11 @@
             <tbody>
                 <tr>
                     <td>Total Material</td>
-                    <td class="right">{{ "{:,.0f}".format(kpi.material_forecast()).replace(",","'") }} CHF</td>
-                    <td class="right">{{ "{:,.0f}".format(kpi.material_budget()).replace(",","'") }} CHF</td>
+                    <td class="right">{{ chf0(kpi.material_forecast()) }} CHF</td>
+                    <td class="right">{{ chf0(kpi.material_budget()) }} CHF</td>
                     {% set material_delta_abs = kpi.material_budget() - kpi.material_forecast() %}
                     <td class="right {{ 'highlight-negative' if material_delta_abs < 0 else 'highlight-positive' if material_delta_abs > 0 else '' }}">
-                        {{ "{:,.0f}".format(material_delta_abs).replace(",","'") }} CHF
+                        {{ chf0(material_delta_abs) }} CHF
                     </td>
                     {% set material_delta_rel = material_delta_abs / kpi.material_budget() if kpi.material_budget() > 0 else 0 %}
                     <td class="center {{ 'highlight-negative' if material_delta_rel and material_delta_rel < 0 else 'highlight-positive' if material_delta_rel and material_delta_rel > 0 else '' }}">
@@ -179,11 +188,11 @@
                 </tr>
                 <tr>
                     <td>Total Fremdleistungen</td>
-                    <td class="right">{{ "{:,.0f}".format(kpi.thirdparty_forecast()).replace(",","'") }} CHF</td>
-                    <td class="right">{{ "{:,.0f}".format(kpi.thirdparty_budget()).replace(",","'") }} CHF</td>
+                    <td class="right">{{ chf0(kpi.thirdparty_forecast()) }} CHF</td>
+                    <td class="right">{{ chf0(kpi.thirdparty_budget()) }} CHF</td>
                     {% set thirdparty_delta_abs = kpi.thirdparty_budget() - kpi.thirdparty_forecast() %}
                     <td class="right {{ 'highlight-negative' if thirdparty_delta_abs < 0 else 'highlight-positive' if thirdparty_delta_abs > 0 else '' }}">
-                        {{ "{:,.0f}".format(thirdparty_delta_abs).replace(",","'") }} CHF
+                        {{ chf0(thirdparty_delta_abs) }} CHF
                     </td>
                     {% set thirdparty_delta_rel = thirdparty_delta_abs / kpi.thirdparty_budget() if kpi.thirdparty_budget() > 0 else 0 %}
                     <td class="center {{ 'highlight-negative' if thirdparty_delta_rel and thirdparty_delta_rel < 0 else 'highlight-positive' if thirdparty_delta_rel and thirdparty_delta_rel > 0 else '' }}">
@@ -191,14 +200,27 @@
                     </td>
                 </tr>
                 <tr>
-                    <td>Total Personal</td>
-                    <td class="right">{{ "{:,.0f}".format(kpi.labor_direct_cost_forecast()).replace(",","'") }} CHF</td>
-                    <td class="right">{{ "{:,.0f}".format(kpi.labor_direct_cost_budget()).replace(",","'") }} CHF</td>
+                    <td>Total Personal (pauschal)</td>
+                    <td class="right">{{ chf0(kpi.labor_direct_cost_forecast()) }} CHF</td>
+                    <td class="right">{{ chf0(kpi.labor_direct_cost_budget()) }} CHF</td>
                     {% set labor_delta_abs = kpi.labor_direct_cost_budget() - kpi.labor_direct_cost_forecast() %}
                     <td class="right {{ 'highlight-negative' if labor_delta_abs < 0 else 'highlight-positive' if labor_delta_abs > 0 else '' }}">
-                        {{ "{:,.0f}".format(labor_delta_abs).replace(",","'") }} CHF
+                        {{ chf0(labor_delta_abs) }} CHF
                     </td>
                     {% set labor_delta_rel = labor_delta_abs / kpi.labor_direct_cost_budget() if kpi.labor_direct_cost_budget() > 0 else 0 %}
+                    <td class="center {{ 'highlight-negative' if labor_delta_rel and labor_delta_rel < 0 else 'highlight-positive' if labor_delta_rel and labor_delta_rel > 0 else '' }}">
+                        {% if labor_delta_rel %}{{ "%.1f"|format(100 * labor_delta_rel) }}%{% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Total Personal nach Aufwand</td>
+                    <td class="right">{{ chf0(kpi.labor_direct_cost_by_effort_forecast()) }} CHF</td>
+                    <td class="right">{{ chf0(kpi.labor_direct_cost_by_effort_budget()) }} CHF</td>
+                    {% set labor_delta_abs = kpi.labor_direct_cost_by_effort_budget() - kpi.labor_direct_cost_by_effort_forecast() %}
+                    <td class="right {{ 'highlight-negative' if labor_delta_abs < 0 else 'highlight-positive' if labor_delta_abs > 0 else '' }}">
+                        {{ chf0(labor_delta_abs) }} CHF
+                    </td>
+                    {% set labor_delta_rel = labor_delta_abs / kpi.labor_direct_cost_by_effort_budget() if kpi.labor_direct_cost_by_effort_budget() > 0 else 0 %}
                     <td class="center {{ 'highlight-negative' if labor_delta_rel and labor_delta_rel < 0 else 'highlight-positive' if labor_delta_rel and labor_delta_rel > 0 else '' }}">
                         {% if labor_delta_rel %}{{ "%.1f"|format(100 * labor_delta_rel) }}%{% endif %}
                     </td>
@@ -208,11 +230,11 @@
                     {# Als Delta berechnet, da GK nicht separat gespeichert werden: GK = HK - DK #}
                     {% set overhead_fc = kpi.labor_production_cost_forecast() - kpi.labor_direct_cost_forecast() %}
                     {% set overhead_bu = kpi.labor_production_cost_budget() - kpi.labor_direct_cost_budget() %}
-                    <td class="right">{{ "{:,.0f}".format(overhead_fc).replace(",","'") }} CHF</td>
-                    <td class="right">{{ "{:,.0f}".format(overhead_bu).replace(",","'") }} CHF</td>
+                    <td class="right">{{ chf0(overhead_fc) }} CHF</td>
+                    <td class="right">{{ chf0(overhead_bu) }} CHF</td>
                     {% set overhead_delta_abs = overhead_bu - overhead_fc %}
                     <td class="right {{ 'highlight-negative' if overhead_delta_abs < 0 else 'highlight-positive' if overhead_delta_abs > 0 else '' }}">
-                        {{ "{:,.0f}".format(overhead_delta_abs).replace(",","'") }} CHF
+                        {{ chf0(overhead_delta_abs) }} CHF
                     </td>
                     {% set overhead_delta_rel = overhead_delta_abs / overhead_bu if overhead_bu > 0 else 0 %}
                     <td class="center {{ 'highlight-negative' if overhead_delta_rel and overhead_delta_rel < 0 else 'highlight-positive' if overhead_delta_rel and overhead_delta_rel > 0 else '' }}">
@@ -237,35 +259,68 @@
                 </tr>
             </thead>
             <tbody>
-                {% set stats = {'has_by_effort_roles': 0, 'total_bu': 0, } %}
+                {% set stats = {'total_hours_bu': 0, 'total_hours_fc': 0, 'total_bu': 0, 'total_fc': 0} %}
                 {% for role in kpi.hours_and_costs_by_role() %}
                 <tr>
-                    <td>{{ role.role }}{% if role.has_hours_by_effort %}*{% if stats.update('has_by_effort_roles': 1){% endif %}{% endif %}</td>
+                    <td>{{ role.role }}{% if role.by_effort %} - {{ _('nach Aufwand') }}{% endif %}</td>
                     <td class="center">{{ "%.2f"|format(role.forecast_hours) if role.forecast_hours > 0 else "-" }}</td>
                     <td class="center">
                         {{ "%.2f"|format(role.budget_hours) if role.budget_hours > 0 else "-" }}
                     </td>
                     {% set delta_hours = role.budget_hours - role.forecast_hours %}
+                    {% if stats.update({'total_hours_bu': stats.total_hours_bu + role.budget_hours}) %}{% endif %}
+                    {% if stats.update({'total_hours_fc': stats.total_hours_fc + role.forecast_hours}) %}{% endif %}
                     <td class="center {{ 'highlight-negative' if delta_hours < 0 else '' }}">
                         <span class="status-dot {{ 'status-red' if delta_hours < 0 else 'status-green' }}"></span>
                         <span>{{ "%.2f"|format(delta_hours) if delta_hours != 0 else "0" }}</span>
                     </td>
-                    <td class="right">{{ "{:,.0f}".format(role.forecast_direct_cost).replace(",","'") if role.forecast_direct_cost > 0 else "0" }} CHF</td>
+                    <td class="right">{{ chf0(role.forecast_direct_cost) if role.forecast_direct_cost > 0 else "0" }} CHF</td>
                     <td class="right">
-                        {{ "{:,.0f}".format(role.budget_direct_cost).replace(",","'") if role.budget_direct_cost > 0 else "0" }} CHF
+                        {{ chf0(role.budget_direct_cost) if role.budget_direct_cost > 0 else "0" }} CHF
                     </td>
                     {% set delta_cost = role.budget_direct_cost - role.forecast_direct_cost %}
+                    {% if stats.update({'total_bu': stats.total_bu + role.budget_direct_cost}) %}{% endif %}
+                    {% if stats.update({'total_fc': stats.total_fc + role.forecast_direct_cost}) %}{% endif %}
                     <td class="center {{ 'highlight-negative' if delta_cost < 0 else 'highlight-positive' }}">
                         <span class="status-dot {{ 'status-red' if delta_cost < 0 else 'status-green' }}"></span>
-                        <span>{{ "{:,.0f}".format(delta_cost).replace(",","'") if delta_cost != 0 else "0" }} CHF</span>
+                        <span>{{ chf0(delta_cost) if delta_cost != 0 else "0" }} CHF</span>
                     </td>
                 </tr>
                 {% endfor %}
                 <tr>
                     <td><b>Total</b></td>
-                    {% set hours_bu = kpi.total_hours_budget() %}
-                    {% set hours_fc = kpi.total_hours_forecast() %}
+                    {% if stats.update({'total_hours_diff': stats.total_hours_bu - stats.total_hours_fc}) %}{% endif %}
+                    {% set hours_bu = kpi.total_hours_budget() + kpi.total_hours_by_effort_budget() %}
+                    {% set hours_fc = kpi.total_hours_forecast() + kpi.total_hours_by_effort_forecast() %}
                     {% set hours_diff = hours_bu - hours_fc %}
+                    <td class="center"><b>{{ "%.2f"|format(stats.total_hours_fc) if stats.total_hours_fc > 0 else "-" }}</b></td>
+                    <td class="center">
+                        <b>{{ "%.2f"|format(stats.total_hours_bu) if stats.total_hours_bu > 0 else "-" }}</b>
+                    </td>
+                    <td class="center {{ 'highlight-negative' if stats.total_hours_diff < 0 else '' }}">
+                        <b><span class="status-dot {{ 'status-red' if stats.total_hours_diff < 0 else 'status-green' }}"></span>
+                        <span>{{ "%.2f"|format(stats.total_hours_diff) if stats.total_hours_diff != 0 else "-" }}</span></b>
+                    </td>
+                    {% if stats.update({'total_diff': stats.total_bu - stats.total_fc}) %}{% endif %}
+                    {% set cost_bu = kpi.labor_direct_cost_budget() + kpi.labor_direct_cost_by_effort_budget() %}
+                    {% set cost_fc = kpi.labor_direct_cost_forecast() + kpi.labor_direct_cost_by_effort_forecast() %}
+                    {% set cost_diff = cost_bu - cost_fc %}
+
+                    <td class="right"><b>{{ chf0(stats.total_fc) if stats.total_fc > 0 else "0" }} CHF</b></td>
+                    <td class="right">
+                        <b>{{ chf0(stats.total_bu) if stats.total_bu > 0 else "0" }} CHF</b>
+                    </td>
+                    <td class="center {{ 'highlight-negative' if stats.total_diff < 0 else 'highlight-positive' }}">
+                        <b><span class="status-dot {{ 'status-red' if stats.total_diff < 0 else 'status-green' }}"></span>
+                        <span>{{ chf0(stats.total_diff) if stats.total_diff != 0 else "0" }} CHF</span></b>
+                    </td>
+                </tr>
+                {% if (hours_bu-stats.total_hours_bu)|abs > hours_thresh or (hours_fc-stats.total_hours_fc)|abs > hours_thresh or (hours_diff-stats.total_hours_diff)|abs > hours_thresh or (cost_bu-stats.total_bu)|abs > cost_thresh or (cost_fc-stats.total_fc)|abs > cost_thresh or (cost_diff-stats.total_diff)|abs > cost_thresh %}
+                <tr>
+                    <td colspan="7" class="highlight-negative"><b>Warnung - Summen nicht konsistent zwischen Task-Ebene (oben) und Projektebene (unten)</b></td>
+                </td>
+                <tr>
+                    <td><b>Total</b></td>
                     <td class="center"><b>{{ "%.2f"|format(hours_fc) if hours_fc > 0 else "-" }}</b></td>
                     <td class="center">
                         <b>{{ "%.2f"|format(hours_bu) if hours_bu > 0 else "-" }}</b>
@@ -274,21 +329,18 @@
                         <b><span class="status-dot {{ 'status-red' if hours_diff < 0 else 'status-green' }}"></span>
                         <span>{{ "%.2f"|format(hours_diff) if hours_diff != 0 else "-" }}</span></b>
                     </td>
-                    {% set cost_bu = kpi.labor_direct_cost_budget() %}
-                    {% set cost_fc = kpi.labor_direct_cost_forecast() %}
-                    {% set cost_diff = cost_bu - cost_fc %}
-                    <td class="right"><b>{{ "{:,.0f}".format(cost_fc).replace(",","'") if cost_fc > 0 else "0" }} CHF</b></td>
+                    <td class="right"><b>{{ chf0(cost_fc) if cost_fc > 0 else "0" }} CHF</b></td>
                     <td class="right">
-                        <b>{{ "{:,.0f}".format(cost_bu).replace(",","'") if cost_bu > 0 else "0" }} CHF</b>
+                        <b>{{ chf0(cost_bu) if cost_bu > 0 else "0" }} CHF</b>
                     </td>
                     <td class="center {{ 'highlight-negative' if cost_diff < 0 else 'highlight-positive' }}">
                         <b><span class="status-dot {{ 'status-red' if cost_diff < 0 else 'status-green' }}"></span>
-                        <span>{{ "{:,.0f}".format(cost_diff).replace(",","'") if cost_diff != 0 else "0" }} CHF</span></b>
+                        <span>{{ chf0(cost_diff) if cost_diff != 0 else "0" }} CHF</span></b>
                     </td>
                 </tr>
+                {% endif %}
             </tbody>
         </table>
-        {% if stats.has_by_effort_roles %}{{ _("* Rolle enthält nach Aufwand verrechnete Stunden; bei Mehraufwand wird das Budget angepasst") }}{% endif %}
     </div>
 </body>
 </html>

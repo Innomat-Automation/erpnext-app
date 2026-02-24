@@ -7,6 +7,7 @@ from frappe import _
 from frappe.utils import get_link_to_form
 from datetime import datetime, timedelta
 from innomat.innomat.utils import get_currency, get_sales_tax_rule, get_project_key
+from erpnext.stock.get_item_details import get_item_details
 
 # Artikel, von dem wir den ILV-Satz nehmen, wenn in einem Artikel keiner hinterlegt ist
 FALLBACK_ITEM_FOR_ILV_RATE = 'ENG-SW'
@@ -344,67 +345,104 @@ def update_project(p):
     # Fallback cost supplements required for labor cost calculations
     project_doc = frappe.get_doc("Project", p['name'])
     company_doc = frappe.get_doc("Company", project_doc.company)
-    fallback_gk = company_doc.cost_supplement_gk
-    fallback_vvgk = company_doc.cost_supplement_vvgk
-
-    # Budget values from Sales Order
+    fallback_gk = 0
+    fallback_vvgk = 0
     if p['sales_order']:
-        planning_data = get_sales_order_materials(p['sales_order'])
-        planned_cost = planning_data['total_mat']
-        services_offered = planning_data['total_services']
-        planned_hours = planning_data['total_hours']
-        planned_hours_budget = planning_data['total_hours_budget']
-        planned_hours_ilv = planning_data['total_hours_ilv']
-    else:
-        planned_cost = 0
-        planned_hours = 0
-        planned_hours_budget = 0
-        planned_hours_ilv = 0
-        services_offered = 0
-
-    # Actual values
-    actual_cost = get_project_material_cost(p['name'])
-    actual_labor_cost = get_project_labor_cost(p['name'], fallback_gk, fallback_vvgk)
-    sum_services = get_project_service_cost(p['name'])
-    sum_expense_claim = get_expense_claims_cost(p['name'])
-
-    # Only update Project if required
-    if project_doc.planned_hours != planned_hours or project_doc.stundenbudget_plan != planned_hours_budget or project_doc.planned_hours_ilv != planned_hours_ilv or project_doc.planned_material_cost != planned_cost or project_doc.services_offered != services_offered or project_doc.actual_labor_as_direct_cost != actual_labor_cost['direct_cost'] or project_doc.actual_labor_as_production_cost != actual_labor_cost['production_cost'] or project_doc.actual_labor_as_prime_cost != actual_labor_cost['prime_cost'] or project_doc.actual_material_cost != actual_cost or project_doc.sum_services != sum_services or project_doc.sum_expense_claim != sum_expense_claim:
-        project_doc.planned_hours = planned_hours
-        project_doc.stundenbudget_plan = planned_hours_budget
-        project_doc.planned_hours_ilv = planned_hours_ilv
-        project_doc.planned_material_cost = planned_cost
-        project_doc.services_offered = services_offered
-        project_doc.actual_labor_as_direct_cost = actual_labor_cost['direct_cost']
-        project_doc.actual_labor_as_production_cost = actual_labor_cost['production_cost']
-        project_doc.actual_labor_as_prime_cost = actual_labor_cost['prime_cost']
-        project_doc.actual_material_cost = actual_cost
-        project_doc.sum_services = sum_services
-        project_doc.sum_expense_claim = sum_expense_claim;
-
-        try:
-            project_doc.save()
-        except Exception as err:
-            frappe.log_error(err, "Update project {0}".format(p['name']))
+        sales_order_doc = frappe.get_doc("Sales Order", p['sales_order'])
+        fallback_gk = sales_order_doc.cost_supplement_gk
+        fallback_vvgk = sales_order_doc.cost_supplement_vvgk
+    if not fallback_gk and company_doc.cost_supplement_gk:
+        fallback_gk = company_doc.cost_supplement_gk
+    if not fallback_vvgk and company_doc.cost_supplement_vvgk:
+        fallback_vvgk = company_doc.cost_supplement_vvgk
+    fallback_ilv_rate = get_fallback_ilv_rate()
 
     # Update labor costs on Task level
+    task_totals = {
+        'actual_hours': 0,
+        'actual_direct_cost': 0,
+        'actual_production_cost': 0,
+        'actual_prime_cost': 0,
+        'forecast_hours': 0,
+        'forecast_labor_as_direct_cost': 0,
+        'forecast_labor_as_production_cost': 0,
+        'forecast_labor_as_prime_cost': 0,
+        'forecast_revenue': 0,
+    }
+    task_totals_by_effort = task_totals.copy()
     project_tasks = frappe.get_all("Task", filters={'project': p['name']}, fields=['name'])
     for task in project_tasks:
-        actual_labor_cost = get_task_labor_cost(task['name'], fallback_gk, fallback_vvgk)
-        task_doc = frappe.get_doc("Task", task['name'])
+        task_data = get_task_labor_cost(task['name'], fallback_gk, fallback_vvgk, fallback_ilv_rate, project_doc)
+        # Calculate totals of hours, costs and cost forecasts over all tasks
+        # (separate sums for "by effort" tasks)
+        for key in task_totals.keys():
+            if task_data['by_effort']:
+                task_totals_by_effort[key] += task_data[key]
+            else:
+                task_totals[key] += task_data[key]
 
         # Only update Task if required
-        if task_doc.actual_labor_as_direct_cost != actual_labor_cost['direct_cost'] or task_doc.actual_labor_as_production_cost != actual_labor_cost['production_cost'] or task_doc.actual_labor_as_prime_cost != actual_labor_cost['prime_cost']:
-            task_doc.actual_labor_as_direct_cost = actual_labor_cost['direct_cost']
-            task_doc.actual_labor_as_production_cost = actual_labor_cost['production_cost']
-            task_doc.actual_labor_as_prime_cost = actual_labor_cost['prime_cost']
+        task_doc = frappe.get_doc("Task", task['name'])
+        if task_doc.actual_labor_as_direct_cost != task_data['actual_direct_cost'] or task_doc.actual_labor_as_production_cost != task_data['actual_production_cost'] or task_doc.actual_labor_as_prime_cost != task_data['actual_prime_cost']:
+            task_doc.actual_labor_as_direct_cost = task_data['actual_direct_cost']
+            task_doc.actual_labor_as_production_cost = task_data['actual_production_cost']
+            task_doc.actual_labor_as_prime_cost = task_data['actual_prime_cost']
 
             try:
                 task_doc.save()
             except Exception as err:
                 frappe.log_error(err, "Update task {0}".format(task['name']))
 
+    # Project-level forecasts: Include "other" (non-task-specific) hours
+    project_data = {
+        'forecast_hours': task_totals['forecast_hours'] + project_doc.actual_labor_hours - task_totals['actual_hours'],
+        'forecast_labor_as_direct_cost': task_totals['forecast_labor_as_direct_cost'] + project_doc.actual_labor_as_direct_cost - task_totals['actual_direct_cost'],
+        'forecast_labor_as_production_cost': task_totals['forecast_labor_as_production_cost'] + project_doc.actual_labor_as_production_cost - task_totals['actual_production_cost'],
+        'forecast_labor_as_prime_cost': task_totals['forecast_labor_as_prime_cost'] + project_doc.actual_labor_as_prime_cost - task_totals['actual_prime_cost'],
+        'forecast_hours_by_effort': task_totals_by_effort['forecast_hours'] + project_doc.labor_by_effort_hours - task_totals_by_effort['actual_hours'],
+        'forecast_labor_by_effort_as_direct_cost': task_totals_by_effort['forecast_labor_as_direct_cost'] + project_doc.labor_by_effort_as_direct_cost - task_totals_by_effort['actual_direct_cost'],
+        'forecast_labor_by_effort_as_production_cost': task_totals_by_effort['forecast_labor_as_production_cost'] + project_doc.labor_by_effort_as_production_cost - task_totals_by_effort['actual_production_cost'],
+        'forecast_labor_by_effort_as_prime_cost': task_totals_by_effort['forecast_labor_as_prime_cost'] + project_doc.labor_by_effort_as_prime_cost - task_totals_by_effort['actual_prime_cost'],
+    }
+    print(':fc_tasks:'+str(project_data['forecast_hours'])+':fc_tasks_bye:'+str(project_data['forecast_hours_by_effort']))
+
+    # Calculate costs on project level
+    project_data['actual_material_cost'] = get_project_material_cost(p['name'])
+    actual_labor_cost = get_project_labor_cost(p['name'], fallback_gk, fallback_vvgk)
+    project_data.update(actual_labor_cost)
+    project_data['sum_services'] = get_project_service_cost(p['name'])
+    project_data['sum_expense_claim'] = get_expense_claims_cost(p['name'])
+
+    print(':fc_other:'+str(project_doc.actual_labor_hours)+':minus:'+str(task_totals['actual_hours'])+':equals:'+str(project_data['forecast_hours']))
+
+    # Budget values from Sales Order
+    if sales_order_doc:
+        planning_data = get_sales_order_materials(sales_order_doc)
+        project_data.update(planning_data)
+    else:
+        project_data.update({'planned_material_cost': 0, 'services_offered': 0, 'planned_hours': 0, 'planned_hours_by_effort': 0, 'stundenbudget_plan': 0, 'planned_hours_ilv': 0, 'planned_hours_by_effort_ilv': 0, 'planned_revenue': 0, 'planned_revenue_by_effort': 0})
+
+    # Revenue forecasts
+    project_data['forecast_revenue'] = project_doc.planned_revenue # TODO - we could consider extra sales orders, credit notes etc. here
+    project_data['forecast_revenue_by_effort'] = task_totals_by_effort['forecast_revenue']
+
+    # Only update Project if required
+    project_changed = False
+    for key in project_data.keys():
+        if project_data[key] != project_doc.get(key):
+            project_changed = True
+            break
+
+    if project_changed:
+        for key in project_data.keys():
+            setattr(project_doc, key, project_data[key])
+        try:
+            project_doc.save()
+        except Exception as err:
+            frappe.log_error(err, "Update project {0}".format(p['name']))
+
     frappe.db.commit()
+
 
 """
 Get a project's third party services cost (cost of non-stock items) based on purchase invoices
@@ -493,51 +531,117 @@ def get_project_labor_cost(project, fallback_gk, fallback_vvgk):
     # - the internal rate is taken from timesheets where available (fallback to internal rate of Employee)
     # - the cost supplements are also taken from timesheets (fallback to cost supplements of Company if zero)
     # - the cost supplements are stored in percent and thus have to be divided by 100
-    data = frappe.db.sql("""SELECT SUM(`tabTimesheet Detail`.`hours` * IFNULL(NULLIF(`tabTimesheet`.`internal_rate_per_hour`, 0), `tabEmployee`.`internal_rate_per_hour`)) AS `direct_cost`,
-            SUM( `tabTimesheet Detail`.`hours` * IFNULL(NULLIF(`tabTimesheet`.`internal_rate_per_hour`, 0), `tabEmployee`.`internal_rate_per_hour`) *
-                 (1.0 + 0.01 * IFNULL(NULLIF(`tabTimesheet`.`cost_supplement_gk`, 0), '{fallback_gk}')) ) AS `production_cost`,
-            SUM( `tabTimesheet Detail`.`hours` * IFNULL(NULLIF(`tabTimesheet`.`internal_rate_per_hour`, 0), `tabEmployee`.`internal_rate_per_hour`) *
-                 (1.0 + 0.01 * IFNULL(NULLIF(`tabTimesheet`.`cost_supplement_gk`, 0), '{fallback_gk}')) *
-                 (1.0 + 0.01 * IFNULL(NULLIF(`tabTimesheet`.`cost_supplement_vvgk`, 0), '{fallback_vvgk}')) ) AS `prime_cost`
-            FROM `tabTimesheet Detail`
-            LEFT JOIN `tabTimesheet` ON `tabTimesheet`.`name` = `tabTimesheet Detail`.`parent`
-            LEFT JOIN `tabEmployee` ON `tabEmployee`.`name` = `tabTimesheet`.`employee`
-            WHERE `tabTimesheet`.`docstatus` = 1
-              AND `tabTimesheet Detail`.`project` = "{project}"
-              AND (`tabTimesheet Detail`.`by_effort` = 0
-                OR (`tabTimesheet Detail`.`by_effort` = 1 AND `tabTimesheet Detail`.`do_not_invoice` = 1)
-            )
-        ;""".format(project=project, fallback_gk=fallback_gk, fallback_vvgk=fallback_vvgk), as_dict=True)
-    if data and len(data) > 0:
-        return data[0]
-    else:
-        return {'direct_cost': 0, 'production_cost': 0, 'prime_cost': 0}
+    # - labor costs by effort are calculated separately
+
+    labor_cost = {
+        'actual_labor_as_direct_cost': 0,
+        'actual_labor_as_production_cost': 0,
+        'actual_labor_as_prime_cost': 0,
+        'actual_labor_hours': 0,
+        'labor_by_effort_as_direct_cost': 0,
+        'labor_by_effort_as_production_cost': 0,
+        'labor_by_effort_as_prime_cost': 0,
+        'labor_by_effort_hours': 0,
+    }
+
+    billability_conditions = {
+        'actual_labor': '(`tabTimesheet Detail`.`by_effort` = 0 OR (`tabTimesheet Detail`.`by_effort` = 1 AND `tabTimesheet Detail`.`do_not_invoice` = 1))',
+        'labor_by_effort': '(`tabTimesheet Detail`.`by_effort` = 1 AND `tabTimesheet Detail`.`do_not_invoice` = 0)',
+    }
+
+    for labor_type, sql_cond in billability_conditions.items():
+        data = frappe.db.sql("""SELECT SUM(`tabTimesheet Detail`.`hours` * IFNULL(NULLIF(`tabTimesheet`.`internal_rate_per_hour`, 0), `tabEmployee`.`internal_rate_per_hour`)) AS `direct_cost`,
+                SUM( `tabTimesheet Detail`.`hours` * IFNULL(NULLIF(`tabTimesheet`.`internal_rate_per_hour`, 0), `tabEmployee`.`internal_rate_per_hour`) *
+                     (1.0 + 0.01 * IFNULL(NULLIF(`tabTimesheet`.`cost_supplement_gk`, 0), '{fallback_gk}')) ) AS `production_cost`,
+                SUM( `tabTimesheet Detail`.`hours` * IFNULL(NULLIF(`tabTimesheet`.`internal_rate_per_hour`, 0), `tabEmployee`.`internal_rate_per_hour`) *
+                     (1.0 + 0.01 * IFNULL(NULLIF(`tabTimesheet`.`cost_supplement_gk`, 0), '{fallback_gk}')) *
+                     (1.0 + 0.01 * IFNULL(NULLIF(`tabTimesheet`.`cost_supplement_vvgk`, 0), '{fallback_vvgk}')) ) AS `prime_cost`,
+                SUM(`tabTimesheet Detail`.`hours`) as `hours`
+                FROM `tabTimesheet Detail`
+                LEFT JOIN `tabTimesheet` ON `tabTimesheet`.`name` = `tabTimesheet Detail`.`parent`
+                LEFT JOIN `tabEmployee` ON `tabEmployee`.`name` = `tabTimesheet`.`employee`
+                WHERE `tabTimesheet`.`docstatus` = 1
+                  AND `tabTimesheet Detail`.`project` = "{project}"
+                  AND {by_effort_condition}
+            ;""".format(project=project, fallback_gk=fallback_gk, fallback_vvgk=fallback_vvgk, by_effort_condition=sql_cond), as_dict=True)
+        # If nothing goes wrong, this will set all six values of labor_cost
+        if data and len(data) > 0:
+            for cost_field, cost_value in data[0].items():
+                if cost_field != 'hours':
+                    labor_cost[labor_type + '_as_' + cost_field] = cost_value
+            labor_cost[labor_type + '_hours'] = data[0]['hours']
+
+    return labor_cost
+
 
 
 """
-Get a task's direct labor cost, as well as production/prime cost, and the average interal hourly rate
+Get a task's direct labor cost, as well as production/prime cost, and cost forecasts based on the task's average hourly rate.
+This function now ignores "by effort" and "do_not_invoice" flags, it simply sums up the hours assigned to the task, so that labor costs are available for all tasks.
 """
-def get_task_labor_cost(task, fallback_gk, fallback_vvgk):
-    # Same query as for project
-    data = frappe.db.sql("""SELECT SUM(`tabTimesheet Detail`.`hours` * IFNULL(NULLIF(`tabTimesheet`.`internal_rate_per_hour`, 0), `tabEmployee`.`internal_rate_per_hour`)) AS `direct_cost`,
-            SUM( `tabTimesheet Detail`.`hours` * IFNULL(NULLIF(`tabTimesheet`.`internal_rate_per_hour`, 0), `tabEmployee`.`internal_rate_per_hour`) *
-                 (1.0 + 0.01 * IFNULL(NULLIF(`tabTimesheet`.`cost_supplement_gk`, 0), '{fallback_gk}')) ) AS `production_cost`,
-            SUM( `tabTimesheet Detail`.`hours` * IFNULL(NULLIF(`tabTimesheet`.`internal_rate_per_hour`, 0), `tabEmployee`.`internal_rate_per_hour`) *
+def get_task_labor_cost(task, fallback_gk, fallback_vvgk, fallback_ilv_rate, project_doc):
+    print("::task::"+task)
+    data = frappe.db.sql("""SELECT
+            IFNULL(SUM(`tabTimesheet Detail`.`hours` * IFNULL(NULLIF(`tabTimesheet`.`internal_rate_per_hour`, 0), `tabEmployee`.`internal_rate_per_hour`)), 0) AS `actual_direct_cost`,
+            IFNULL(SUM( `tabTimesheet Detail`.`hours` * IFNULL(NULLIF(`tabTimesheet`.`internal_rate_per_hour`, 0), `tabEmployee`.`internal_rate_per_hour`) *
+                 (1.0 + 0.01 * IFNULL(NULLIF(`tabTimesheet`.`cost_supplement_gk`, 0), '{fallback_gk}')) ), 0) AS `actual_production_cost`,
+            IFNULL(SUM( `tabTimesheet Detail`.`hours` * IFNULL(NULLIF(`tabTimesheet`.`internal_rate_per_hour`, 0), `tabEmployee`.`internal_rate_per_hour`) *
                  (1.0 + 0.01 * IFNULL(NULLIF(`tabTimesheet`.`cost_supplement_gk`, 0), '{fallback_gk}')) *
-                 (1.0 + 0.01 * IFNULL(NULLIF(`tabTimesheet`.`cost_supplement_vvgk`, 0), '{fallback_vvgk}')) ) AS `prime_cost`
-            FROM `tabTimesheet Detail`
-            LEFT JOIN `tabTimesheet` ON `tabTimesheet`.`name` = `tabTimesheet Detail`.`parent`
-            LEFT JOIN `tabEmployee` ON `tabEmployee`.`name` = `tabTimesheet`.`employee`
+                 (1.0 + 0.01 * IFNULL(NULLIF(`tabTimesheet`.`cost_supplement_vvgk`, 0), '{fallback_vvgk}')) ), 0) AS `actual_prime_cost`,
+            IFNULL(`tabTask`.`expected_time` * IFNULL(NULLIF(IFNULL(NULLIF(`tabTask`.`ilv_rate`, 0), `tabItem`.`ilv_rate`), 0), {fallback_ilv_rate}), 0) AS `budget_prime_cost`,
+            IFNULL(`tabTask`.`expected_time`, 0) AS `budget_hours`,
+            IFNULL(`tabTask`.`actual_time`, 0) AS `actual_hours`,
+            IF(`tabTask`.`status` IN ('Cancelled','Completed'), 1, 0) AS `completed`,
+            `tabTask`.`by_effort` AS `by_effort`,
+            `tabTask`.`item_code` AS `item_code`
+            FROM `tabTask`
+            LEFT JOIN `tabItem` ON `tabTask`.`item_code` = `tabItem`.`item_code`
+            LEFT JOIN `tabTimesheet Detail` ON `tabTask`.`name` = `tabTimesheet Detail`.`task`
+            LEFT JOIN `tabTimesheet` ON `tabTimesheet Detail`.`parent` = `tabTimesheet`.`name`
+            LEFT JOIN `tabEmployee` ON `tabTimesheet`.`employee` = `tabEmployee`.`name`
             WHERE `tabTimesheet`.`docstatus` = 1
-              AND `tabTimesheet Detail`.`task` = "{task}"
-              AND (`tabTimesheet Detail`.`by_effort` = 0
-                OR (`tabTimesheet Detail`.`by_effort` = 1 AND `tabTimesheet Detail`.`do_not_invoice` = 1)
-            )
-        ;""".format(task=task, fallback_gk=fallback_gk, fallback_vvgk=fallback_vvgk), as_dict=True)
+              AND `tabTask`.`name` = "{task}"
+        ;""".format(task=task, fallback_gk=fallback_gk, fallback_vvgk=fallback_vvgk, fallback_ilv_rate=fallback_ilv_rate), as_dict=True)
+    # As the overall project labor costs are not calculated from task labor costs, we can safely include "by effort" tasks and unbillable hours here
+    # - these will be useful to show accurate stats for every role/task.
+    # We do return the `by_effort` field in order to calculate separate sums in  project-level forecasts.
+
     if data and len(data) > 0:
-        return data[0]
+        task_data = data[0]
+        if task_data['completed']:
+            task_data['forecast_hours'] = task_data['actual_hours']
+            task_data['forecast_labor_as_prime_cost'] = task_data['actual_prime_cost']
+            task_data['forecast_labor_as_production_cost'] = task_data['actual_production_cost']
+            task_data['forecast_labor_as_direct_cost'] = task_data['actual_direct_cost']
+        else:
+            prime_fc_rate = 0
+            prod_fc_rate = 0
+            direct_fc_rate = 0
+            if task_data['actual_hours'] > 0:
+                prime_fc_rate = task_data['actual_prime_cost'] / task_data['actual_hours']
+                prod_fc_rate = task_data['actual_production_cost'] / task_data['actual_hours']
+                direct_fc_rate = task_data['actual_direct_cost'] / task_data['actual_hours']
+            elif task_data['budget_hours'] > 0:
+                prime_fc_rate = task_data['budget_prime_cost'] / task_data['budget_hours']
+                prod_fc_rate = prime_fc_rate / (1 + 0.01 * fallback_vvgk)
+                direct_fc_rate = prod_fc_rate / (1 + 0.01 * fallback_gk)
+            task_data['forecast_hours'] = max(task_data['budget_hours'], task_data['actual_hours'])
+            delta_hours = task_data['forecast_hours'] - task_data['actual_hours']
+            task_data['forecast_labor_as_prime_cost'] = task_data['actual_prime_cost'] + delta_hours * prime_fc_rate
+            task_data['forecast_labor_as_production_cost'] = task_data['actual_production_cost'] + delta_hours * prod_fc_rate
+            task_data['forecast_labor_as_direct_cost'] = task_data['actual_direct_cost'] + delta_hours * direct_fc_rate
+            print(":task_h:"+str(task_data['actual_hours'])+":bu:"+str(task_data['budget_hours'])+":fc_dir:"+str(task_data['forecast_labor_as_direct_cost'])+":rate:"+str(direct_fc_rate))
+
+        if task_data['by_effort']:
+            task_billing_rate = get_billing_rate(task_data['item_code'], project_doc)
+            print(":b_rate:"+str(task_billing_rate)+":for:"+str(task_data['item_code']))
+            task_data['forecast_revenue'] = task_data['forecast_hours'] * task_billing_rate
+        else:
+            task_data['forecast_revenue'] = 0
+
+        return task_data
     else:
-        return {'direct_cost': 0, 'production_cost': 0, 'prime_cost': 0}
+        return {'actual_direct_cost': 0, 'actual_production_cost': 0, 'actual_prime_cost': 0, 'forecast_hours': 0, 'forecast_labor_as_prime_cost': 0, 'forecast_labor_as_production_cost': 0, 'forecast_labor_as_direct_cost': 0, 'forecast_revenue': 0}
 
 
 def get_expense_claims_cost(project):
@@ -555,18 +659,25 @@ def get_expense_claims_cost(project):
 """
 Get all required material with costs from a sales order (based on BOM or purchase item
 """
-def get_sales_order_materials(sales_order):
-    sales_order= frappe.get_doc("Sales Order", sales_order)
-    data = {'total_mat' : 0, 'total_services': 0, 'total_hours': 0, 'total_hours_budget': 0, 'total_hours_ilv': 0, 'items': []}
-    for item in sales_order.items:
+def get_sales_order_materials(sales_order_doc):
+    data = {'planned_material_cost' : 0, 'services_offered': 0, 'planned_hours': 0, 'planned_hours_by_effort': 0, 'stundenbudget_plan': 0, 'planned_hours_ilv': 0, 'planned_hours_by_effort_ilv': 0, 'planned_revenue': 0, 'planned_revenue_by_effort': 0, 'items': []}
+    for item in sales_order_doc.items:
         if "h" in item.uom:
+            ilv_rate = item.ilv_rate or get_fallback_ilv_rate(item.item_code)
             if item.by_effort == 0:
                 # single per-hour item
-                data['total_hours'] += item.qty
-                data['total_hours_budget'] += item.qty * frappe.get_value("Item", item.item_code, "valuation_rate")
-                ilv_rate = item.ilv_rate or get_fallback_ilv_rate(item.item_code)
-                data['total_hours_ilv'] += item.qty * ilv_rate
+                data['planned_hours'] += item.qty
+                data['stundenbudget_plan'] += item.qty * frappe.get_value("Item", item.item_code, "valuation_rate") # legacy budget calc from valuation rate
+                data['planned_hours_ilv'] += item.qty * ilv_rate
+                data['planned_revenue'] += item.amount
+                print(":so_item:"+str(item.item_code)+":hours:"+str(item.qty)+":rate:"+str(ilv_rate)+":chf:"+str(item.qty * ilv_rate))
+            else:
+                data['planned_hours_by_effort'] += item.qty
+                data['planned_hours_by_effort_ilv'] += item.qty * ilv_rate
+                data['planned_revenue_by_effort'] += item.amount
+                print(":so_item_by_effort:"+str(item.item_code)+":hours:"+str(item.qty)+":rate:"+str(ilv_rate)+":chf:"+str(item.qty * ilv_rate))
         else:
+            data['planned_revenue'] += item.amount
             # check if there is a BOM
             boms = frappe.get_all("BOM", filters={'item': item.item_code, 'is_active': 1, 'is_default': 1, 'docstatus': 1}, fields=['name'])
             if boms and len(boms) > 0:
@@ -575,37 +686,43 @@ def get_sales_order_materials(sales_order):
                 for i in bom.items:
                     if "h" in i.uom:
                         # this is a per-hours item
-                        data['total_hours'] += item.qty * i.qty
-                        data['total_hours_budget'] += item.qty * i.qty * frappe.get_value("Item", i.item_code, "valuation_rate")
+                        data['planned_hours'] += item.qty * i.qty
+                        data['stundenbudget_plan'] += item.qty * i.qty * frappe.get_value("Item", i.item_code, "valuation_rate") # legacy budget calc from valuation rate
                         ilv_rate = i.ilv_rate or get_fallback_ilv_rate(i.item_code)
-                        data['total_hours_ilv'] += item.qty * i.qty * ilv_rate
+                        data['planned_hours_ilv'] += item.qty * i.qty * ilv_rate
+                        print(":bom_item:"+str(i.item_code)+":hours:"+str(item.qty * i.qty)+":rate:"+str(ilv_rate)+":chf:"+str(item.qty * i.qty * ilv_rate))
+                        # NOTE - there is no 'by_effort' field in BOM items, therefore all BOM hours go into regular planned hours
                     else:
                         # this is a material position
-                        data['items'].append({
-                            'item_code': i.item_code,
-                            'qty': item.qty * i.qty,
-                            'cost': item.qty * i.amount
-                        })
+                        #data['items'].append({
+                        #    'item_code': i.item_code,
+                        #    'qty': item.qty * i.qty,
+                        #    'cost': item.qty * i.amount
+                        #})
 
                         if frappe.get_value("Item", item.item_code, "is_stock_item"):
-                            data['total_mat'] += item.qty * i.amount
+                            data['planned_material_cost'] += item.qty * i.amount
                         else:
-                            data['total_services'] += item.qty * i.amount
+                            data['services_offered'] += item.qty * i.amount
             else:
                 # no BOM, use valuation rate
                 value = frappe.get_value("Item", item.item_code, "valuation_rate")
                 if not value:
                     value = frappe.get_value("Item", item.item_code, "last_purchase_rate")
-                data['items'].append({
-                    'item_code': item.item_code,
-                    'qty': item.qty,
-                    'cost': item.qty * value
-                })
+                #data['items'].append({
+                #    'item_code': item.item_code,
+                #    'qty': item.qty,
+                #    'cost': item.qty * value
+                #})
 
                 if frappe.get_value("Item", item.item_code, "is_stock_item"):
-                    data['total_mat'] += item.qty * value
+                    data['planned_material_cost'] += item.qty * value
                 else:
-                    data['total_services'] += item.qty * value
+                    data['services_offered'] += item.qty * value
+    # Apply any discounts on revenue totals
+    # ("total" is before additional discounts and "net_total" is after; both are without taxes)
+    data['planned_revenue'] = data['planned_revenue'] * sales_order_doc.net_total / sales_order_doc.total
+    data['planned_revenue_by_effort'] = data['planned_revenue_by_effort'] * sales_order_doc.net_total / sales_order_doc.total
     return data
 
 """
@@ -645,3 +762,23 @@ def get_employee_default_project(employee):
     if not default_project:
         raise Exception(_("Cost Center '{0}' has no default project for general operating costs").format(cc))
     return {'company': company, 'default_project': default_project}
+
+"""
+Get the default rate at which an Item would be billed in a given Project's context
+"""
+def get_billing_rate(item_code, project_doc):
+    if not project_doc.customer:
+        return 0
+    price_list = frappe.get_value("Customer", project_doc.customer, "default_price_list")
+    if not price_list:
+        price_list = frappe.defaults.get_global_default("selling_price_list")
+    if not price_list:
+        return 0
+    item_details = get_item_details({
+        "item_code": item_code,
+        "customer": project_doc.customer,
+        "currency": get_currency(project_doc),
+        "price_list": price_list,
+        "company": project_doc.company,
+        "doctype": "Sales Invoice"})
+    return item_details.price_list_rate
