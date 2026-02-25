@@ -463,7 +463,7 @@ def update_project(p):
 Get a project's third party services cost (cost of non-stock items) based on purchase invoices
 """
 def get_project_service_cost(project):
-    data = frappe.db.sql("""SELECT SUM(`net_amount`) AS `cost`
+    data = frappe.db.sql("""SELECT IFNULL(SUM(`net_amount`), 0) AS `cost`
                             FROM `tabPurchase Invoice Item`
                             LEFT JOIN `tabPurchase Invoice` ON `tabPurchase Invoice Item`.`parent` = `tabPurchase Invoice`.`name`
                             LEFT JOIN `tabItem` ON `tabPurchase Invoice Item`.`item_code` = `tabItem`.`item_code`

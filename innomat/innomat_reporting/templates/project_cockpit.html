@@ -90,7 +90,7 @@
         <div class="header">
             <h1>Projektcontrolling – Cockpit</h1>
             <div class="header-info">
-                Projektnummer: {{ doc.name }}<br>
+                Projekt: {{ doc.title }} {{ kpi.status_light() }}<br>
                 Fortschritt (in %) Cost-to-cost: <strong>{{ "%.0f"|format(100 * kpi.cost_to_cost_progress()) }}%</strong>
             </div>
         </div>
@@ -136,14 +136,16 @@
                 <td class="center">
                     CHF {{ chf0(kpi.ebit_budget()) }}<br>
                     <span class="{{ 'highlight-positive' if kpi.ebit_budget() > 0 else 'highlight-negative' }}">
-                        {{ "%.1f"|format(100 * kpi.ebit_budget() / kpi.revenue_budget()) }}%
+                        {% set ebit_budget_rel = kpi.ebit_budget() / kpi.revenue_budget() if kpi.revenue_budget() > 0 else 0 %}
+                        {{ "%.1f"|format(100 * ebit_budget_rel) }}%
                     </span>
                 </td>
                 <td class="center">
                     <span class="{{ 'highlight-positive' if kpi.ebit_forecast() > 0 else 'highlight-negative' }}">
                         CHF {{ chf0(kpi.ebit_forecast()) }}
                         <br>
-                        {{ "%.1f"|format(100 * kpi.ebit_forecast() / kpi.revenue_forecast()) }}%
+                        {% set ebit_fc_rel = kpi.ebit_forecast() / kpi.revenue_forecast() if kpi.revenue_forecast() > 0 else 0 %}
+                        {{ "%.1f"|format(100 * ebit_fc_rel) }}%
                     </span>
                 </td>
             </tr>
@@ -182,7 +184,8 @@
                     CHF {{ chf0(kpi.revenue_forecast()) }}
                 </td>
                 <td class="center">
-                    {{ "%.0f"|format(100 * kpi.revenue_forecast() / kpi.revenue_budget()) }}%
+                    {% set revenue_rel = kpi.revenue_forecast() / kpi.revenue_budget() if kpi.revenue_budget() > 0 else 0 %}
+                    {{ "%.0f"|format(100 * revenue_rel) }}%
                 </td>
                 <td class="center" colspan="2">
                     {% set delta_rel = (delta_abs / kpi.prime_cost_budget()) if kpi.prime_cost_budget() > 0 else 0 %}

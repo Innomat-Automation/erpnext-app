@@ -101,7 +101,7 @@
     <div class="overview-container">
         <h1>Projektübersicht (Kompakt)</h1>
         <div class="project-info">
-            Projektnummer: {{ doc.name }}
+            Projekt: {{ doc.title }} {{ kpi.status_light() }}
         </div>
 
         <!-- Zusammenfassung -->
@@ -150,7 +150,7 @@
                     <td class="right {{ 'highlight-negative' if kpi.ebit_forecast() < 0 else 'highlight-positive' }}">
                         {{ chf0(kpi.ebit_forecast()) }} CHF
                     </td>
-                    {% set ebit_fc_rel = kpi.ebit_forecast() / kpi.revenue_forecast() %}
+                    {% set ebit_fc_rel = kpi.ebit_forecast() / kpi.revenue_forecast() if kpi.revenue_forecast() > 0 else 0 %}
                     <td class="center {{ 'highlight-negative' if ebit_fc_rel < 0 else 'highlight-positive' }}">
                         {{ "%.1f"|format(100 * ebit_fc_rel) }}%
                     </td>

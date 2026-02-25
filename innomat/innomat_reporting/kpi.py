@@ -8,18 +8,22 @@ from innomat.innomat.scripts.project import update_project, get_fallback_ilv_rat
 # Verwendete Übersetzungen:
 # ist = current, Direktkosten = direct cost, Herstellkosten = production cost, Selbstkosten = prime cost
 
-def get_project_kpis(project):
-    return ProjectKPI(project)
+def get_project_kpis(*args, **kwargs):
+    return ProjectKPI(*args, **kwargs)
 
 class ProjectKPI:
-    def __init__(self, project):
+    def __init__(self, project, recalculate=True):
         self.project_name = project
         self.project_doc = frappe.get_doc("Project", project)
+        self.details_loaded = False
         sales_order = self.project_doc.get('sales_order')
-        # Update project parameters (this is also done by a daily background job)
-        update_project({'name': self.project_name, 'sales_order': sales_order})
-        # Reload project doc after update
-        self.project_doc = frappe.get_doc("Project", project)
+
+        if recalculate:
+            # Update project parameters (this is also done by a daily background job)
+            update_project({'name': self.project_name, 'sales_order': sales_order})
+            # Reload project doc after update
+            self.project_doc = frappe.get_doc("Project", project)
+
         # Link other docs, if any
         if self.project_doc.company:
             self.company_doc = frappe.get_doc("Company", self.project_doc.company)
@@ -28,8 +32,6 @@ class ProjectKPI:
             # Quotation is currently not required
             #if self.sales_order_doc.items and self.sales_order_doc.items[0].prevdoc_docname:
             #    self.quotation_doc = frappe.get_doc("Quotation", self.sales_order_doc.items[0].prevdoc_docname)
-        # Preload task details, needed by several KPI functions
-        self.details_by_role = self._load_role_details_from_tasks()
 
     # Fortschritt Cost-to-cost = Kosten IST / Kosten FC (Basis: SK)
     def cost_to_cost_progress(self):
@@ -59,11 +61,11 @@ class ProjectKPI:
 
     # Materialkosten IST
     def material_current(self):
-        return self.project_doc.actual_material_cost # TODO, double-check this is correct (item selection and valuation rates used)
+        return self.project_doc.actual_material_cost
 
     # Dienstleistungen Dritter, IST
     def thirdparty_current(self):
-        return self.project_doc.sum_services # TODO, double-check this is correct (item selection and valuation rates used)
+        return self.project_doc.sum_services
 
     # Spesen IST
     def expenses_current(self):
@@ -111,7 +113,7 @@ class ProjectKPI:
 
     # Dienstleistungen Dritter, BUDGET
     def thirdparty_budget(self):
-        return self.project_doc.services_offered # TODO, double-check this is correct (item selection and valuation rates used)
+        return self.project_doc.services_offered
 
     # Personalkosten BUDGET (DK, indirekt anhand ILV)
     def labor_direct_cost_budget(self):
@@ -162,6 +164,7 @@ class ProjectKPI:
         # Die Forecasts anhand verbleibender Task-Stunden und deren durchschnittlichen Kostensätzen werden jetzt in project.py vorberechnet
         return self.project_doc.forecast_labor_as_direct_cost
         #return sum(map(lambda role: role['forecast_direct_cost'], self.details_by_role))
+        #(NOTE- für diese Variante wäre jetzt zu prüfen ob self.details_loaded)
 
     # Personalkosten "nach Aufwand" FORECAST, DK
     def labor_direct_cost_by_effort_forecast(self):
@@ -172,6 +175,7 @@ class ProjectKPI:
     def labor_production_cost_forecast(self):
         return self.project_doc.forecast_labor_as_production_cost
         #return sum(map(lambda role: role['forecast_production_cost'], self.details_by_role))
+        #(NOTE- für diese Variante wäre jetzt zu prüfen ob self.details_loaded)
 
     # Personalkosten "nach Aufwand" FORECAST, HK
     def labor_production_cost_by_effort_forecast(self):
@@ -182,6 +186,7 @@ class ProjectKPI:
     def labor_prime_cost_forecast(self):
         return self.project_doc.forecast_labor_as_prime_cost
         #return sum(map(lambda role: role['forecast_prime_cost'], self.details_by_role))
+        #(NOTE- für diese Variante wäre jetzt zu prüfen ob self.details_loaded)
 
     # Personalkosten "nach Aufwand" FORECAST, SK
     def labor_prime_cost_by_effort_forecast(self):
@@ -253,6 +258,8 @@ class ProjectKPI:
 
     # Summarische Darstellung der Tasks gruppiert nach Artikel = Rolle (wird durch Funktion _load_role_details_from_tasks vorberechnet)
     def hours_and_costs_by_role(self):
+        if not self.details_loaded:
+            self._load_role_details_from_tasks()
         return self.details_by_role
 
     # Total Arbeitsstunden über alle Rollen IST
@@ -267,6 +274,7 @@ class ProjectKPI:
     def total_hours_budget(self):
         return self.project_doc.planned_hours
         #return sum(map(lambda role: role['budget_hours'] if not role['by_effort'] else 0, self.details_by_role))
+        #(NOTE- für diese Variante wäre jetzt zu prüfen ob self.details_loaded)
 
     # Total Arbeitsstunden "nach Aufwand" über alle Rollen BUDGET
     def total_hours_by_effort_budget(self):
@@ -276,12 +284,19 @@ class ProjectKPI:
     def total_hours_forecast(self):
         return self.project_doc.forecast_hours
         #return sum(map(lambda role: role['forecast_hours'], self.details_by_role))
+        #(NOTE- für diese Variante wäre jetzt zu prüfen ob self.details_loaded)
 
     # Total Arbeitsstunden "nach Aufwand" über alle Rollen FORECAST
     def total_hours_by_effort_forecast(self):
         return self.project_doc.forecast_hours_by_effort
         #return max(self.total_hours_by_effort_current(), self.total_hours_by_effort_budget())
         #return sum(map(lambda role: role['forecast_hours'], self.details_by_role))
+        #(NOTE- für letztere Variante wäre jetzt zu prüfen ob self.details_loaded)
+
+    # Status-Ampel (wird in project.py berechnet)
+    # => hier wiedergeben, um in den Druckformaten die aktuelle Version davon zu haben
+    def status_light(self):
+        return self.project_doc.status_light
 
     def _load_role_details_from_tasks(self):
         # Das Stundenbudget sowie die Istwerte für Stunden und Kosten sind auf dem Task bereits vorhanden.
@@ -353,7 +368,7 @@ class ProjectKPI:
             total_role_costs_prod += line['actual_production_cost']
             total_role_costs_direct += line['actual_direct_cost']
         # Allfällige Arbeit ohne Task (nur bei internen Projekten erlaubt) als "Sonstige" aufführen
-        # TODO - da ist jetzt "by effort" mit drin. Auf Projektebene läuft dies separat. Passt das so??
+        # NOTE - da ist Arbeit "nach Aufwand" mit enthalten. Passt aber so, da die entsprechenden Einnahmen im Forecast auch ausgewiesen werden
         other_hours = self.project_doc.actual_time - total_role_hours
         other_costs_prime = self.project_doc.actual_labor_as_prime_cost + self.project_doc.labor_by_effort_as_prime_cost - total_role_costs_prime
         other_costs_prod = self.project_doc.actual_labor_as_production_cost + self.project_doc.labor_by_effort_as_production_cost - total_role_costs_prod
@@ -361,5 +376,7 @@ class ProjectKPI:
         if other_hours != 0 or other_costs_prime != 0 or other_costs_direct != 0:
             other_line = {'role': 'Sonstige', 'budget_hours': 0, 'budget_prime_cost': 0, 'budget_production_cost': 0, 'budget_direct_cost': 0, 'actual_hours': other_hours, 'actual_prime_cost': other_costs_prime, 'actual_production_cost': other_costs_prod, 'actual_direct_cost': other_costs_direct, 'forecast_hours': other_hours, 'forecast_prime_cost': other_costs_prime, 'forecast_production_cost': other_costs_prod, 'forecast_direct_cost': other_costs_direct, 'all_completed': 1, 'by_effort': 0}
             details_by_role.append(other_line)
-        print(details_by_role)
-        return details_by_role
+
+        self.details_by_role = details_by_role
+        self.details_loaded = True
+        return
