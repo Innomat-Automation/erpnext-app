@@ -5,9 +5,10 @@
 import frappe
 from frappe import _
 from frappe.utils import get_link_to_form
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from innomat.innomat.utils import get_currency, get_sales_tax_rule, get_project_key
 from erpnext.stock.get_item_details import get_item_details
+from erpnext.setup.utils import get_exchange_rate
 
 # Artikel, von dem wir den ILV-Satz nehmen, wenn in einem Artikel keiner hinterlegt ist
 FALLBACK_ITEM_FOR_ILV_RATE = 'ENG-SW'
@@ -426,6 +427,20 @@ def update_project(p):
     project_data['forecast_revenue'] = project_doc.planned_revenue # TODO - we could consider extra sales orders, credit notes etc. here
     project_data['forecast_revenue_by_effort'] = task_totals_by_effort['forecast_revenue']
 
+    # Status light: Calculate EBIT budget & forecast values (NOTE - not stored for now as it's quick to calculate)
+    prime_cost_budget = project_data['planned_material_cost'] + project_data['services_offered'] + project_data['planned_hours_ilv'] + project_data['planned_hours_by_effort_ilv']
+    ebit_budget = project_data['planned_revenue'] + project_data['planned_revenue_by_effort'] - prime_cost_budget
+    material_fc = max(project_data['planned_material_cost'], project_data['actual_material_cost'])
+    thirdparty_fc = max(project_data['services_offered'], project_data['sum_services'])
+    prime_cost_fc = material_fc + thirdparty_fc + project_data['forecast_labor_as_prime_cost'] + project_data['forecast_labor_by_effort_as_prime_cost']
+    ebit_fc = project_data['forecast_revenue'] + project_data['forecast_revenue_by_effort'] - prime_cost_fc
+    if ebit_fc < 0:
+        project_data['status_light'] = '🔴' # red: EBIT negative
+    elif ebit_fc < ebit_budget:
+        project_data['status_light'] = '🟡' # yellow: EBIT < budget
+    else:
+        project_data['status_light'] = '🟢' # green: EBIT >= budget
+
     # Only update Project if required
     project_changed = False
     for key in project_data.keys():
@@ -633,6 +648,8 @@ def get_task_labor_cost(task, fallback_gk, fallback_vvgk, fallback_ilv_rate, pro
             print(":task_h:"+str(task_data['actual_hours'])+":bu:"+str(task_data['budget_hours'])+":fc_dir:"+str(task_data['forecast_labor_as_direct_cost'])+":rate:"+str(direct_fc_rate))
 
         if task_data['by_effort']:
+            # TODO: Revenue forecasting does not consider the billing rate of hours already billed (which may be based on previous exchange rates and/or price lists)
+            #       To keep the project reporting correct, particularly for completed projects, this should be improved.
             task_billing_rate = get_billing_rate(task_data['item_code'], project_doc)
             print(":b_rate:"+str(task_billing_rate)+":for:"+str(task_data['item_code']))
             task_data['forecast_revenue'] = task_data['forecast_hours'] * task_billing_rate
@@ -774,11 +791,15 @@ def get_billing_rate(item_code, project_doc):
         price_list = frappe.defaults.get_global_default("selling_price_list")
     if not price_list:
         return 0
+    project_currency = get_currency(project_doc)
+    exchange_rate = get_exchange_rate(project_currency, "CHF", date.today())
     item_details = get_item_details({
         "item_code": item_code,
         "customer": project_doc.customer,
-        "currency": get_currency(project_doc),
+        "currency": project_currency,
+        "conversion_rate": exchange_rate,
         "price_list": price_list,
         "company": project_doc.company,
+        "transaction_date": date.today(),
         "doctype": "Sales Invoice"})
     return item_details.price_list_rate
