@@ -6,6 +6,7 @@ import frappe
 from frappe import _
 import ast          # to parse str to dict (from JS calls)
 from datetime import date
+from innomat.innomat_reporting.kpi import get_project_kpis
 
 def execute(filters=None):
     columns = get_columns()
@@ -14,21 +15,23 @@ def execute(filters=None):
 
 def get_columns():
     return [
-        {"label": _("Project"), "fieldname": "project", "fieldtype": "Link", "options": "Project", "width": 100},
-        {"label": _("Project Name"), "fieldname": "project_name", "width": 200},
-        {"label": _("Project manager name"), "fieldname": "project_manager_name", "fieldtype": "Data", "width": 100},
-        {"label": _("Status Light"), "fieldname": "status_light", "fieldtype": "Data", "width": 100},
-        {"label": _("Start Date"), "fieldname": "start_date", "fieldtype": "Date", "width": 80},
-        {"label": _("End Date"), "fieldname": "end_date", "fieldtype": "Date", "width": 80},
-        #{"label": _("Progress (time)"), "fieldname": "progress_time", "fieldtype": "Percent", "width": 100},   # only requried for project status
-        #{"label": _("Progress (tasks)"), "fieldname": "progress_tasks", "fieldtype": "Percent", "width": 100}, # only requried for project status
-        {"label": _("Material (plan)"), "fieldname": "planned_material_cost", "fieldtype": "Currency", "width": 100},
-        {"label": _("Material (used)"), "fieldname": "actual_material_cost", "fieldtype": "Currency", "width": 100},
-        {"label": _("Hours flat (plan)"), "fieldname": "planned_hours", "fieldtype": "Float", "width": 100},
-        {"label": _("Hours flat (used)"), "fieldname": "hours_flat", "fieldtype": "Float", "width": 100},
-        {"label": _("Hours by effort"), "fieldname": "hours_effective", "fieldtype": "Float", "width": 100},
-        {"label": _("Labor cost budget (ILV)"), "fieldname": "planned_hours_ilv", "fieldtype": "Currency", "width": 100},
-        {"label": _("Labor cost actual (prime cost)"), "fieldname": "actual_labor_as_prime_cost", "fieldtype": "Currency", "width": 100}
+        {"label": _("Projekt"), "fieldname": "project", "fieldtype": "Link", "options": "Project", "width": 80},
+        {"label": _("Projektname / Status"), "fieldname": "project_name", "width": 260},
+        {"label": _("Projektleiter"), "fieldname": "project_manager_name", "fieldtype": "Data", "width": 100},
+        {"label": _("Ampel"), "fieldname": "status_light", "fieldtype": "Data", "width": 60},
+        {"label": _("Startdatum"), "fieldname": "start_date", "fieldtype": "Date", "width": 90},
+        {"label": _("Enddatum"), "fieldname": "end_date", "fieldtype": "Date", "width": 80},
+        {"label": _("Werte"), "fieldname": "budget_vs_actual", "fieldtype": "Data", "width": 80},
+        {"label": _("Materialkosten"), "fieldname": "material_cost", "fieldtype": "Currency", "width": 110},
+        {"label": _("Fremdleistungen"), "fieldname": "third_party_services", "fieldtype": "Currency", "width": 120},
+        {"label": _("Std pauschal"), "fieldname": "hours_flat", "fieldtype": "Float", "width": 100},
+        {"label": _("Std n.Aufwand"), "fieldname": "hours_by_effort", "fieldtype": "Float", "width": 110},
+        {"label": _("Personalaufwand (DK)"), "fieldname": "labor_cost", "fieldtype": "Currency", "width": 150},
+        {"label": _("Direktkosten"), "fieldname": "direct_cost", "fieldtype": "Currency", "width": 100},
+        {"label": _("Selbstkosten"), "fieldname": "prime_cost", "fieldtype": "Currency", "width": 100},
+        {"label": _("Ertrag"), "fieldname": "revenue", "fieldtype": "Currency", "width": 100},
+        {"label": _("EBIT"), "fieldname": "ebit", "fieldtype": "Currency", "width": 100},
+        {"label": _("EBIT ΔFC-BU"), "fieldname": "ebit_delta", "fieldtype": "Currency", "width": 100},
     ]
 
 @frappe.whitelist()
@@ -43,54 +46,99 @@ def get_data(filters):
     if 'project_manager_name' in filters:
         conditions += """ AND `tabProject`.`project_manager_name` LIKE '%{project_manager_name}%'""".format(project_manager_name=filters['project_manager_name'])
     if 'customer' in filters:
-        conditions = """ AND `tabProject`.`customer` = '{customer}'""".format(customer=filters['customer'])
+        conditions += """ AND `tabProject`.`customer` = '{customer}'""".format(customer=filters['customer'])
+    if 'status' in filters:
+        conditions += """ AND `tabProject`.`status` = '{status}'""".format(status=filters['status'])
+    if 'status_light' in filters and filters['status_light'] != '⚪':
+        # For some reason the SQL comparison doesn't compare all bytes of the emoji, so use base64 as workaround
+        # (Perhaps the issue is that the collation of the connection and/or tables is utf8_general_ci instead of utf8mb4_unicode_ci - in any case this appears to work.)
+        conditions += """ AND TO_BASE64(`tabProject`.`status_light`) = TO_BASE64('{status}')""".format(status=filters['status_light'])
+    if 'year' in filters:
+        conditions += """AND (YEAR(expected_start_date) = '{year}' OR YEAR(expected_end_date) = '{year}' OR (YEAR(expected_end_date) = ('{year}' - 1) AND status !='Completed'))""".format(year=filters['year'])
 
     sql_query = """SELECT
                     `tabProject`.`name` AS `project`,
                     `tabProject`.`title` AS `project_name`,
                     `tabProject`.`project_manager` AS `project_manager`,
                     `tabProject`.`project_manager_name` AS `project_manager_name`,
-                    `tabProject`.`finished` AS `finished`,
+                    `tabProject`.`status` AS `status`,
                     `tabProject`.`status_light` AS `status_light`,
                     `tabProject`.`expected_start_date` AS `start_date`,
-                    `tabProject`.`expected_end_date` AS `end_date`,
-                    (SELECT IFNULL(SUM(`tabTask`.`expected_time`) , 0)
-                     FROM `tabTask`
-                     WHERE `tabTask`.`project` = `tabProject`.`name`) AS `project_expected_time`,
-                    IFNULL(`tabProject`.`planned_material_cost`, 0) AS `planned_material_cost`,
-                    IFNULL(`tabProject`.`actual_material_cost`, 0) AS `actual_material_cost`,
-                    IFNULL(`tabProject`.`planned_hours`, 0) AS `planned_hours`,
-                    (SELECT IFNULL(SUM(`tabTimesheet Detail`.`hours`), 0)
-                     FROM `tabTimesheet Detail`
-                     WHERE `tabTimesheet Detail`.`docstatus` = 1
-                       AND `tabTimesheet Detail`.`project` = `tabProject`.`name`
-                       AND `tabTimesheet Detail`. `by_effort` = 0) AS `hours_flat`,
-                    (SELECT IFNULL(SUM(`tabTimesheet Detail`.`hours`), 0)
-                     FROM `tabTimesheet Detail`
-                     WHERE `tabTimesheet Detail`.`docstatus` = 1
-                       AND `tabTimesheet Detail`.`project` = `tabProject`.`name`
-                       AND `tabTimesheet Detail`. `by_effort` = 1) AS `hours_effective`,
-                    `tabProject`.`planned_hours_ilv` AS `planned_hours_ilv`,
-                    `tabProject`.`actual_labor_as_prime_cost` AS `actual_labor_as_prime_cost`
+                    `tabProject`.`expected_end_date` AS `end_date`
                 FROM `tabProject`
                 WHERE
-                  `tabProject`.`status` = "Open"
+                  1
                   {conditions}
+                ORDER BY
+                  `tabProject`.`expected_end_date`
                 ;""".format(
               conditions=conditions)
 
     data = frappe.db.sql(sql_query, as_dict=True)
 
     # processing
+    output = []
     for row in data:
-        if row['end_date'] and row['start_date']:
-            duration_days = (row['end_date'] - row['start_date']).days
-            if duration_days == 0:
-                duration_days = 1
-            expired_days = (date.today() - row['start_date']).days
-            progress_time = 100 * expired_days / duration_days
-            row['progress_time'] = progress_time
-        if row['project_expected_time']:
-            row['progress_tasks'] = 100 * (row['hours_flat'] or 0) / row['project_expected_time']
+        kpi = get_project_kpis(row['project'])
+        actual_row = {
+            "project": row['project'],
+            "project_name": row['project_name'],
+            "project_manager_name": row['project_manager_name'],
+            "status_light": row['status_light'],
+            "start_date": row['start_date'],
+            "end_date": row['end_date'],
+            "budget_vs_actual": _("IST"),
+            "material_cost": kpi.material_current(),
+            "third_party_services": kpi.thirdparty_current(),
+            "hours_flat": kpi.total_hours_current(),
+            "hours_by_effort": kpi.total_hours_by_effort_current(),
+            "labor_cost": kpi.labor_direct_cost_current() + kpi.labor_direct_cost_by_effort_current(),
+            "direct_cost": kpi.direct_cost_current(),
+            "prime_cost": kpi.prime_cost_current(),
+            "revenue": kpi.revenue_current(),
+            "ebit": kpi.ebit_current(),
+            "ebit_delta": '',
+        }
+        budget_row = {
+            "project": '',
+            "project_name": _(row['status']),
+            "project_manager_name": '',
+            "status_light": '',
+            "start_date": '',
+            "end_date": '',
+            "budget_vs_actual": _("BUDGET"),
+            "material_cost": kpi.material_budget(),
+            "third_party_services": kpi.thirdparty_budget(),
+            "hours_flat": kpi.total_hours_budget(),
+            "hours_by_effort": kpi.total_hours_by_effort_budget(),
+            "labor_cost": kpi.labor_direct_cost_budget() + kpi.labor_direct_cost_by_effort_budget(),
+            "direct_cost": kpi.direct_cost_budget(),
+            "prime_cost": kpi.prime_cost_budget(),
+            "revenue": kpi.revenue_budget(),
+            "ebit": kpi.ebit_budget(),
+            "ebit_delta": '',
+        }
+        forecast_row = {
+            "project": '',
+            "project_name": '',
+            "project_manager_name": '',
+            "status_light": '',
+            "start_date": '',
+            "end_date": '',
+            "budget_vs_actual": _("FORECAST"),
+            "material_cost": kpi.material_forecast(),
+            "third_party_services": kpi.thirdparty_forecast(),
+            "hours_flat": kpi.total_hours_forecast(),
+            "hours_by_effort": kpi.total_hours_by_effort_forecast(),
+            "labor_cost": kpi.labor_direct_cost_forecast() + kpi.labor_direct_cost_by_effort_forecast(),
+            "direct_cost": kpi.direct_cost_forecast(),
+            "prime_cost": kpi.prime_cost_forecast(),
+            "revenue": kpi.revenue_forecast(),
+            "ebit": kpi.ebit_forecast(),
+            "ebit_delta": kpi.ebit_forecast() - kpi.ebit_budget(),
+        }
+        output.append(actual_row)
+        output.append(budget_row)
+        output.append(forecast_row)
 
-    return data
+    return output
