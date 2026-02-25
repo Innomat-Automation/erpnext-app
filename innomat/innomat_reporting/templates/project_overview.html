@@ -92,7 +92,7 @@
     {% endmacro %}
 
     {# Daten aus Python-Modul laden #}
-    {% set kpi = get_project_kpis(doc.name) %}
+    {% set kpi = get_project_kpis(doc.name, True) %}
 
     {# Thresholds für Abweichungen bei Sanity Checks #}
     {% set cost_thresh = 10 %}

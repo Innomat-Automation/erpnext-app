@@ -352,6 +352,8 @@ def update_project(p):
         sales_order_doc = frappe.get_doc("Sales Order", p['sales_order'])
         fallback_gk = sales_order_doc.cost_supplement_gk
         fallback_vvgk = sales_order_doc.cost_supplement_vvgk
+    else:
+        sales_order_doc = None
     if not fallback_gk and company_doc.cost_supplement_gk:
         fallback_gk = company_doc.cost_supplement_gk
     if not fallback_vvgk and company_doc.cost_supplement_vvgk:

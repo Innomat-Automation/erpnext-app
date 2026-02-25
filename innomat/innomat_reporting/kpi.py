@@ -12,7 +12,7 @@ def get_project_kpis(*args, **kwargs):
     return ProjectKPI(*args, **kwargs)
 
 class ProjectKPI:
-    def __init__(self, project, recalculate=True):
+    def __init__(self, project, recalculate=False):
         self.project_name = project
         self.project_doc = frappe.get_doc("Project", project)
         self.details_loaded = False
@@ -32,6 +32,8 @@ class ProjectKPI:
             # Quotation is currently not required
             #if self.sales_order_doc.items and self.sales_order_doc.items[0].prevdoc_docname:
             #    self.quotation_doc = frappe.get_doc("Quotation", self.sales_order_doc.items[0].prevdoc_docname)
+        else:
+            self.sales_order_doc = None
 
     # Fortschritt Cost-to-cost = Kosten IST / Kosten FC (Basis: SK)
     def cost_to_cost_progress(self):

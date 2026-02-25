@@ -83,7 +83,7 @@
     {% endmacro %}
 
     {# Berechnungen über Python-Modul durchführen #}
-    {% set kpi = get_project_kpis(doc.name) %}
+    {% set kpi = get_project_kpis(doc.name, True) %}
 
     <div class="cockpit-container">
         <!-- Header -->
