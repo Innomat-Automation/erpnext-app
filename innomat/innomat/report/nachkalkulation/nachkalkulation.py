@@ -70,7 +70,7 @@ def get_data(filters):
                   1
                   {conditions}
                 ORDER BY
-                  `tabProject`.`expected_end_date`
+                  `tabProject`.`name`
                 ;""".format(
               conditions=conditions)
 
