@@ -405,7 +405,6 @@ def update_project(p):
         'forecast_labor_by_effort_as_production_cost': task_totals_by_effort['forecast_labor_as_production_cost'] + project_doc.labor_by_effort_as_production_cost - task_totals_by_effort['actual_production_cost'],
         'forecast_labor_by_effort_as_prime_cost': task_totals_by_effort['forecast_labor_as_prime_cost'] + project_doc.labor_by_effort_as_prime_cost - task_totals_by_effort['actual_prime_cost'],
     }
-    print(':fc_tasks:'+str(project_data['forecast_hours'])+':fc_tasks_bye:'+str(project_data['forecast_hours_by_effort']))
 
     # Calculate costs on project level
     project_data['actual_material_cost'] = get_project_material_cost(p['name'])
@@ -413,8 +412,6 @@ def update_project(p):
     project_data.update(actual_labor_cost)
     project_data['sum_services'] = get_project_service_cost(p['name'])
     project_data['sum_expense_claim'] = get_expense_claims_cost(p['name'])
-
-    print(':fc_other:'+str(project_doc.actual_labor_hours)+':minus:'+str(task_totals['actual_hours'])+':equals:'+str(project_data['forecast_hours']))
 
     # Budget values from Sales Order
     if sales_order_doc:
@@ -595,7 +592,6 @@ Get a task's direct labor cost, as well as production/prime cost, and cost forec
 This function now ignores "by effort" and "do_not_invoice" flags, it simply sums up the hours assigned to the task, so that labor costs are available for all tasks.
 """
 def get_task_labor_cost(task, fallback_gk, fallback_vvgk, fallback_ilv_rate, project_doc):
-    print("::task::"+task)
     data = frappe.db.sql("""SELECT
             IFNULL(SUM(`tabTimesheet Detail`.`hours` * IFNULL(NULLIF(`tabTimesheet`.`internal_rate_per_hour`, 0), `tabEmployee`.`internal_rate_per_hour`)), 0) AS `actual_direct_cost`,
             IFNULL(SUM( `tabTimesheet Detail`.`hours` * IFNULL(NULLIF(`tabTimesheet`.`internal_rate_per_hour`, 0), `tabEmployee`.`internal_rate_per_hour`) *
@@ -645,13 +641,11 @@ def get_task_labor_cost(task, fallback_gk, fallback_vvgk, fallback_ilv_rate, pro
             task_data['forecast_labor_as_prime_cost'] = task_data['actual_prime_cost'] + delta_hours * prime_fc_rate
             task_data['forecast_labor_as_production_cost'] = task_data['actual_production_cost'] + delta_hours * prod_fc_rate
             task_data['forecast_labor_as_direct_cost'] = task_data['actual_direct_cost'] + delta_hours * direct_fc_rate
-            print(":task_h:"+str(task_data['actual_hours'])+":bu:"+str(task_data['budget_hours'])+":fc_dir:"+str(task_data['forecast_labor_as_direct_cost'])+":rate:"+str(direct_fc_rate))
 
         if task_data['by_effort']:
             # TODO: Revenue forecasting does not consider the billing rate of hours already billed (which may be based on previous exchange rates and/or price lists)
             #       To keep the project reporting correct, particularly for completed projects, this should be improved.
             task_billing_rate = get_billing_rate(task_data['item_code'], project_doc)
-            print(":b_rate:"+str(task_billing_rate)+":for:"+str(task_data['item_code']))
             task_data['forecast_revenue'] = task_data['forecast_hours'] * task_billing_rate
         else:
             task_data['forecast_revenue'] = 0
@@ -687,12 +681,10 @@ def get_sales_order_materials(sales_order_doc):
                 data['stundenbudget_plan'] += item.qty * frappe.get_value("Item", item.item_code, "valuation_rate") # legacy budget calc from valuation rate
                 data['planned_hours_ilv'] += item.qty * ilv_rate
                 data['planned_revenue'] += item.amount
-                print(":so_item:"+str(item.item_code)+":hours:"+str(item.qty)+":rate:"+str(ilv_rate)+":chf:"+str(item.qty * ilv_rate))
             else:
                 data['planned_hours_by_effort'] += item.qty
                 data['planned_hours_by_effort_ilv'] += item.qty * ilv_rate
                 data['planned_revenue_by_effort'] += item.amount
-                print(":so_item_by_effort:"+str(item.item_code)+":hours:"+str(item.qty)+":rate:"+str(ilv_rate)+":chf:"+str(item.qty * ilv_rate))
         else:
             data['planned_revenue'] += item.amount
             # check if there is a BOM
@@ -707,7 +699,6 @@ def get_sales_order_materials(sales_order_doc):
                         data['stundenbudget_plan'] += item.qty * i.qty * frappe.get_value("Item", i.item_code, "valuation_rate") # legacy budget calc from valuation rate
                         ilv_rate = i.ilv_rate or get_fallback_ilv_rate(i.item_code)
                         data['planned_hours_ilv'] += item.qty * i.qty * ilv_rate
-                        print(":bom_item:"+str(i.item_code)+":hours:"+str(item.qty * i.qty)+":rate:"+str(ilv_rate)+":chf:"+str(item.qty * i.qty * ilv_rate))
                         # NOTE - there is no 'by_effort' field in BOM items, therefore all BOM hours go into regular planned hours
                     else:
                         # this is a material position
