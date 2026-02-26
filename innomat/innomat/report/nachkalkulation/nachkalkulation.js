@@ -37,7 +37,8 @@ frappe.query_reports["Nachkalkulation"] = {
             fieldname: "year",
             label: __("Jahr"),
             fieldtype: "Link",
-            options: "Fiscal Year"
+            options: "Fiscal Year",
+            default: new Date().getFullYear()
         }
     ]
 };
