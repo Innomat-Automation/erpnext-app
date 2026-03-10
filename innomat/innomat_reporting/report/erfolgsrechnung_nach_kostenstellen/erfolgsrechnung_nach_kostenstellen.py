@@ -151,44 +151,105 @@ def get_columns(cost_center_list):
 
 
 # Merge two lists of dicts containing account information.
-# TODO Aktuell werden übergeordnete Konten von Budgetkonten nicht dargestellt und deren Budgets nicht aufsummiert!
-#      Am besten analog Budget-Druckformat vorgehen - der Reihe nach gemäss Kontenplan - und die Summen so bilden.
-#      Vermutlich ein "Pfad"-Dict führen, wo alle Parents aufgeführt sind, um deren Totale vorzu zu updaten.
-# - fehlende "parent" Konten
 def merge_data(existing_data, more_data, key):
-    cnt = 0
-    mcnt = 0
-    while True:
-        if mcnt == len(more_data):
-            break
-        if more_data[mcnt] == {}:
-            mcnt += 1
+    search_pos = 0
+    for new_item in more_data:
+        if not 'account' in new_item:
             continue
-        if cnt < len(existing_data):
-            if existing_data[cnt] == {}:
-                cnt += 1
-                continue
-            if existing_data[cnt]['account'] == more_data[mcnt]['account']:
-                # Account matches
-                existing_data[cnt][key] = more_data[mcnt][key]
-                mcnt += 1
-            elif (existing_data[cnt]['account'].replace("'","") > more_data[mcnt]['account'].replace("'","")):
-                # Account is missing from existing_data and should be inserted here
-                # NOTE: We assume that account numbers are in order, which usually works, because eg. '4' > '300' in Python.
-                #       We remove single quotes because 'Total Expense' and 'Total Credit' rows are quoted, and need to be without quotes to end up in the right spot ("'Total" < "1234" but "Total" > "1234")
-
-                if more_data[mcnt].get("indent") == None:
-                    # Account data without 'indent', coming from budget: We need to figure out the correct indentation
-                    for i in range(cnt,0,-1):
-                        if existing_data[i]['account'] == more_data[mcnt]['parent_account'] and existing_data[i].get('indent') != None:
-                            more_data[mcnt]['indent'] = existing_data[i]['indent'] + 1
-                            break
-                existing_data.insert(cnt, more_data[mcnt])
-                mcnt += 1
-            cnt += 1
+        found_at = search_account_in_data(new_item['account'], existing_data, search_pos)
+        if found_at != None:
+            existing_data[found_at][key] = new_item[key]
+            search_pos = found_at + 1
         else:
-            existing_data.append(more_data[mcnt])
-            mcnt += 1
+            tree_path = get_account_tree_path(new_item['account'])
+            found_idx = -1
+            found_pos = None
+            # Go up the path, i.e. start at the end, and stop whenever a parent node is found
+            for t in range(len(tree_path)-1, -1, -1):
+                found_pos = search_account_in_data(tree_path[t], existing_data)
+                if found_pos != None:
+                    found_idx = t
+                    break
+            # Now go downward and insert all the missing nodes
+            # (Note - this also works if no parent was found, in that case we start at t=0)
+            pos = found_pos
+            for t in range(found_idx + 1, len(tree_path)):
+                pos = insert_account_into_data(tree_path[t], existing_data, pos)
+            pos = insert_account_into_data(new_item['account'], existing_data, pos)
+            existing_data[pos][key] = new_item[key]
+            search_pos = pos + 1
+    update_sums(existing_data, key)
+
+
+# Update sums by going upward through the tree
+def update_sums(data, key):
+    prev_indent = 0
+    sum = [0, 0, 0, 0, 0]
+    for i in range(len(data)-1, -1, -1):
+        if data[i]['account'].startswith("'Total"):
+            continue
+        indent = data[i]['indent']
+        if indent == prev_indent:
+            sum[indent] += data[i].get(key, 0)
+        elif indent > prev_indent:
+            sum[indent] = data[i].get(key, 0)
+        else: # indent < prev_indent
+            data[i][key] = sum[prev_indent] or ''
+            sum[indent] += sum[prev_indent]
+            sum[prev_indent] = 0
+        prev_indent = indent
+    if len(data)>0 and data[-1]['account'].startswith("'Total"):
+        data[-1][key] = sum[0]
+
+
+# Returns a list of accounts, starting at the root of the account tree and ending at the given account's parent
+def get_account_tree_path(account):
+    path = []
+    if not frappe.db.exists("Account", account):
+        return path
+    acc_doc = frappe.get_doc("Account", account)
+    company = acc_doc.company
+    while True:
+        if acc_doc.parent_account == company or acc_doc.parent_account == None:
+            break
+        path.insert(0, acc_doc.parent_account)
+        acc_doc = frappe.get_doc("Account", acc_doc.parent_account)
+    return path
+
+
+# Returns the position of the given account in the data, or None if not found.
+# The search is started at the given position to speed things up (usually the data is in order)
+def search_account_in_data(account, data, start_at=0):
+    if len(data) == 0:
+        return None
+    start_at = min(start_at, len(data)-1)
+    pos = start_at
+    while True:
+        if data[pos]['account'] == account:
+            return pos
+        pos += 1
+        if pos >= len(data):
+            pos = 0
+        if pos == start_at:
+            return None
+
+
+def insert_account_into_data(account, data, parent_pos = None):
+    comp_account = account.replace("'","")
+    if parent_pos != None:
+        parent = data[parent_pos]['account']
+        my_indent = data[parent_pos]['indent'] + 1
+        pos = parent_pos + 1
+        # Remove single quotes when comparing names because 'Total Expense' and 'Total Credit' rows are quoted, and need to be without quotes to stay at the bottom ("'Total" < "1234" but "Total" > "1234")
+        while pos < len(data) and (data[pos]['indent'] > my_indent or (data[pos]['indent'] == my_indent and comp_account > data[pos]['account'].replace("'",""))):
+            pos += 1
+        data.insert(pos, {'account': account, 'parent_account': parent, 'indent': my_indent})
+    else:
+        pos = 0
+        while pos < len(data) and comp_account > data[pos]['account'].replace("'",""):
+            pos += 1
+        data.insert(pos, {'account': account, 'parent_account': None, 'indent': 0})
+    return pos
 
 
 def get_budget_data(budget_name, budget_months, cost_center, root_type):
