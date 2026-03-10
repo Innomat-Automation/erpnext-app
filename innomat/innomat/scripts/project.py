@@ -332,6 +332,7 @@ def unset_project_invoiced(sales_invoice, method):
             frappe.db.commit()
     return
 
+
 """
 This function will update  the project cost values
 """
@@ -345,19 +346,7 @@ def update_project_costs():
 def update_project(p):
     # Fallback cost supplements required for labor cost calculations
     project_doc = frappe.get_doc("Project", p['name'])
-    company_doc = frappe.get_doc("Company", project_doc.company)
-    fallback_gk = 0
-    fallback_vvgk = 0
-    if p['sales_order']:
-        sales_order_doc = frappe.get_doc("Sales Order", p['sales_order'])
-        fallback_gk = sales_order_doc.cost_supplement_gk
-        fallback_vvgk = sales_order_doc.cost_supplement_vvgk
-    else:
-        sales_order_doc = None
-    if not fallback_gk and company_doc.cost_supplement_gk:
-        fallback_gk = company_doc.cost_supplement_gk
-    if not fallback_vvgk and company_doc.cost_supplement_vvgk:
-        fallback_vvgk = company_doc.cost_supplement_vvgk
+    fallback_gk, fallback_vvgk = get_fallback_cost_supplements(p['name'])
     fallback_ilv_rate = get_fallback_ilv_rate()
 
     # Update labor costs on Task level
@@ -735,6 +724,7 @@ def get_sales_order_materials(sales_order_doc):
     data['planned_revenue_by_effort'] = data['planned_revenue_by_effort'] * sales_order_doc.net_total / sales_order_doc.total
     return data
 
+
 """
 Return a fallback value for an Item's ILV (Interne Leistungsverrechnung) hourly rate, to be used when no value is present in a Sales Order Item
 """
@@ -745,6 +735,26 @@ def get_fallback_ilv_rate(item_code=None):
     if not rate:
         rate = frappe.get_value("Item", FALLBACK_ITEM_FOR_ILV_RATE, "ilv_rate")
     return rate or 0
+
+
+"""
+Get cost supplements either from project's sales order or from company
+To be used as a fallback if no supplements are available in Timesheet
+NOTE - we get data directly from DB here to minimize overhead, as this function is used in various contexts where eg. the Project doc may not have been loaded
+"""
+def get_fallback_cost_supplements(project_name=None, company=None):
+    fallback_gk = 0
+    fallback_vvgk = 0
+    if project_name:
+        sales_order, company = frappe.get_value("Project", project_name, ["sales_order", "company"])
+        if sales_order:
+            fallback_gk, fallback_vvgk = frappe.get_value("Sales Order", sales_order, ["cost_supplement_gk", "cost_supplement_vvgk"])
+    if company:
+        if not fallback_gk:
+            fallback_gk = frappe.get_value("Company", company, "cost_supplement_gk")
+        if not fallback_vvgk:
+            fallback_vvgk = frappe.get_value("Company", company, "cost_supplement_vvgk")
+    return fallback_gk, fallback_vvgk
 
 
 """
@@ -772,6 +782,7 @@ def get_employee_default_project(employee):
     if not default_project:
         raise Exception(_("Cost Center '{0}' has no default project for general operating costs").format(cc))
     return {'company': company, 'default_project': default_project}
+
 
 """
 Get the default rate at which an Item would be billed in a given Project's context

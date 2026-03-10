@@ -49,6 +49,11 @@ class ProjectKPI:
             return self.project_doc.total_billed_amount / prime_cost
         return 1 # Keine Selbstkosten = die Selbstkosten sind zu 100% verrechnet
 
+    # Arbeitsvorrat = Auftragssumme - SK
+    def backlog(self):
+        # Negativen Arbeitsvorrat nicht zulassen - unprofitable Projekte sollen nicht den Gesamtarbeitsvorrat reduzieren
+        return max(self.revenue_budget() - self.prime_cost_flat_current(), 0)
+
     # Gesamtkosten IST, DK
     def direct_cost_current(self):
         return self.material_current() + self.thirdparty_current() + self.expenses_current() + self.labor_direct_cost_current() + self.labor_direct_cost_by_effort_current()
@@ -59,7 +64,11 @@ class ProjectKPI:
 
     # Gesamtkosten IST, SK
     def prime_cost_current(self):
-        return self.material_current() + self.thirdparty_current() + self.expenses_current() + self.labor_prime_cost_current() + self.labor_prime_cost_by_effort_current()
+        return self.prime_cost_flat_current() + self.labor_prime_cost_by_effort_current()
+
+    # Gesamtkosten IST, SK - nur pauschal verrechnete Arbeit
+    def prime_cost_flat_current(self):
+        return self.material_current() + self.thirdparty_current() + self.expenses_current() + self.labor_prime_cost_current()
 
     # Materialkosten IST
     def material_current(self):
