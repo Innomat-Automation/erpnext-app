@@ -24,6 +24,7 @@ def get_columns():
         {"label": _("Werte"), "fieldname": "budget_vs_actual", "fieldtype": "Data", "width": 80},
         {"label": _("Materialkosten"), "fieldname": "material_cost", "fieldtype": "Currency", "width": 110},
         {"label": _("Fremdleistungen"), "fieldname": "third_party_services", "fieldtype": "Currency", "width": 120},
+        {"label": _("Spesen"), "fieldname": "expenses", "fieldtype": "Currency", "width": 120},
         {"label": _("Std pauschal"), "fieldname": "hours_flat", "fieldtype": "Float", "width": 100},
         {"label": _("Std n.Aufwand"), "fieldname": "hours_by_effort", "fieldtype": "Float", "width": 110},
         {"label": _("Personalaufwand (DK)"), "fieldname": "labor_cost", "fieldtype": "Currency", "width": 150},
@@ -80,16 +81,37 @@ def get_data(filters):
     output = []
     for row in data:
         kpi = get_project_kpis(row['project'])
-        actual_row = {
+        forecast_row = {
             "project": row['project'],
-            "project_name": row['project_name'],
+            "project_name": row['project_name'][10:],
             "project_manager_name": row['project_manager_name'],
             "status_light": row['status_light'],
             "start_date": row['start_date'],
             "end_date": row['end_date'],
+            "budget_vs_actual": _("FORECAST"),
+            "material_cost": kpi.material_forecast(),
+            "third_party_services": kpi.thirdparty_forecast(),
+            "expenses": kpi.expenses_forecast(),
+            "hours_flat": kpi.total_hours_forecast(),
+            "hours_by_effort": kpi.total_hours_by_effort_forecast(),
+            "labor_cost": kpi.labor_direct_cost_forecast() + kpi.labor_direct_cost_by_effort_forecast(),
+            "direct_cost": kpi.direct_cost_forecast(),
+            "prime_cost": kpi.prime_cost_forecast(),
+            "revenue": kpi.revenue_forecast(),
+            "ebit": kpi.ebit_forecast(),
+            "ebit_delta": kpi.ebit_forecast() - kpi.ebit_budget(),
+        }
+        actual_row = {
+            "project": '',
+            "project_name": _(row['status']),
+            "project_manager_name": '',
+            "status_light": '',
+            "start_date": '',
+            "end_date": '',
             "budget_vs_actual": _("IST"),
             "material_cost": kpi.material_current(),
             "third_party_services": kpi.thirdparty_current(),
+            "expenses": kpi.expenses_current(),
             "hours_flat": kpi.total_hours_current(),
             "hours_by_effort": kpi.total_hours_by_effort_current(),
             "labor_cost": kpi.labor_direct_cost_current() + kpi.labor_direct_cost_by_effort_current(),
@@ -101,7 +123,7 @@ def get_data(filters):
         }
         budget_row = {
             "project": '',
-            "project_name": _(row['status']),
+            "project_name": '',
             "project_manager_name": '',
             "status_light": '',
             "start_date": '',
@@ -109,6 +131,7 @@ def get_data(filters):
             "budget_vs_actual": _("BUDGET"),
             "material_cost": kpi.material_budget(),
             "third_party_services": kpi.thirdparty_budget(),
+            "expenses": kpi.expenses_budget() or '',
             "hours_flat": kpi.total_hours_budget(),
             "hours_by_effort": kpi.total_hours_by_effort_budget(),
             "labor_cost": kpi.labor_direct_cost_budget() + kpi.labor_direct_cost_by_effort_budget(),
@@ -118,27 +141,8 @@ def get_data(filters):
             "ebit": kpi.ebit_budget(),
             "ebit_delta": '',
         }
-        forecast_row = {
-            "project": '',
-            "project_name": '',
-            "project_manager_name": '',
-            "status_light": '',
-            "start_date": '',
-            "end_date": '',
-            "budget_vs_actual": _("FORECAST"),
-            "material_cost": kpi.material_forecast(),
-            "third_party_services": kpi.thirdparty_forecast(),
-            "hours_flat": kpi.total_hours_forecast(),
-            "hours_by_effort": kpi.total_hours_by_effort_forecast(),
-            "labor_cost": kpi.labor_direct_cost_forecast() + kpi.labor_direct_cost_by_effort_forecast(),
-            "direct_cost": kpi.direct_cost_forecast(),
-            "prime_cost": kpi.prime_cost_forecast(),
-            "revenue": kpi.revenue_forecast(),
-            "ebit": kpi.ebit_forecast(),
-            "ebit_delta": kpi.ebit_forecast() - kpi.ebit_budget(),
-        }
+        output.append(forecast_row)
         output.append(actual_row)
         output.append(budget_row)
-        output.append(forecast_row)
 
     return output

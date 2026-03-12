@@ -405,8 +405,8 @@ def update_project(p):
     project_data['sum_expense_claim'] = get_expense_claims_cost(p['name'])
 
     # Budget values from Sales Order
-    if sales_order_doc:
-        planning_data = get_sales_order_materials(sales_order_doc)
+    if project_doc.sales_order:
+        planning_data = get_sales_order_materials(project_doc.sales_order)
         project_data.update(planning_data)
     else:
         project_data.update({'planned_material_cost': 0, 'services_offered': 0, 'planned_hours': 0, 'planned_hours_by_effort': 0, 'stundenbudget_plan': 0, 'planned_hours_ilv': 0, 'planned_hours_by_effort_ilv': 0, 'planned_revenue': 0, 'planned_revenue_by_effort': 0})
@@ -661,8 +661,9 @@ def get_expense_claims_cost(project):
 """
 Get all required material with costs from a sales order (based on BOM or purchase item
 """
-def get_sales_order_materials(sales_order_doc):
+def get_sales_order_materials(sales_order):
     data = {'planned_material_cost' : 0, 'services_offered': 0, 'planned_hours': 0, 'planned_hours_by_effort': 0, 'stundenbudget_plan': 0, 'planned_hours_ilv': 0, 'planned_hours_by_effort_ilv': 0, 'planned_revenue': 0, 'planned_revenue_by_effort': 0, 'items': []}
+    sales_order_doc = frappe.get_doc("Sales Order", sales_order)
     for item in sales_order_doc.items:
         if "h" in item.uom:
             ilv_rate = item.ilv_rate or get_fallback_ilv_rate(item.item_code)

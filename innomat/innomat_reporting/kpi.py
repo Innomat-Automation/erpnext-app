@@ -108,15 +108,15 @@ class ProjectKPI:
 
     # Gesamtkosten BUDGET, DK
     def direct_cost_budget(self):
-        return self.material_budget() + self.thirdparty_budget() + self.labor_direct_cost_budget() + self.labor_direct_cost_by_effort_budget()
+        return self.material_budget() + self.thirdparty_budget() + self.expenses_budget() + self.labor_direct_cost_budget() + self.labor_direct_cost_by_effort_budget()
 
     # Gesamtkosten BUDGET, HK
     def production_cost_budget(self):
-        return self.material_budget() + self.thirdparty_budget() + self.labor_production_cost_budget() + self.labor_production_cost_by_effort_budget()
+        return self.material_budget() + self.thirdparty_budget() + self.expenses_budget() + self.labor_production_cost_budget() + self.labor_production_cost_by_effort_budget()
 
     # Gesamtkosten BUDGET, SK
     def prime_cost_budget(self):
-        return self.material_budget() + self.thirdparty_budget() + self.labor_prime_cost_budget() + self.labor_prime_cost_by_effort_budget()
+        return self.material_budget() + self.thirdparty_budget() + self.expenses_budget() + self.labor_prime_cost_budget() + self.labor_prime_cost_by_effort_budget()
 
     # Materialkosten BUDGET
     def material_budget(self):
@@ -125,6 +125,10 @@ class ProjectKPI:
     # Dienstleistungen Dritter, BUDGET
     def thirdparty_budget(self):
         return self.project_doc.services_offered
+
+    # Spesen BUDGET - werden nicht budgetiert
+    def expenses_budget(self):
+        return 0
 
     # Personalkosten BUDGET (DK, indirekt anhand ILV)
     def labor_direct_cost_budget(self):
@@ -152,15 +156,15 @@ class ProjectKPI:
 
     # Gesamtkosten FORECAST, DK
     def direct_cost_forecast(self):
-        return self.material_forecast() + self.thirdparty_forecast() + self.labor_direct_cost_forecast() + self.labor_direct_cost_by_effort_forecast()
+        return self.material_forecast() + self.thirdparty_forecast() + self.expenses_forecast() + self.labor_direct_cost_forecast() + self.labor_direct_cost_by_effort_forecast()
 
     # Gesamtkosten FORECAST, HK
     def production_cost_forecast(self):
-        return self.material_forecast() + self.thirdparty_forecast() + self.labor_production_cost_forecast() + self.labor_production_cost_by_effort_forecast()
+        return self.material_forecast() + self.thirdparty_forecast() + self.expenses_forecast() + self.labor_production_cost_forecast() + self.labor_production_cost_by_effort_forecast()
 
     # Gesamtkosten FORECAST, SK
     def prime_cost_forecast(self):
-        return self.material_forecast() + self.thirdparty_forecast() + self.labor_prime_cost_forecast() + self.labor_prime_cost_by_effort_forecast()
+        return self.material_forecast() + self.thirdparty_forecast() + self.expenses_forecast() + self.labor_prime_cost_forecast() + self.labor_prime_cost_by_effort_forecast()
 
     # Dienstleistungen FORECAST - wir haben kein Matching zwischen Budget- und Istpositionen, daher Forecast = max(Budget, Ist)
     def thirdparty_forecast(self):
@@ -169,6 +173,10 @@ class ProjectKPI:
     # Materialkosten FORECAST - wir haben kein Matching zwischen Budget- und Istpositionen, daher Forecast = max(Budget, Ist)
     def material_forecast(self):
         return max(self.material_budget(), self.material_current())
+
+    # Spesen FORECAST - kein Forecast möglich, Forecast = IST
+    def expenses_forecast(self):
+        return self.project_doc.sum_expense_claim
 
     # Personalkosten FORECAST, DK
     def labor_direct_cost_forecast(self):
