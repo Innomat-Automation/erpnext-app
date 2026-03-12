@@ -26,5 +26,9 @@ frappe.query_reports["Mitarbeiter Gegenverrechnung"] = {
             'default': frappe.defaults.get_default("Company"),
             'reqd': 1
         }
-    ]
+    ],
+
+    "after_datatable_render": function() {
+        $("div.dt-row-header").css("height","50px");
+    }
 };

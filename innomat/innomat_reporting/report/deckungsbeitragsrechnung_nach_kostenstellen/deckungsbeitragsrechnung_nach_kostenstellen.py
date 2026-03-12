@@ -384,7 +384,6 @@ def set_gl_entries_by_account(
         {additional_conditions}
         and posting_date <= %(to_date)s
         order by account, posting_date""".format(additional_conditions=additional_conditions)
-    print(sql_q)
     gl_entries = frappe.db.sql(sql_q, gl_filters, as_dict=True) #nosec
 
     if filters and filters.get('presentation_currency'):
