@@ -563,7 +563,7 @@ def get_project_labor_cost(project, fallback_gk, fallback_vvgk):
                 LEFT JOIN `tabTimesheet` ON `tabTimesheet`.`name` = `tabTimesheet Detail`.`parent`
                 LEFT JOIN `tabEmployee` ON `tabEmployee`.`name` = `tabTimesheet`.`employee`
                 WHERE `tabTimesheet`.`docstatus` = 1
-                  AND `tabTimesheet Detail`.`project` = %(project)
+                  AND `tabTimesheet Detail`.`project` = %(project)s
                   AND {by_effort_condition}
             ;""".format(by_effort_condition=sql_cond), {"project": project, "fallback_gk": fallback_gk, "fallback_vvgk": fallback_vvgk}, as_dict=True)
         # If nothing goes wrong, this will set all six values of labor_cost
@@ -633,8 +633,6 @@ def get_task_labor_cost(task, fallback_gk, fallback_vvgk, fallback_ilv_rate, pro
             task_data['forecast_labor_as_direct_cost'] = task_data['actual_direct_cost'] + delta_hours * direct_fc_rate
 
         if task_data['by_effort']:
-            # TODO: Revenue forecasting does not consider the billing rate of hours already billed (which may be based on previous exchange rates and/or price lists)
-            #       To keep the project reporting correct, particularly for completed projects, this should be improved.
             task_billing_rate = get_billing_rate(task_data['item_code'], project_doc)
             task_data['forecast_revenue'] = task_data['forecast_hours'] * task_billing_rate
         else:
@@ -785,16 +783,28 @@ def get_employee_default_project(employee):
 
 
 """
-Get the default rate at which an Item would be billed in a given Project's context
+Get the last billing rate used for an Item within the given Project.
+Failing that, determine the default rate at which an Item would be billed in a given Project's context.
 """
 def get_billing_rate(item_code, project_doc):
-    if not project_doc.customer:
+    # Get the last used billing rate of this item on the project
+    prev_rate = frappe.db.sql("""SELECT `tabSales Invoice Item`.`rate`
+        FROM `tabSales Invoice` INNER JOIN `tabSales Invoice Item` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
+        WHERE `tabSales Invoice`.`project` = %(project)s AND `tabSales Invoice Item`.`item_code` = %(item)s
+        ORDER BY `tabSales Invoice`.`creation` DESC LIMIT 1;""", {"project": project_doc.name, "item": item_code}, as_dict=True)
+    if prev_rate and len(prev_rate) > 0 and prev_rate[0]['rate'] > 0:
+        return prev_rate[0]['rate']
+
+    # From here on, we need the Customer and Item to exist, and there has to be a price list
+    if not project_doc.customer or not frappe.db.exists("Item", item_code):
         return 0
     price_list = frappe.get_value("Customer", project_doc.customer, "default_price_list")
     if not price_list:
         price_list = frappe.defaults.get_global_default("selling_price_list")
     if not price_list:
         return 0
+
+    # All this data is required for get_item_details() to return something useful
     project_currency = get_currency(project_doc)
     exchange_rate = get_exchange_rate(project_currency, "CHF", date.today())
     item_details = get_item_details({
