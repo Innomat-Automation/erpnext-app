@@ -48,15 +48,16 @@ class OrderVolumeGrowth(KPI):
         return ((current - previous) / previous * 100) if previous else 0
 
 # Book-to-Bill Ratio = Auftragseingang / Umsatz
-# => TODO, laut Excelsheet: Sales und nicht BilledSales verwenden?! Name ist dann aber irreführend.
+# => Umsatz und nicht Billed Sales verwenden!
+# (sanity checked MZ)
 class BookToBillRatio(KPI):
     name = "Book-to-Bill Ratio"
     unit = "Ratio"
 
     def compute(self, company, cost_center, from_date, to_date):
         orders = OrderVolume().compute(company, cost_center, from_date, to_date)
-        billed = BilledSales().compute(company, cost_center, from_date, to_date)
-        return (orders / billed) if billed else 0
+        sales = Sales().compute(company, cost_center, from_date, to_date)
+        return (orders / sales) if sales else 0
 
 # Auftragseingang Top-5-Kunden
 # => TODO, indent = 2, mehrere Zeilen ausgeben...
@@ -148,13 +149,24 @@ class PostCalcDeviation(KPI):
 # --- FINANCE KPIs ---
 # ======================================================
 
-#TODO, kann ERPNext keinen effektiven Umsatz ermitteln?
+# sanity checked MZ
 class Sales(KPI):
     name = "Sales"
     unit = "Currency"
 
+    # TODO cost_center could be empty (perhaps use make_conditions())
     def compute(self, company, cost_center, from_date, to_date):
-        return BilledSales().compute(company, cost_center, from_date, to_date)
+        query = """
+            SELECT SUM(jea.credit) - SUM(jea.debit) AS total_sales
+            FROM `tabJournal Entry Account` AS jea
+            INNER JOIN `tabJournal Entry` AS je ON je.name = jea.parent
+            WHERE LEFT(jea.account, 4) IN ('3000', '3200', '3400')
+            AND je.company = %(company)s
+            AND jea.cost_center = %(cost_center)s
+            AND je.posting_date BETWEEN %(from_date)s AND %(to_date)s
+            """
+        total_sales = frappe.db.sql(query, {'company': company, 'cost_center': cost_center, 'from_date': from_date, 'to_date': to_date})
+        return total_sales[0][0] if total_sales else 0
 
 
 class SalesGrowth(KPI):

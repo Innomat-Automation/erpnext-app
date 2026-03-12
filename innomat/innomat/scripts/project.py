@@ -335,8 +335,12 @@ def unset_project_invoiced(sales_invoice, method):
 """
 This function will update  the project cost values
 """
-def update_project_costs():
-    projects = frappe.get_all("Project", filters={'status': 'Open'}, fields=['name', 'sales_order'])
+def update_project_costs(all_projects=False):
+    if all_projects:
+        filters = {}
+    else:
+        filters = {'status': 'Open'}
+    projects = frappe.get_all("Project", filters=filters, fields=['name', 'sales_order'])
     for p in projects:
         update_project(p)
     return
