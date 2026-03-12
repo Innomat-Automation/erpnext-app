@@ -24,6 +24,20 @@ frappe.query_reports["Employee Productivity"] = {
             'fieldtype': "Link",
             'options': "Company",
             'default': frappe.defaults.get_default("Company")
+        },
+        {
+            'fieldname': "department",
+            'label': __("Department"),
+            'fieldtype': "Link",
+            'options': "Department",
+            "get_query": function() {
+                let company = frappe.query_report.get_filter_value('company');
+                return {
+                    "filters": {
+                        "company": company,
+                    }
+                }
+            }
         }
     ]
 };
