@@ -1,5 +1,5 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# License: GNU General Public License v3. See license.txt
+# Copyright (c) 2026, Innomat, Asprotec and libracore and contributors
+# For license information, please see license.txt
 
 from __future__ import unicode_literals
 import frappe
@@ -29,7 +29,7 @@ def execute(filters=None):
         'year_end_date': datetime(int(filters.fiscal_year), 12, 31).date()
     })]
 
-    cost_center_list = frappe.get_list("Cost Center", {'company':'Innomat-Automation AG'}, order_by='ISNULL(parent_cost_center), name')
+    cost_center_list = frappe.get_list("Cost Center", {'company':filters.company}, order_by='ISNULL(parent_cost_center), name')
     cost_center_list = [cc.name for cc in cost_center_list]
     income_merged = []
     expense_merged = []
