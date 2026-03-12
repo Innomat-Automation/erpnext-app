@@ -183,7 +183,7 @@
                     </td>
                     {% set material_delta_rel = material_delta_abs / kpi.material_budget() if kpi.material_budget() > 0 else 0 %}
                     <td class="center {{ 'highlight-negative' if material_delta_rel and material_delta_rel < 0 else 'highlight-positive' if material_delta_rel and material_delta_rel > 0 else '' }}">
-                        {% if material_delta_rel %}{{ "%.1f"|format(100 * material_delta_rel) }}%{% endif %}
+                        {{ "%.1f"|format(100 * material_delta_rel) }}%
                     </td>
                 </tr>
                 <tr>
@@ -196,8 +196,15 @@
                     </td>
                     {% set thirdparty_delta_rel = thirdparty_delta_abs / kpi.thirdparty_budget() if kpi.thirdparty_budget() > 0 else 0 %}
                     <td class="center {{ 'highlight-negative' if thirdparty_delta_rel and thirdparty_delta_rel < 0 else 'highlight-positive' if thirdparty_delta_rel and thirdparty_delta_rel > 0 else '' }}">
-                        {% if thirdparty_delta_rel %}{{ "%.1f"|format(100 * thirdparty_delta_rel) }}%{% endif %}
+                        {{ "%.1f"|format(100 * thirdparty_delta_rel) }}%
                     </td>
+                </tr>
+                <tr>
+                    <td>Total Spesen</td>
+                    <td class="right">{{ chf0(kpi.expenses_forecast()) }} CHF</td>
+                    <td class="right">- <span style="color:white">CHF</span></td>
+                    <td class="right">- <span style="color:white">CHF</span></td>
+                    <td class="center">-</td>
                 </tr>
                 <tr>
                     <td>Total Personal (pauschal)</td>

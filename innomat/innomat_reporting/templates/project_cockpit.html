@@ -220,6 +220,12 @@
                     <td class="right">{{ chf0(kpi.thirdparty_budget()) }}</td>
                 </tr>
                 <tr>
+                <td>Spesen</td>
+                    <td class="right">{{ chf0(kpi.expenses_current()) }}</td>
+                    <td class="right">{{ chf0(kpi.expenses_forecast()) }}</td>
+                    <td class="right">-</td>
+                </tr>
+                <tr>
                     <td>Personal (pauschal)</td>
                     <td class="right">{{ chf0(kpi.labor_direct_cost_current()) }}</td>
                     <td class="right">{{ chf0(kpi.labor_direct_cost_forecast()) }}</td>
