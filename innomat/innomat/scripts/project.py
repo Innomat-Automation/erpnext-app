@@ -30,8 +30,8 @@ def find_drafts(project):
                                       FROM `tabExpense Claim Detail`
                                       LEFT JOIN `tabExpense Claim` ON `tabExpense Claim Detail`.`parent` = `tabExpense Claim`.`name`
                                       WHERE `tabExpense Claim`.`docstatus` = 0
-                                        AND `tabExpense Claim Detail`.`project` = "{project}"
-                                      GROUP BY `tabExpense Claim`.`name`;""".format(project=project), as_dict=True)
+                                        AND `tabExpense Claim Detail`.`project` = %(project)s
+                                      GROUP BY `tabExpense Claim`.`name`;""", {"project": project}, as_dict=True)
     if expense_claims and len(expense_claims) > 0:
         data['has_drafts'] = 1
         for ec in expense_claims:
@@ -42,8 +42,8 @@ def find_drafts(project):
                                       FROM `tabTimesheet Detail`
                                       LEFT JOIN `tabTimesheet` ON `tabTimesheet Detail`.`parent` = `tabTimesheet`.`name`
                                       WHERE `tabTimesheet`.`docstatus` = 0
-                                        AND `tabTimesheet Detail`.`project` = "{project}"
-                                      GROUP BY `tabTimesheet`.`name`;""".format(project=project), as_dict=True)
+                                        AND `tabTimesheet Detail`.`project` = %(project)s
+                                      GROUP BY `tabTimesheet`.`name`;""", {"project": project}, as_dict=True)
     if timesheets and len(timesheets) > 0:
         data['has_drafts'] = 1
         for ts in timesheets:
@@ -151,7 +151,7 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
                                     LEFT JOIN `tabPayment Entry` ON `tabPayment Entry Reference`.`parent` = `tabPayment Entry`.`name`
                                     WHERE `tabPayment Entry`.`docstatus` = 1
                                       AND `tabPayment Entry Reference`.`reference_doctype` = "Sales Order"
-                                      AND `tabPayment Entry Reference`.`reference_name` = "{sales_order}";""".format(sales_order=pj.sales_order), as_dict=True)
+                                      AND `tabPayment Entry Reference`.`reference_name` = %(sales_order)s";""", {"sales_order": pj.sales_order}, as_dict=True)
         if payments and len(payments) > 0:
             for payment in payments:
                 new_sinv.append('advances', {
@@ -184,15 +184,14 @@ def create_sinvs_for_date_range(from_date, to_date, company):
         LEFT JOIN `tabTimesheet` ON `tabTimesheet Detail`.`parent` = `tabTimesheet`.`name`
         LEFT JOIN `tabSales Invoice Item` ON `tabTimesheet Detail`.`name` = `tabSales Invoice Item`.`ts_detail`
         WHERE `tabTimesheet`.`docstatus` = 1
-          AND DATE(`tabTimesheet Detail`.`from_time`) >= "{from_date}"
-          AND DATE(`tabTimesheet Detail`.`from_time`) <= "{to_date}"
+          AND DATE(`tabTimesheet Detail`.`from_time`) >= %(from_date)s
+          AND DATE(`tabTimesheet Detail`.`from_time`) <= %(to_date)s
           AND `tabProject`.`project_type` = "Service"
           AND `tabTimesheet Detail`.`project` IS NOT NULL
           AND `tabSales Invoice Item`.`ts_detail` IS NULL
-          AND `tabProject`.`company` = "{company}"
-        GROUP BY `tabProject`.`name`;
-    """.format(from_date=from_date, to_date=to_date, company=company)
-    projects = frappe.db.sql(sql_query, as_dict=True)
+          AND `tabProject`.`company` = %(company)s
+        GROUP BY `tabProject`.`name`;"""
+    projects = frappe.db.sql(sql_query, {"from_date": from_date, "to_date": to_date, "company": company}, as_dict=True)
     invoices = []
     for p in projects:
         sales_invoice = create_sinv_from_project(p['project'], from_date, to_date)
@@ -270,9 +269,9 @@ Get not-invoiced service project time records
 def get_uninvoiced_service_time_records(project, from_date=None, to_date=None):
     time_conditions = ""
     if from_date:
-        time_conditions += """ AND DATE(`tabTimesheet Detail`.`from_time`) >= "{from_date}" """.format(from_date=from_date)
+        time_conditions += """ AND DATE(`tabTimesheet Detail`.`from_time`) >= %(from_date)s """.format(from_date=from_date)
     if to_date:
-        time_conditions += """ AND DATE(`tabTimesheet Detail`.`from_time`) <= "{to_date}" """.format(to_date=to_date)
+        time_conditions += """ AND DATE(`tabTimesheet Detail`.`from_time`) <= %(to_date)s """.format(to_date=to_date)
     sql_query = """SELECT
            `tabTimesheet Detail`.`activity_type` AS `activity_type`,
            `tabTimesheet Detail`.`from_time` AS `from_time`,
@@ -291,13 +290,13 @@ def get_uninvoiced_service_time_records(project, from_date=None, to_date=None):
          WHERE
            `tabTimesheet`.`docstatus` = 1
            {time_conditions}
-           AND `tabTimesheet Detail`.`project` = "{project}"
+           AND `tabTimesheet Detail`.`project` = %(project)s
            AND `tabTimesheet Detail`.`by_effort` = 1
            AND `tabTimesheet Detail`.`do_not_invoice` = 0
            /* AND `tabTimesheet Detail`.`activity_type` != "Reisetätigkeit" (on effort will be invoiced) */
            AND `tabSales Invoice Item`.`ts_detail` IS NULL;
-    """.format(project=project, time_conditions=time_conditions)
-    time_logs = frappe.db.sql(sql_query, as_dict=True)
+    """.format(time_conditions=time_conditions)
+    time_logs = frappe.db.sql(sql_query, {"project": project, "from_date": from_date, "to_date": to_date}, as_dict=True)
     return time_logs
 
 def get_uninvoiced_delivery_notes(project):
@@ -309,10 +308,10 @@ def get_uninvoiced_delivery_notes(project):
          LEFT JOIN `tabSales Invoice Item` ON `tabDelivery Note Item`.`name` = `tabSales Invoice Item`.`dn_detail`
          WHERE
            `tabDelivery Note`.`docstatus` = 1
-           AND `tabDelivery Note`.`project` = "{project}"
+           AND `tabDelivery Note`.`project` = %(project)s
            AND `tabSales Invoice Item`.`dn_detail` IS NULL;
-    """.format(project=project)
-    delivery_notes = frappe.db.sql(sql_query, as_dict=True)
+    """
+    delivery_notes = frappe.db.sql(sql_query, {"project": project}, as_dict=True)
     return delivery_notes
 
 
@@ -456,9 +455,9 @@ def get_project_service_cost(project):
                             LEFT JOIN `tabPurchase Invoice` ON `tabPurchase Invoice Item`.`parent` = `tabPurchase Invoice`.`name`
                             LEFT JOIN `tabItem` ON `tabPurchase Invoice Item`.`item_code` = `tabItem`.`item_code`
                             WHERE `tabPurchase Invoice`.`docstatus` = 1
-                              AND `tabPurchase Invoice Item`.`project` = "{project}"
+                              AND `tabPurchase Invoice Item`.`project` = %(project)s
                               AND `tabItem`.`is_stock_item` = 0
-                        ;""".format(project=project), as_dict=True)
+                        ;""", {"project": project}, as_dict=True)
 
     if data and len(data) > 0:
         return data[0]['cost']
@@ -478,10 +477,10 @@ def get_project_material_cost(project):
                             LEFT JOIN `tabPurchase Invoice` ON `tabPurchase Invoice Item`.`parent` = `tabPurchase Invoice`.`name`
                             LEFT JOIN `tabItem` ON `tabPurchase Invoice Item`.`item_code` = `tabItem`.`item_code`
                             WHERE `tabPurchase Invoice`.`docstatus` = 1
-                              AND `tabPurchase Invoice Item`.`project` = "{project}"
+                              AND `tabPurchase Invoice Item`.`project` = %(project)s
                               AND `tabItem`.`is_stock_item` = 1
                             GROUP BY `tabItem`.`item_code`
-                        ;""".format(project=project), as_dict=True)
+                        ;""", {"project": project}, as_dict=True)
     if not pinv_data or len(pinv_data) == 0:
         return 0
 
@@ -491,9 +490,9 @@ def get_project_material_cost(project):
         FROM `tabDelivery Note Item`
         LEFT JOIN `tabDelivery Note` ON `tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name`
         WHERE `tabDelivery Note`.`docstatus` = 1
-          AND `tabDelivery Note`.`project` = "{project}"
-          AND `tabDelivery Note Item`.`item_code` = "{item_code}"
-        """.format(project=project, item_code=item['item_code']), as_dict=True)
+          AND `tabDelivery Note`.`project` = %(project)s
+          AND `tabDelivery Note Item`.`item_code` = %(item_code)s
+        """, {"project": project, "item_code": item['item_code']}, as_dict=True)
         if dn_item_data and len(dn_item_data) > 0:
             delta_qty = item['total_qty'] - (dn_item_data[0]['total_qty'] or 0)
             if delta_qty > 0:
@@ -512,8 +511,8 @@ def get_project_material_cost_from_delivery_notes(project):
                             LEFT JOIN `tabDelivery Note` ON `tabGL Entry`.`voucher_no` = `tabDelivery Note`.`name`
                             WHERE `tabGL Entry`.`docstatus` = 1
                               AND `tabDelivery Note`.`docstatus` = 1
-                              AND `tabDelivery Note`.`project` = "{project}"
-                        ;""".format(project=project), as_dict=True)
+                              AND `tabDelivery Note`.`project` = %(project)s
+                        ;""", {"project": project}, as_dict=True)
 
     if data and len(data) > 0:
         return data[0]['cost'] or 0
@@ -555,18 +554,18 @@ def get_project_labor_cost(project, fallback_gk, fallback_vvgk):
     for labor_type, sql_cond in billability_conditions.items():
         data = frappe.db.sql("""SELECT SUM(`tabTimesheet Detail`.`hours` * IFNULL(NULLIF(`tabTimesheet`.`internal_rate_per_hour`, 0), `tabEmployee`.`internal_rate_per_hour`)) AS `direct_cost`,
                 SUM( `tabTimesheet Detail`.`hours` * IFNULL(NULLIF(`tabTimesheet`.`internal_rate_per_hour`, 0), `tabEmployee`.`internal_rate_per_hour`) *
-                     (1.0 + 0.01 * IFNULL(NULLIF(`tabTimesheet`.`cost_supplement_gk`, 0), '{fallback_gk}')) ) AS `production_cost`,
+                     (1.0 + 0.01 * IFNULL(NULLIF(`tabTimesheet`.`cost_supplement_gk`, 0), %(fallback_gk)s)) ) AS `production_cost`,
                 SUM( `tabTimesheet Detail`.`hours` * IFNULL(NULLIF(`tabTimesheet`.`internal_rate_per_hour`, 0), `tabEmployee`.`internal_rate_per_hour`) *
-                     (1.0 + 0.01 * IFNULL(NULLIF(`tabTimesheet`.`cost_supplement_gk`, 0), '{fallback_gk}')) *
-                     (1.0 + 0.01 * IFNULL(NULLIF(`tabTimesheet`.`cost_supplement_vvgk`, 0), '{fallback_vvgk}')) ) AS `prime_cost`,
+                     (1.0 + 0.01 * IFNULL(NULLIF(`tabTimesheet`.`cost_supplement_gk`, 0), %(fallback_gk)s)) *
+                     (1.0 + 0.01 * IFNULL(NULLIF(`tabTimesheet`.`cost_supplement_vvgk`, 0), %(fallback_vvgk)s)) ) AS `prime_cost`,
                 SUM(`tabTimesheet Detail`.`hours`) as `hours`
                 FROM `tabTimesheet Detail`
                 LEFT JOIN `tabTimesheet` ON `tabTimesheet`.`name` = `tabTimesheet Detail`.`parent`
                 LEFT JOIN `tabEmployee` ON `tabEmployee`.`name` = `tabTimesheet`.`employee`
                 WHERE `tabTimesheet`.`docstatus` = 1
-                  AND `tabTimesheet Detail`.`project` = "{project}"
+                  AND `tabTimesheet Detail`.`project` = %(project)
                   AND {by_effort_condition}
-            ;""".format(project=project, fallback_gk=fallback_gk, fallback_vvgk=fallback_vvgk, by_effort_condition=sql_cond), as_dict=True)
+            ;""".format(by_effort_condition=sql_cond), {"project": project, "fallback_gk": fallback_gk, "fallback_vvgk": fallback_vvgk}, as_dict=True)
         # If nothing goes wrong, this will set all six values of labor_cost
         if data and len(data) > 0:
             for cost_field, cost_value in data[0].items():
@@ -586,11 +585,11 @@ def get_task_labor_cost(task, fallback_gk, fallback_vvgk, fallback_ilv_rate, pro
     data = frappe.db.sql("""SELECT
             IFNULL(SUM(`tabTimesheet Detail`.`hours` * IFNULL(NULLIF(`tabTimesheet`.`internal_rate_per_hour`, 0), `tabEmployee`.`internal_rate_per_hour`)), 0) AS `actual_direct_cost`,
             IFNULL(SUM( `tabTimesheet Detail`.`hours` * IFNULL(NULLIF(`tabTimesheet`.`internal_rate_per_hour`, 0), `tabEmployee`.`internal_rate_per_hour`) *
-                 (1.0 + 0.01 * IFNULL(NULLIF(`tabTimesheet`.`cost_supplement_gk`, 0), '{fallback_gk}')) ), 0) AS `actual_production_cost`,
+                 (1.0 + 0.01 * IFNULL(NULLIF(`tabTimesheet`.`cost_supplement_gk`, 0), %(fallback_gk)s)) ), 0) AS `actual_production_cost`,
             IFNULL(SUM( `tabTimesheet Detail`.`hours` * IFNULL(NULLIF(`tabTimesheet`.`internal_rate_per_hour`, 0), `tabEmployee`.`internal_rate_per_hour`) *
-                 (1.0 + 0.01 * IFNULL(NULLIF(`tabTimesheet`.`cost_supplement_gk`, 0), '{fallback_gk}')) *
-                 (1.0 + 0.01 * IFNULL(NULLIF(`tabTimesheet`.`cost_supplement_vvgk`, 0), '{fallback_vvgk}')) ), 0) AS `actual_prime_cost`,
-            IFNULL(`tabTask`.`expected_time` * IFNULL(NULLIF(IFNULL(NULLIF(`tabTask`.`ilv_rate`, 0), `tabItem`.`ilv_rate`), 0), {fallback_ilv_rate}), 0) AS `budget_prime_cost`,
+                 (1.0 + 0.01 * IFNULL(NULLIF(`tabTimesheet`.`cost_supplement_gk`, 0), %(fallback_gk)s)) *
+                 (1.0 + 0.01 * IFNULL(NULLIF(`tabTimesheet`.`cost_supplement_vvgk`, 0), %(fallback_vvgk)s)) ), 0) AS `actual_prime_cost`,
+            IFNULL(`tabTask`.`expected_time` * IFNULL(NULLIF(IFNULL(NULLIF(`tabTask`.`ilv_rate`, 0), `tabItem`.`ilv_rate`), 0), %(fallback_ilv_rate)s), 0) AS `budget_prime_cost`,
             IFNULL(`tabTask`.`expected_time`, 0) AS `budget_hours`,
             IFNULL(`tabTask`.`actual_time`, 0) AS `actual_hours`,
             IF(`tabTask`.`status` IN ('Cancelled','Completed'), 1, 0) AS `completed`,
@@ -602,8 +601,8 @@ def get_task_labor_cost(task, fallback_gk, fallback_vvgk, fallback_ilv_rate, pro
             LEFT JOIN `tabTimesheet` ON `tabTimesheet Detail`.`parent` = `tabTimesheet`.`name`
             LEFT JOIN `tabEmployee` ON `tabTimesheet`.`employee` = `tabEmployee`.`name`
             WHERE `tabTimesheet`.`docstatus` = 1
-              AND `tabTask`.`name` = "{task}"
-        ;""".format(task=task, fallback_gk=fallback_gk, fallback_vvgk=fallback_vvgk, fallback_ilv_rate=fallback_ilv_rate), as_dict=True)
+              AND `tabTask`.`name` = %(task)s
+        ;""", {"task": task, "fallback_gk": fallback_gk, "fallback_vvgk": fallback_vvgk, "fallback_ilv_rate": fallback_ilv_rate}, as_dict=True)
     # As the overall project labor costs are not calculated from task labor costs, we can safely include "by effort" tasks and unbillable hours here
     # - these will be useful to show accurate stats for every role/task.
     # We do return the `by_effort` field in order to calculate separate sums in  project-level forecasts.
@@ -650,8 +649,8 @@ def get_expense_claims_cost(project):
     data = frappe.db.sql("""SELECT SUM(`tabExpense Claim Detail`.`amount` * `tabExpense Claim Detail`.`qty`) AS `cost`
             FROM `tabExpense Claim Detail`
             WHERE `tabExpense Claim Detail`.`docstatus` = 1
-              AND `tabExpense Claim Detail`.`project` = "{project}"
-        ;""".format(project=project), as_dict=True)
+              AND `tabExpense Claim Detail`.`project` = %(project)s
+        ;""", {"project": project}, as_dict=True)
     if data and len(data) > 0:
         return data[0]['cost']
     else:
