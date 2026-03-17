@@ -52,7 +52,7 @@ class ProjectKPI:
     # Arbeitsvorrat = Auftragssumme - SK
     def backlog(self):
         # Negativen Arbeitsvorrat nicht zulassen - unprofitable Projekte sollen nicht den Gesamtarbeitsvorrat reduzieren
-        return max(self.revenue_budget() - self.prime_cost_flat_current(), 0)
+        return max(self.revenue_budget() - self.prime_cost_current(), 0)
 
     # Gesamtkosten IST, DK
     def direct_cost_current(self):

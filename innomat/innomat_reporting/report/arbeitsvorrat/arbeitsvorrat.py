@@ -22,6 +22,9 @@ def get_columns():
         {"label": _("Arbeitsvorrat Monate"), "fieldname": "backlog_mon", "fieldtype": "Float", "width": 150},
     ]
 
+# NOTE - Dieser Bericht funktioniert nicht rückwirkend und hat deshalb auch keinen variablen Datumsfilter
+#        (Zu einem Stichdatum zu ermitteln, welche Projekte dann unfertig waren und was die Selbstkosten "IST" aller Projekte zu diesem Datum waren, wäre viel aufwändiger und bedingt insbesondere ein Feld "completion date" auf dem Projekt)
+
 def execute(filters=None):
     columns = get_columns()
     company = filters.company

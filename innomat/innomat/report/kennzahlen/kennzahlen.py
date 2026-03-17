@@ -29,12 +29,12 @@ def get_internal_data(filters):
     #     filters = ast.literal_eval(filters)
     # else:
     #     filters = dict(filters)
-    
+
     year = int(filters.date[:4])
     date = filters['date']
     previous_year = year - 1
     previous_date = "{0}{1}".format(previous_year, filters['date'][5:])
-    
+
     data = []
 
     data.append({
@@ -42,7 +42,7 @@ def get_internal_data(filters):
         'ytd': None,
         'py': None
     })
-    
+
     period_list = get_period_list(year, year, "Yearly", False, filters.company)
 
     ytd_revenue = get_data(filters.company, "Income", "Credit", period_list, filters = filters,
@@ -69,8 +69,8 @@ def get_internal_data(filters):
             'ytd': ytd_revenue[4]['total'],
             'py': py_revenue[4]['total']
         })
-    
-   
+
+
     # receivables
     ytd_receivables = frappe.db.sql("""
         SELECT IFNULL(SUM(`outstanding_amount` * IFNULL(`conversion_rate`, 1)), 0) AS `amount`
@@ -85,14 +85,14 @@ def get_internal_data(filters):
         'ytd': ytd_receivables,
         'py': None
     })
-   
+
     # expected receivables
     ytd_expected_receivables = frappe.db.sql("""
         SELECT (`amount_volume` - `invoiced_akonto_volume` - `invoiced_volume`) AS `amount`
             FROM
             (SELECT
                 (SELECT
-                    IFNULL(SUM(`tabSales Order`.`base_net_total`), 0) 
+                    IFNULL(SUM(`tabSales Order`.`base_net_total`), 0)
                         FROM `tabSales Order`
                         WHERE `tabSales Order`.`docstatus` = 1
                         AND `tabSales Order`.`status` NOT IN ("Closed", "Completed")
@@ -124,7 +124,7 @@ def get_internal_data(filters):
                 ) AS `invoiced_volume`
             ) as `data`
         ;""".format(company=filters['company'], date=date), as_dict=True)[0]['amount']
-   
+
     data.append({
         'description': _("Expected Receivables"),
         'ytd': ytd_expected_receivables,
@@ -158,21 +158,22 @@ def get_internal_data(filters):
             'ytd': ytd_expenses[-2]['total'],
             'py': py_expenses[-2]['total']
         })
-        
-    # payables 
+
+    # payables
     ytd_payables = frappe.db.sql("""
         SELECT IFNULL((SUM(`debit`) - SUM(`credit`)), 0) AS `amount`
-        FROM `tabGL Entry` 
+        FROM `tabGL Entry`
         WHERE `account` IN (SELECT `name` FROM `tabAccount` WHERE `account_type` = "Payable")
           AND `posting_date` <= "{date}"
           AND `company` = "{company}"
+          AND `docstatus` = "1"
         ;""".format(company=filters['company'], date=date), as_dict=True)[0]['amount']
     data.append({
         'description': _("from that Payables"),
         'ytd': ytd_payables * -1,
         'py': None
     })
-    
+
     # expected payables
     ytd_expected_payables = frappe.db.sql("""
         SELECT
@@ -192,7 +193,7 @@ def get_internal_data(filters):
         'ytd': ytd_expected_payables * -1,
         'py': None
     })
-    
+
     data.append({
         'description': "-----------",
         'ytd': None,
