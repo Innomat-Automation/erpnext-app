@@ -11,7 +11,6 @@ def get_data():
 					"name": "KPI-Uebersicht",
 					"label": _("KPI-Übersicht"),
 					"is_query_report": True,
-					#"doctype": "tbd"
 				},
 				{
 					"type": "report",
@@ -29,15 +28,35 @@ def get_data():
 				},
 				{
 					"type": "report",
-					"name": "Auftraege in Arbeit",
-					"label": _("Aufträge in Arbeit"),
+					"name": "Arbeitsvorrat",
+					"label": _("Arbeitsvorrat"),
 					"is_query_report": True,
 					"doctype": "Sales Order"
 				},
 				{
 					"type": "report",
-					"name": "Arbeitsvorrat",
-					"label": _("Arbeitsvorrat"),
+					"name": "Nachkalkulation",
+					"label": _("Nachkalkulation"),
+					"is_query_report": True,
+					"doctype": "Sales Order"
+				},
+				{
+					"type": "report",
+					"name": "Projektstatus",
+					"label": _("Projektstatus"),
+					"is_query_report": True,
+					"doctype": "Sales Order"
+				},
+				{
+					"type": "report",
+					"name": "Akonto Forecast",
+					"label": _("Akonto Forecast"),
+					"is_query_report": True,
+				},
+				{
+					"type": "report",
+					"name": "Mitarbeiter Gegenverrechnung",
+					"label": _("Mitarbeiter Gegenverrechnung"),
 					"is_query_report": True,
 					"doctype": "Sales Order"
 				},
@@ -48,15 +67,15 @@ def get_data():
 			"items": [
 				{
 					"type": "report",
-					"name": "Erfolgsrechnung",
-					"label": _("Erfolgsrechnung"),
+					"name": "Erfolgsrechnung nach Kostenstellen",
+					"label": _("Erfolgsrechnung nach Kostenstellen"),
 					"doctype": "GL Entry",
 					"is_query_report": True
 				},
 				{
 					"type": "report",
-					"name": "Deckungsbeitragsrechnung",
-					"label": _("Deckungsbeitragsrechnung"),
+					"name": "Deckungsbeitragsrechnung nach Kostenstellen",
+					"label": _("Deckungsbeitragsrechnung nach Kostenstellen"),
 					"doctype": "GL Entry",
 					"is_query_report": True
 				},
@@ -74,17 +93,16 @@ def get_data():
 			"items": [
 				{
 					"type": "report",
-					"name": "OP nach Faelligkeit",
+					"name": "Accounts Receivable",
 					"label": _("OP nach Fälligkeit"),
 					"is_query_report": True,
 					"doctype": "Sales Invoice",
 				},
 				{
 					"type": "report",
-					"name": "Liquiditaet",
-					"label": _("Liquidität"),
+					"name": "Liquiditaetspositionen",
+					"label": _("Liquiditätspositionen"),
 					"is_query_report": True,
-					#"doctype": "tbd"
 				},
 			]
 		},
@@ -93,17 +111,15 @@ def get_data():
 			"items": [
 				{
 					"type": "report",
-					"name": "Produktivitaet",
-					"label": _("Produktivität"),
+					"name": "Employee Productivity",
+					"label": _("Mitarbeiter-Produktivität"),
 					"is_query_report": True,
-					#"doctype": "tbd"
 				},
 				{
 					"type": "report",
-					"name": "GLZ und Ferien",
+					"name": "Worktime Overview",
 					"label": _("GLZ und Ferien"),
 					"is_query_report": True,
-					#"doctype": "tbd"
 				},
 			]
 		},
