@@ -30,7 +30,7 @@ def get_data(filters):
     conditions = ""
     company = filters.company or '%'
     department = filters.department or '%'
-    year = filters.to_date[:4]
+    year = str(filters.to_date)[:4]
     default_projects = frappe.get_list("Cost Center", {'default_project'}, {'default_project':['is','set']})
     default_projects = [dp.default_project for dp in default_projects]
 

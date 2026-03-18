@@ -16,13 +16,19 @@ frappe.query_reports["KPI-Uebersicht"] = {
             fieldname: "from_date",
             label: __("From Date"),
             fieldtype: "Date",
-            reqd: 1
+            reqd: 1,
+            default: frappe.datetime.add_months(frappe.datetime.get_today(), -1),
         },
         {
             fieldname: "to_date",
             label: __("To Date"),
             fieldtype: "Date",
-            reqd: 1
+            reqd: 1,
+            default: frappe.datetime.get_today(),
         }
-    ]
+    ],
+
+    "after_datatable_render": function() {
+        $("div.dt-row-header").css("height","50px");
+    }
 };

@@ -8,7 +8,7 @@ from frappe import _
 from datetime import datetime, date
 from frappe.utils import add_years
 from innomat.innomat.report.employee_productivity.employee_productivity import get_data as get_employee_productivity_data
-
+from erpnext.hr.doctype.leave_application.leave_application import get_leave_balance_on
 
 # ======================================================
 # Base KPI class
@@ -16,6 +16,7 @@ from innomat.innomat.report.employee_productivity.employee_productivity import g
 class KPI:
     name = None
     unit = None
+    multiline = False
 
     def compute(self, company, cost_center, from_date, to_date):
         """Override this in subclasses. Returns numeric value for the given date range."""
@@ -29,8 +30,8 @@ class KPI:
 # Auftragseingang = Summe der erfassten Aufträge
 # [OK-MZ]
 class OrderVolume(KPI):
-    name = "Order Volume"
-    unit = "Currency"
+    name = "Auftragseingang"
+    unit = "CHF"
 
     def compute(self, company, cost_center, from_date, to_date):
         query, params = make_conditions("tabSales Order", "transaction_date", company, cost_center, from_date, to_date)
@@ -40,8 +41,8 @@ class OrderVolume(KPI):
 # Auftragseingang-Wachstum = (Auftragsvol. - Auftragsvol. Vorjahr) / Auftragsvol. Vorjahr
 # [OK-MZ]
 class OrderVolumeGrowth(KPI):
-    name = "Order Volume Growth (YoY)"
-    unit = "Percent"
+    name = "Auftragseingang-Wachstum (YoY)"
+    unit = "%"
 
     def compute(self, company, cost_center, from_date, to_date):
         current = OrderVolume().compute(company, cost_center, from_date, to_date)
@@ -68,26 +69,26 @@ class BookToBillRatio(KPI):
 # Auftragseingang pro Kunde (Top-5-Kunden): Anteil der 5 grössten Kunden am AE [%]
 # [OK-MZ]
 class OrderVolumeTop5Share(KPI):
-    name = "Order Volume % of Top-5 Customers"
-    unit = "Percent"
+    name = "Anteil der 5 grössten Kunden am AE"
+    unit = "%"
     multiline = True
 
     def compute(self, company, cost_center, from_date, to_date):
         query, params = make_conditions("tabSales Order", "transaction_date", company, cost_center, from_date, to_date)
         total = frappe.db.sql(f"SELECT IFNULL(SUM(base_net_total), 0) FROM {query}", params)[0][0] or 0
         top5 = frappe.db.sql(f"""
-            SELECT IFNULL(SUM(base_net_total), 0)
-            FROM (
-                SELECT customer, SUM(base_net_total) AS base_net_total
-                FROM {query}
-                GROUP BY customer
-                ORDER BY SUM(base_net_total) DESC
-                LIMIT 5
-            ) t
+            SELECT customer, customer_name, SUM(base_net_total) AS base_net_total
+            FROM {query}
+            GROUP BY customer
+            ORDER BY SUM(base_net_total) DESC
+            LIMIT 5
         """, params, as_dict=True)
-        result = []
+        result = {}
+        cust_cnt = 1
         for t in top5:
-            result[t['customer']] = 100 * t['base_net_total'] / total if total else 0
+            # Use a neutral row title "Customer 1 .. Customer 5" as other cost centers will have different Top5 customers!
+            result[_("Customer") + f" {cust_cnt}"] = 100 * t['base_net_total'] / total if total else 0
+            cust_cnt += 1
         return result
 
 
@@ -98,8 +99,8 @@ class OrderVolumeTop5Share(KPI):
 # Fakturierter Umsatz
 # [OK-MZ]
 class BilledSales(KPI):
-    name = "Billed Sales"
-    unit = "Currency"
+    name = "Fakturierter Umsatz"
+    unit = "CHF"
 
     def compute(self, company, cost_center, from_date, to_date):
         query, params = make_conditions("tabSales Invoice", "posting_date", company, cost_center, from_date, to_date)
@@ -110,8 +111,8 @@ class BilledSales(KPI):
 # Der Einfachheit halber auf Projektebene umgesetzt
 # [OK-MZ]
 class BillingRatio(KPI):
-    name = "Billing Ratio"
-    unit = "Percent"
+    name = "Fakturierungsgrad"
+    unit = "%"
 
     # Datumsbereich: Alle Projekte berücksichtigen, die im ang. Zeitraum irgendwann aktiv waren, d.h.
     # Startdatum <= to_date sowie
@@ -119,7 +120,8 @@ class BillingRatio(KPI):
     # (Nicht begonnene Projekte werden nicht berücksichtigt)
     def compute(self, company, cost_center, from_date, to_date):
         args = locals()
-        query = """SELECT SUM(total_billed_amount) AS billed, SUM(actual_material_cost + sum_services + sum_expense_claim + labor_as_prime_cost + labor_by_effort_as_prime_cost) AS prime_cost
+        del args['self']
+        query = """SELECT SUM(total_billed_amount) AS billed, SUM(actual_material_cost + sum_services + sum_expense_claim + actual_labor_as_prime_cost + labor_by_effort_as_prime_cost) AS prime_cost
             FROM `tabProject`
             WHERE `company` = %(company)s
             AND `actual_start_date` <= %(to_date)s
@@ -128,7 +130,7 @@ class BillingRatio(KPI):
         if cost_center:
             query += " AND cost_center = %(cost_center)s"
         data = frappe.db.sql(query, args, as_dict=True)
-        if data and len(data) > 0 and data[0].prime_cost > 0:
+        if data[0].prime_cost:
             return 100 * data[0].billed / data[0].prime_cost
         else:
             return 0
@@ -138,8 +140,8 @@ class BillingRatio(KPI):
 # Der Einfachheit halber auf Projektebene umgesetzt
 # [OK-MZ]
 class GrossMargin(KPI):
-    name = "Gross Margin"
-    unit = "Percent"
+    name = "Bruttomarge"
+    unit = "%"
 
     # Datumsbereich: Alle Projekte berücksichtigen, die im ang. Zeitraum irgendwann aktiv waren, d.h.
     # Startdatum <= to_date sowie
@@ -147,8 +149,9 @@ class GrossMargin(KPI):
     # (Nicht begonnene Projekte werden nicht berücksichtigt)
     def compute(self, company, cost_center, from_date, to_date):
         args = locals()
+        del args['self']
         query = """SELECT SUM(total_billed_amount) AS billed,
-                          SUM(actual_material_cost + sum_services + sum_expense_claim + labor_as_production_cost + labor_by_effort_as_production_cost) AS prod_cost,
+                          SUM(actual_material_cost + sum_services + sum_expense_claim + actual_labor_as_production_cost + labor_by_effort_as_production_cost) AS prod_cost,
                           SUM(planned_revenue + planned_revenue_by_effort) AS revenue
             FROM `tabProject`
             WHERE `company` = %(company)s
@@ -158,7 +161,7 @@ class GrossMargin(KPI):
         if cost_center:
             query += " AND cost_center = %(cost_center)s"
         data = frappe.db.sql(query, args, as_dict=True)
-        if data and len(data) > 0 and data[0].revenue > 0:
+        if data[0].revenue:
             return 100 * (data[0].billed - data[0].prod_cost) / data[0].revenue
         else:
             return 0
@@ -167,8 +170,8 @@ class GrossMargin(KPI):
 # Bruttomarge Wachstum (YoY) = Differenz zu Vorjahr in %
 # [OK-MZ]
 class GrossMarginGrowth(KPI):
-    name = "Gross Margin Growth (YoY)"
-    unit = "Percent"
+    name = "Bruttomarge Wachstum (YoY)"
+    unit = "%"
 
     def compute(self, company, cost_center, from_date, to_date):
         current = GrossMargin().compute(company, cost_center, from_date, to_date)
@@ -179,37 +182,52 @@ class GrossMarginGrowth(KPI):
         return ((current - previous) / previous * 100) if previous else 0
 
 
-# Arbeitsvorrat = noch nicht bearbeitetes Auftragsvolumen [CHF]
-# Der Einfachheit halber auf Projektebene umgesetzt, mit Arb.vorrat = Projektumsatz minus bisherige Selbstkosten
-# TODO - Die aktuelle Umsetzung ignoriert den Datumsfilter komplett.
-#        Evtl. ist bei Umsetzung auf Buchhaltungsebene eine sinnvolle Filterung möglich
+# Arbeitsvorrat = noch nicht bearbeitetes Auftragsvolumen [CHF] = Auftragsvolumen - Selbstkosten über alle laufenden Projekte
+# Der Einfachheit halber wird effektiv erbrachte Arbeit hier ignoriert, es wird nur das verrechnete Volumen berücksichtigt.
+# Zu einem beliebigen Stichtag die aktuellen Selbstkosten aller Projekte zu ermitteln, ist leider kaum realistisch.
+# (TODO - eher unbefriedigende Lösung, zudem wird hier nur nach Belegdaten abgegrenzt, daher kann der KPI negativ werden, wenn in der Periode mehr verrechnet als neu bestellt wurde)
 class Backlog(KPI):
-    name = "Backlog"
-    unit = "Currency"
+    name = "Arbeitsvorrat"
+    unit = "CHF"
 
-    def compute(self, company, cost_center, dummy, dummy2):
+    def compute(self, company, cost_center, from_date, to_date):
+        ordered = OrderVolume().compute(company, cost_center, from_date, to_date)
+        billed = BilledSales().compute(company, cost_center, from_date, to_date)
+        return ordered - billed
+
+
+# Nachkalkulationsabweichung = (Istkosten – Budgetkosten) / Budgetkosten
+# Der Einfachheit halber auf Projektebene umgesetzt
+# (Stunden basieren hier auf Selbstkosten, nicht Direktkosten)
+# [OK-MZ]
+class PostCalcDeviation(KPI):
+    name = "Nachkalkulationsabweichung"
+    unit = "%"
+
+    # Datumsbereich: Alle ABGESCHLOSSENEN Projekte berücksichtigen, die im ang. Zeitraum irgendwann aktiv waren, d.h.
+    # Startdatum <= to_date sowie
+    # Enddatum >= from_date
+    # (Nicht begonnene Projekte werden nicht berücksichtigt)
+    def compute(self, company, cost_center, from_date, to_date):
         args = locals()
-        query = """SELECT SUM(planned_revenue + planned_revenue_by_effort - actual_material_cost - sum_services - sum_expense_claim - labor_as_prime_cost - labor_by_effort_as_prime_cost) AS backlog_amount
+        del args['self']
+        # NOTE - sum_expense_claim sowie Arbeit nach Aufwand hier ignorieren, da für Nachkalkulation irrelevant
+        query = """SELECT SUM(actual_material_cost + sum_services + actual_labor_as_prime_cost) AS prime_cost_final,
+                          SUM(planned_material_cost + services_offered + planned_hours_ilv) AS prime_cost_budget
             FROM `tabProject`
             WHERE `company` = %(company)s
-            AND `status` NOT IN ('Completed','Cancelled')
+            AND `status` = 'Completed'
+            AND `actual_start_date` <= %(to_date)s
+            AND `actual_end_date` >= %(from_date)s
             """
         if cost_center:
             query += " AND cost_center = %(cost_center)s"
         data = frappe.db.sql(query, args, as_dict=True)
-        if data and len(data) > 0:
-            return data[0].backlog_amount
+        if data[0].prime_cost_budget:
+            return 100 * (data[0].prime_cost_final - data[0].prime_cost_budget) / data[0].prime_cost_budget
         else:
             return 0
-
-
-#TODO
-class PostCalcDeviation(KPI):
-    name = "Post-Calculation Deviation"
-    unit = "Percent"
-
-    def compute(self, company, cost_center, from_date, to_date):
-        return 0.0  # placeholder
+    #    return self.material_budget() + self.thirdparty_budget() + self.expenses_budget() + self.labor_direct_cost_budget() + self.labor_direct_cost_by_effort_budget()
 
 
 # ======================================================
@@ -219,11 +237,12 @@ class PostCalcDeviation(KPI):
 # Umsatz
 # [OK-MZ]
 class Sales(KPI):
-    name = "Sales"
-    unit = "Currency"
+    name = "Umsatz"
+    unit = "CHF"
 
     def compute(self, company, cost_center, from_date, to_date):
         args = locals()
+        del args['self']
         query = """
             SELECT SUM(gle.credit - gle.debit) AS total_sales
             FROM `tabGL Entry` AS gle
@@ -235,14 +254,14 @@ class Sales(KPI):
         if cost_center:
             query += " AND gle.cost_center = %(cost_center)s"
         total_sales = frappe.db.sql(query, args)
-        return total_sales[0][0] if total_sales else 0
+        return total_sales[0][0] or 0
 
 
 # Umsatzwachstum (YoY) = (Umsatz – Vorjahr) / Vorjahr
 # [OK-MZ]
 class SalesGrowth(KPI):
-    name = "Sales Growth (YoY)"
-    unit = "Percent"
+    name = "Umsatzwachstum (YoY)"
+    unit = "%"
 
     def compute(self, company, cost_center, from_date, to_date):
         current = Sales().compute(company, cost_center, from_date, to_date)
@@ -257,8 +276,8 @@ class SalesGrowth(KPI):
 # [OK-MZ]
 # (NOTE - aktuell wird budget_prefix = "Budget" angenommen und sonst einfach das erstbeste Innomat-Budget verwendet)
 class SalesVsBudget(KPI):
-    name = "Sales % of Budget"
-    unit = "Percent"
+    name = "Umsatz in % zum Budget"
+    unit = "%"
 
     def compute(self, company, cost_center, from_date, to_date):
         sales = Sales().compute(company, cost_center, from_date, to_date)
@@ -266,8 +285,8 @@ class SalesVsBudget(KPI):
         budget_months = "+".join(["`budget_%02d`" % x for x in range(from_date.month,to_date.month+1)])
         budget_filters = {
             "name_prefix": "Budget",
-            "company": filters.company,
-            "fiscal_year": filters.fiscal_year
+            "company": company,
+            "fiscal_year": from_date.year
         }
         if cost_center:
             budget_filters['cost_center'] = cost_center
@@ -279,16 +298,16 @@ class SalesVsBudget(KPI):
             return 0
 
         query = """
-            SELECT SUM({budget_months}) AS `sales_budget`,
+            SELECT SUM({budget_months}) AS `sales_budget`
             FROM `tabInnomat Budget Account`
             LEFT JOIN `tabAccount` ON `tabInnomat Budget Account`.`account` = `tabAccount`.`name`
             WHERE `tabInnomat Budget Account`.`parent` = '{budget_name}' AND `tabInnomat Budget Account`.`root_type`= 'Income'
-            AND LEFT(`tabInnomat Budget`.`account`, 4) IN ('3000', '3200', '3400')
+            AND LEFT(`tabInnomat Budget Account`.`account`, 4) IN ('3000', '3200', '3400')
             """.format(budget_months=budget_months, budget_name=budget_name)
         data = frappe.db.sql(query, as_dict=True)
-        if data and len(data) > 0 and data[0].sales_budget > 0:
+        if data[0].sales_budget:
             return 100 * sales / data[0].sales_budget
-        else
+        else:
             return 0
 
 
@@ -296,7 +315,7 @@ class SalesVsBudget(KPI):
 # [OK-MZ]
 class EBITDA(KPI):
     name = "EBITDA"
-    unit = "Currency"
+    unit = "CHF"
 
     def compute(self, company, cost_center, from_date, to_date):
         return EBIT().compute(company, cost_center, from_date, to_date, True)
@@ -311,41 +330,37 @@ class EBITDA(KPI):
 # [OK-MZ]
 class EBIT(KPI):
     name = "EBIT"
-    unit = "Currency"
+    unit = "CHF"
 
     def compute(self, company, cost_center, from_date, to_date, da=False):
-        args = locals()
-        da_condition = ' AND account_type != "Depreciation" ' if da else ''
+        da_condition = " AND account_type != 'Depreciation' " if da else ''
         query = """
             SELECT SUM(gle.credit - gle.debit) AS ebit_da
             FROM `tabGL Entry` gle
             INNER JOIN `tabAccount` acc ON gle.account = acc.name
             WHERE gle.account IN (
                 SELECT name FROM `tabAccount`
-                WHERE report_type = "Profit and Loss"
+                WHERE report_type = 'Profit and Loss'
                 {da_condition}
-                AND (account_type != "Expense Account" OR expense_account_classification NOT IN ('Interest', 'Tax'))
-                AND company = %(company)s
+                AND (account_type != 'Expense Account' OR expense_account_classification NOT IN ('Interest', 'Tax'))
+                AND company = '{company}'
             )
-            AND gle.voucher_type != "Period Closing Voucher"
-            AND gle.company = %(company)s
-            AND gle.posting_date BETWEEN %(from_date)s AND %(to_date)s
+            AND gle.voucher_type != 'Period Closing Voucher'
+            AND gle.company = '{company}'
+            AND gle.posting_date BETWEEN '{from_date}' AND '{to_date}'
             AND gle.docstatus = 1
-            """.format(da_condition)
+            """.format(da_condition=da_condition, company=company, from_date=from_date, to_date=to_date)
         if cost_center:
-            query += " AND gle.cost_center = %(cost_center)s"
-        data = frappe.db.sql(query, args, as_dict=True)
-        if data and len(data) > 0:
-            return data[0]['ebit_da']
-        else:
-            return 0
+            query += " AND gle.cost_center = '{cost_center}'".format(cost_center=cost_center)
+        data = frappe.db.sql(query, as_dict=True)
+        return data[0].ebit_da or 0
 
 
 # EBITDA-Marge = EBITDA / Umsatz
 # [OK-MZ]
 class EBITDAMargin(KPI):
-    name = "EBITDA Margin"
-    unit = "Percent"
+    name = "EBITDA-Marge"
+    unit = "%"
 
     def compute(self, company, cost_center, from_date, to_date):
         ebitda = EBITDA().compute(company, cost_center, from_date, to_date)
@@ -356,11 +371,14 @@ class EBITDAMargin(KPI):
 # Offene Posten (OP)
 # [OK-MZ]
 class OpenPositions(KPI):
-    name = "Open Positions (OP)"
-    unit = "Currency"
+    name = "Offene Posten (OP)"
+    unit = "CHF"
 
     def compute(self, company, cost_center, from_date, to_date):
-        rep = frappe.desk.query_report.run("Accounts Receivable Summary", {"company": company, "ageing_based_on": "Due Date", "report_date": to_date, "range1":30, "range2":60, "range3":90, "range4":120})
+        params = {"company": company, "ageing_based_on": "Due Date", "report_date": to_date, "range1":30, "range2":60, "range3":90, "range4":120}
+        if cost_center:
+            params['cost_center'] = cost_center # TODO - The cost center filter in this report seems to be broken: Fix it!
+        rep = frappe.desk.query_report.run("Accounts Receivable Summary", params)
         totals = rep['result'][-1]
         total_op = totals[6]
         return total_op
@@ -369,13 +387,18 @@ class OpenPositions(KPI):
 # Fällige OP
 # [OK-MZ]
 class OpenPositionsDue(KPI):
-    name = "Open Positions Due"
-    unit = "Currency"
+    name = "Fällige Offene Posten"
+    unit = "CHF"
 
     def compute(self, company, cost_center, from_date, to_date):
-        rep = frappe.desk.query_report.run("Accounts Receivable Summary", {"company": company, "ageing_based_on": "Due Date", "report_date": to_date, "range1":30, "range2":60, "range3":90, "range4":120})
+        params = {"company": company, "ageing_based_on": "Due Date", "report_date": to_date, "range1":30, "range2":60, "range3":90, "range4":120}
+        if cost_center:
+            params['cost_center'] = cost_center
+        rep = frappe.desk.query_report.run("Accounts Receivable Summary", params)
         totals = rep['result'][-1]
-        total_op_due = totals[7]+totals[8]+totals[9]+totals[10]+totals[11]
+        total_op_due = 0
+        for i in range(7,12): #col 7,8,9,10: range1 to range4; col 11: the rest
+            total_op_due += totals[i] or 0
         return total_op_due
 
 
@@ -383,34 +406,30 @@ class OpenPositionsDue(KPI):
 # (ignoriert from_date)
 # [OK-MZ]
 class Stock(KPI):
-    name = "Stock"
-    unit = "Currency"
+    name = "Wert des Lagers zum Ende der Periode"
+    unit = "CHF"
 
     def compute(self, company, cost_center, dummy, to_date):
-        args = locals()
         query = """
-            SELECT  SUM(gle.debit - gle.credit) FROM `tabGL Entry` gle
+            SELECT SUM(gle.debit - gle.credit) FROM `tabGL Entry` gle
             INNER JOIN `tabAccount` acc ON gle.account = acc.name
             WHERE gle.account LIKE '1200%'
-            AND gle.company = %(company)s
-            AND gle.voucher_type != "Period Closing Voucher"
-            AND gle.posting_date < %(to_date)s
+            AND gle.company = '{company}'
+            AND gle.voucher_type != 'Period Closing Voucher'
+            AND gle.posting_date < '{to_date}'
             AND gle.docstatus = 1
-            """
+            """.format(company=company, to_date=to_date)
         if cost_center:
-            query += " AND gle.cost_center = %(cost_center)s"
-        val = frappe.db.sql(query, args)
-        if val and len(val)>0:
-            return val[0][0]
-        else:
-            return 0
+            query += " AND gle.cost_center = '{cost_center}'".format(cost_center=cost_center)
+        val = frappe.db.sql(query)
+        return val[0][0] or 0
 
 
 # ROCE = EBIT / Capital Employed
 # [OK-MZ]
 class ROCE(KPI):
     name = "ROCE"
-    unit = "Percent"
+    unit = "%"
 
     def compute(self, company, cost_center, from_date, to_date):
         ebit = EBIT().compute(company, cost_center, from_date, to_date)
@@ -421,11 +440,10 @@ class ROCE(KPI):
 # Gebundenes Kapital = Eigenkapital + verz. FK - Cash = Summe(240) + Summe(2b = 280+290) - Summe(100) im Kontenplan
 # [OK-MZ]
 class CapitalEmployed(KPI):
-    name = "Capital Employed"
-    unit = "Currency"
+    name = "Gebundenes Kapital"
+    unit = "CHF"
 
     def compute(self, company, cost_center, dummy, to_date):
-        args = locals()
         # Sign: For 100, Debit - Credit is positive. For 2xx accounts, Credit - Debit is positive. To get 2xx - 100, just do sum(Credit-Debit)
         query = """
             SELECT SUM(gle.credit - gle.debit) AS ce
@@ -434,20 +452,18 @@ class CapitalEmployed(KPI):
             WHERE gle.account IN (
                 SELECT name FROM `tabAccount`
                 WHERE (parent_account LIKE '100 -%' OR parent_account LIKE '240 -%' OR parent_account LIKE '280 -%' OR parent_account LIKE '290 -%')
-                AND company = %(company)s
+                AND company = '{company}'
             )
             AND gle.voucher_type != "Period Closing Voucher"
-            AND gle.company = %(company)s
-            AND gle.posting_date <= %(to_date)s
+            AND gle.company = '{company}'
+            AND gle.posting_date <= '{to_date}'
             AND gle.docstatus = 1
-            """.format(da_condition)
+            """.format(company=company,to_date=to_date)
         if cost_center:
-            query += " AND gle.cost_center = %(cost_center)s"
-        data = frappe.db.sql(query, args, as_dict=True)
-        if data and len(data) > 0:
-            return data[0]['ce']
-        else:
-            return 0
+            query += " AND gle.cost_center = '{cost_center}'".format(cost_center=cost_center)
+        data = frappe.db.sql(query, as_dict=True)
+        return data[0].ce or 0
+
 
 # ======================================================
 # --- EMPLOYEE KPIs ---
@@ -456,8 +472,8 @@ class CapitalEmployed(KPI):
 # Produktivität = Produktive Stunden / Anwesende Stunden [%]
 # [OK-MZ]
 class Productivity(KPI):
-    name = "Productivity"
-    unit = "Percent"
+    name = "Produktivität"
+    unit = "%"
 
     def compute(self, company, cost_center, from_date, to_date):
         params = {"from_date": from_date, "to_date": to_date, "company": company}
@@ -473,8 +489,8 @@ class Productivity(KPI):
 # Überzeit in Stunden pro Mitarbeiter
 # TODO - Keine Daten verfügbar, da nicht alle MA das Timesheet ausfüllen
 class OvertimeBalance(KPI):
-    name = "Overtime Balance"
-    unit = "Hours"
+    name = "Überzeit pro Mitarbeiter"
+    unit = "h"
 
     def compute(self, company, cost_center, from_date, to_date):
         return 0.0
@@ -483,8 +499,8 @@ class OvertimeBalance(KPI):
 # NOTE - wird am Stichtag to_date berechnet, from_date wird ignoriert.
 # [OK-MZ]
 class VacationBalance(KPI):
-    name = "Vacation Balance"
-    unit = "Days"
+    name = "Feriensaldo pro Mitarbeiter"
+    unit = "d"
 
     def compute(self, company, cost_center, from_date, to_date):
         employee_cond = {"status": "Active", "company": company}
@@ -499,7 +515,7 @@ class VacationBalance(KPI):
         for e in employees:
             # 2099-12-31 here means we ignore the expiry of vacation day allocations
             balance += get_leave_balance_on(e.name,"Urlaub",to_date,"2099-12-31")
-        return balance
+        return balance / len(employees)
 
 
 # ======================================================
@@ -561,13 +577,13 @@ def get_columns(company):
     """
     Generates columns for the report: Company + each cost center, each with YTD/Period subcolumns.
     """
-    cols = [{"label": _("KPI"), "fieldname": "kpi_label", "fieldtype": "Data", "width": 260}]
+    cols = [{"label": _("KPI"), "fieldname": "kpi_label", "fieldtype": "Data", "width": 260},{"label": _("Unit"), "fieldname": "unit", "fieldtype": "Data", "width": 50}]
     entities = [company] + [cc.name for cc in get_cost_centers(company)]
 
     for entity in entities:
         base = entity.lower().replace(" ", "_")
-        cols.append({"label": _(f"{entity} YTD"), "fieldname": f"{base}_ytd", "fieldtype": "Float", "width": 130})
-        cols.append({"label": _(f"{entity} Period"), "fieldname": f"{base}_period", "fieldtype": "Float", "width": 130})
+        cols.append({"label": f"{entity}<br>"+_("YTD"), "fieldname": f"{base}_ytd", "fieldtype": "Float", "width": 160, "precision": 2})
+        cols.append({"label": f"{entity}<br>"+_("Period"), "fieldname": f"{base}_period", "fieldtype": "Float", "width": 160, "precision": 2})
 
     return cols
 
@@ -577,14 +593,18 @@ def get_data(company, from_date, to_date):
     Compute KPI rows for YTD and Period columns.
     Uses all KPI classes defined previously.
     """
+
+    # Year must be the same for both dates (eg. due to budget comparisons taking place)
+    if from_date.year != to_date.year:
+        return []
+
     # KPI classes grouped by section
     kpis = {
-        "Sales": [OrderVolume(), OrderVolumeGrowth(), BookToBillRatio(), OrderVolumeTop5Share()],
-#        "Fulfillment": [BilledSales(), BillingRatio(), GrossMargin(), GrossMarginGrowth(), Backlog(), PostCalcDeviation()],
-        "Fulfillment": [BilledSales(), BillingRatio(), Backlog(), PostCalcDeviation()],
-        "Finance": [Sales(), SalesGrowth(), SalesVsBudget(), EBITDA(), EBITDAMargin(),
+        "Verkauf": [OrderVolume(), OrderVolumeGrowth(), BookToBillRatio(), OrderVolumeTop5Share()],
+        "Abwicklung": [BilledSales(), BillingRatio(), GrossMargin(), GrossMarginGrowth(), Backlog(), PostCalcDeviation()],
+        "Finanzen": [Sales(), SalesGrowth(), SalesVsBudget(), EBITDA(), EBITDAMargin(),
                     OpenPositions(), OpenPositionsDue(), Stock(), ROCE()],
-        "Employees": [Productivity(), OvertimeBalance(), VacationBalance()],
+        "Mitarbeitende": [Productivity(), VacationBalance()], #OvertimeBalance()
     }
 
     # Precompute YTD range based on to_date
@@ -600,27 +620,35 @@ def get_data(company, from_date, to_date):
         data.append({"kpi_label": section, "indent": 0})
 
         for kpi in kpi_list:
-            row = {"kpi_label": kpi.name, "indent": 1}
+            row = {"kpi_label": kpi.name, "unit": kpi.unit, "indent": 1}
 
-            if kpi.get("multiline"):
+            if kpi.multiline:
+                # Special KPIs such as Top5 customers, with several lines returned as dict
+                # NOTE - the line titles must be the same across cost centers as only the first ones are shown!!
+                sub_data = []
+                first_cc = True
                 for cc in cost_centers:
                     base = (company if cc is None else cc).lower().replace(" ", "_")
 
-                    # YTD column
                     ytd_data = kpi.compute(company, cc, ytd_from, ytd_to)
                     period_data = kpi.compute(company, cc, from_date, to_date)
 
                     row[f"{base}_ytd"] = 0
                     row[f"{base}_period"] = 0
-                    sub_data = []
+                    row_cnt = 0
+
                     for d in ytd_data:
-                        sub_row = {"kpi_label": name, "indent": 2, f"{base}_ytd": ytd_data[d], f"{base}_period": period_data.get(d)}
+                        if first_cc:
+                            sub_data.append({"kpi_label": d, "indent": 2})
+                        sub_data[row_cnt][f"{base}_ytd"] = ytd_data[d]
+                        sub_data[row_cnt][f"{base}_period"] = period_data.get(d)
                         row[f"{base}_ytd"] += ytd_data[d]
                         row[f"{base}_period"] += period_data.get(d, 0)
-                        sub_data.append(sub_row)
+                        row_cnt += 1
 
-                    data.append(row)
-                    data.extend(sub_data)
+                    first_cc = False
+                data.append(row)
+                data.extend(sub_data)
             else:
                 for cc in cost_centers:
                     base = (company if cc is None else cc).lower().replace(" ", "_")
