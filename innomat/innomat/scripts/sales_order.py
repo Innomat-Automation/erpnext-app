@@ -19,14 +19,11 @@ Create a new project with tasks from a sales order
 def create_project(sales_order,combine_bom):
     key = get_project_key()
     so = frappe.get_doc("Sales Order", sales_order)
-    # cost_center = frappe.get_value("Company", so.company, "cost_center")
-    cost_center = so.cost_center
-    company_key = "IN"
-    if "Frauenfeld" in cost_center or "Asprotec" in so.company:
+    company_key = so.company[0:2].upper()
+    if "Frauenfeld" in so.cost_center:
         company_key = "AS"
-    if "Hitzkirch" in cost_center:
-        company_key = "ST"
-    # create project 
+    department = frappe.get_value("Department", {"default_cost_center": so.cost_center}, "name") or ''
+    # create project
     new_project = frappe.get_doc({
         "doctype": "Project",
         "project_key": key,
@@ -41,19 +38,20 @@ def create_project(sales_order,combine_bom):
         "customer_name": so.customer_name,
         "sales_order": sales_order,
         "title": "{0}P{1} {2}".format(company_key, key, (so.object or so.customer_name)),
-        "company": so.company
+        "company": so.company,
+        "cost_center": so.cost_center,
+        "department": department
     })
     new_project.insert()
-    
+
     # create tasks for each item
     dn_items = []   # collect time hours not per effort
     for i in so.items:
-        hours = 0.0 # sum hours when combine the tasks 
-        boms = frappe.get_all("BOM", 
-                filters={'item': i.item_code, 'is_default': 1}, 
+        hours = 0.0 # sum hours when combine the tasks
+        boms = frappe.get_all("BOM",
+                filters={'item': i.item_code, 'is_default': 1},
                 fields=['name', 'total_hours'])
         if boms and len(boms) > 0:
-            expected_time = boms[0]['total_hours']
             # create one task per BOM position
             bom = frappe.get_doc("BOM", boms[0]['name'])
             for bom_item in bom.items:
@@ -67,6 +65,7 @@ def create_project(sales_order,combine_bom):
                             "project": new_project.name,
                             "status": "Open",
                             "expected_time": (bom_item.qty * i.qty),
+                            "ilv_rate": bom_item.ilv_rate,
                             "description": bom_item.description,
                             "sales_order": sales_order,
                             "sales_order_item": i.name,
@@ -84,6 +83,7 @@ def create_project(sales_order,combine_bom):
                             "project": new_project.name,
                             "status": "Open",
                             "expected_time": (bom_item.hours * i.qty),
+                            "ilv_rate":  bom_item.ilv_rate,
                             "description": bom_item.description,
                             "sales_order": sales_order,
                             "sales_order_item": i.name,
@@ -91,7 +91,7 @@ def create_project(sales_order,combine_bom):
                             "by_effort": i.by_effort
                         })
                         new_task.insert()
-            
+
             if combine_bom == '1':
                 new_task = frappe.get_doc({
                     "doctype": "Task",
@@ -99,6 +99,7 @@ def create_project(sales_order,combine_bom):
                     "project": new_project.name,
                     "status": "Open",
                     "expected_time": hours,
+                    "ilv_rate": i.ilv_rate,
                     "description": i.description,
                     "sales_order": sales_order,
                     "sales_order_item": i.name,
@@ -114,6 +115,7 @@ def create_project(sales_order,combine_bom):
                     "project": new_project.name,
                     "status": "Open",
                     "expected_time": i.qty,
+                    "ilv_rate": i.ilv_rate,
                     "description": i.description,
                     "sales_order": sales_order,
                     "sales_order_item": i.name,
@@ -121,7 +123,7 @@ def create_project(sales_order,combine_bom):
                     "by_effort": i.by_effort
                 })
                 new_task.insert()
-            i_item = frappe.get_doc("Item",i.item_code)    
+            i_item = frappe.get_doc("Item",i.item_code)
             if i_item.need_task:
                 new_task = frappe.get_doc({
                     "doctype": "Task",
@@ -129,6 +131,7 @@ def create_project(sales_order,combine_bom):
                     "project": new_project.name,
                     "status": "Open",
                     "expected_time": (i_item.hours * i.qty),
+                    "ilv_rate": i.ilv_rate,
                     "description": i.description,
                     "sales_order": sales_order,
                     "sales_order_item": i.name,
@@ -148,9 +151,9 @@ def create_project(sales_order,combine_bom):
                 'so_detail': i.name,
                 'against_sales_order': so.name,
                 'warehouse': i.warehouse,
-                'cost_center': cost_center
+                'cost_center': so.cost_center
             })
-            
+
     # create delivery note for all non-per-effort items
     if len(dn_items) > 0:
         new_dn = frappe.get_doc({
@@ -159,23 +162,23 @@ def create_project(sales_order,combine_bom):
             'company': so.company,
             'project': new_project.name,
             'currency': so.currency,
-            'cost_center': cost_center
+            'cost_center': so.cost_center
         })
         for item in dn_items:
             new_dn.append('items', item)
         for sales_item_group in so.sales_item_groups:
             new_dn.append('sales_item_groups', {
-                'group': sales_item_group.group, 
-                'title': sales_item_group.title, 
+                'group': sales_item_group.group,
+                'title': sales_item_group.title,
                 'sum_caption': sales_item_group.sum_caption
             })
         new_dn.insert()
-        
+
     frappe.db.commit()
     return new_project.name
 
 
-   
+
 """
 This function will create the next akonto invoice
 """
@@ -192,7 +195,7 @@ def create_akonto(source_name, target_doc=None, ignore_permissions=False):
         target.ignore_pricing_rule = 1
         target.is_akonto = 1
         target.sales_order = source.name
-        
+
         target.flags.ignore_permissions = True
         target.run_method("set_missing_values")
         target.run_method("calculate_taxes_and_totals")
@@ -237,8 +240,8 @@ def create_akonto(source_name, target_doc=None, ignore_permissions=False):
     }, target_doc, postprocess, ignore_permissions=ignore_permissions)
 
     return doclist
-    
-    
+
+
     for a in (sales_order.akonto or []):
         if not a.creation_date:
             data = {
@@ -268,7 +271,7 @@ def create_akonto(source_name, target_doc=None, ignore_permissions=False):
 
 def get_akonto_account(company, currency):
     accounts = frappe.db.sql("""
-        SELECT `akonto_account` 
+        SELECT `akonto_account`
         FROM `tabInnomat Settings Account`
         WHERE `parentfield` = "akonto_accounts"
           AND `company` = "{company}"
@@ -277,11 +280,11 @@ def get_akonto_account(company, currency):
         return accounts[0]['akonto_account']
     else:
         frappe.throw( _("Please configure akonto accounts in Innomat Settings") )
-        
+
 def create_akonto_payment(sales_order, amount, akonto_reference):
     so = frappe.get_doc("Sales Order", sales_order)
     account = get_akonto_account(so.company, so.currency)
-    
+
     # create payment entry
     new_pe = frappe.get_doc({
         'doctype': "Payment Entry",
@@ -315,8 +318,8 @@ def create_akonto_payment(sales_order, amount, akonto_reference):
     new_pe.submit()
     frappe.db.commit()
     return
-        
-            
+
+
 @frappe.whitelist()
 def add_akonto_payment_reference(sales_order, payment_entry):
     sales_order = frappe.get_doc("Sales Order", sales_order)

@@ -6,20 +6,39 @@ frappe.query_reports["Nachkalkulation"] = {
     "filters": [
         {
             fieldname: "project_manager",
-            label: __("Project manager"),
+            label: __("Projektleiter"),
             fieldtype: "Link",
             options: "Employee"
         },
         {
             fieldname: "project_manager_name",
-            label: __("Project manager name"),
+            label: __("Name Projektleiter"),
             fieldtype: "Data"
         },
         {
             fieldname: "customer",
-            label: __("Customer"),
+            label: __("Kunde"),
             fieldtype: "Link",
             options: "Customer"
+        },
+        {
+            fieldname: "status",
+            label: __("Status"),
+            fieldtype: "Select",
+            options: "\nOpen\nCompleted\nCancelled"
+        },
+        {
+            fieldname: "status_light",
+            label: __("Status-Ampel"),
+            fieldtype: "Select",
+            options: "⚪\n🟢\n🟡\n🔴"
+        },
+        {
+            fieldname: "year",
+            label: __("Jahr"),
+            fieldtype: "Link",
+            options: "Fiscal Year",
+            default: new Date().getFullYear()
         }
     ]
 };

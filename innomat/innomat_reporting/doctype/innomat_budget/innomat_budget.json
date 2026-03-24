@@ -12,7 +12,9 @@
   "fiscal_year",
   "section_accounts",
   "accounts",
-  "total"
+  "ebitda",
+  "ebit",
+  "net_income"
  ],
  "fields": [
   {
@@ -55,21 +57,35 @@
    "reqd": 1
   },
   {
-   "fieldname": "total",
-   "fieldtype": "Currency",
-   "label": "Total",
-   "options": "Currency",
-   "read_only": 1
-  },
-  {
    "default": "Budget",
    "fieldname": "name_prefix",
    "fieldtype": "Data",
    "label": "Namenspr\u00e4fix",
    "reqd": 1
+  },
+  {
+   "fieldname": "ebitda",
+   "fieldtype": "Currency",
+   "label": "EBITDA",
+   "options": "Currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "ebit",
+   "fieldtype": "Currency",
+   "label": "EBIT",
+   "options": "Currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "net_income",
+   "fieldtype": "Currency",
+   "label": "Net Income",
+   "options": "Currency",
+   "read_only": 1
   }
  ],
- "modified": "2025-12-02 11:56:18.626205",
+ "modified": "2026-01-05 09:50:26.977876",
  "modified_by": "Administrator",
  "module": "Innomat Reporting",
  "name": "Innomat Budget",

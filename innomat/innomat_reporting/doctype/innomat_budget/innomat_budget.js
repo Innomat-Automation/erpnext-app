@@ -36,7 +36,7 @@ frappe.ui.form.on('Innomat Budget', {
         frm.doc.accounts.forEach(acc => {
             update_account_total(frm, acc.doctype, acc.name);
         });
-        update_grand_total(frm);
+        update_totals(frm);
     }
 });
 
@@ -78,7 +78,7 @@ function populate_if_empty(frm) {
 
 function update_totals(frm, cdt, cdn) {
     update_account_total(frm, cdt, cdn);
-    update_grand_total(frm);
+    update_totals(frm);
 }
 
 function update_account_total(frm, cdt, cdn) {
@@ -91,12 +91,38 @@ function update_account_total(frm, cdt, cdn) {
     frappe.model.set_value(cdt, cdn, "annual_budget", sum);
 }
 
-function update_grand_total(frm) {
-    let total = 0;
+function update_totals(frm) {
+    let net_income = 0;
+    let ebitda = 0;
+    let ebit = 0;
+    let rt_factor = {Income: 1, Expense: -1};
+    let acc_amount = 0;
     frm.doc.accounts.forEach(acc => {
-        total += (acc.annual_budget || 0);
+        if(acc.root_type && rt_factor[acc.root_type]) {
+            acc_amount = (acc.annual_budget * rt_factor[acc.root_type] || 0);
+            net_income += acc_amount;
+            if(acc.account_type == "Expense Account") {
+                if(acc.expense_account_classification) {
+                    if(!['Interest','Tax'].includes(acc.expense_account_classification)) {
+                        ebitda += acc_amount;
+                        ebit += acc_amount;
+                    }
+                } else {
+                    frappe.show_alert({message: __("EBITDA-Berechnung fehlgeschlagen: Konto '{0}' ist nicht als Zinsen, Steuern oder Andere klassifiziert.", [acc.account]), indicator: 'red'});
+                }
+            } else {
+                ebit += acc_amount;
+                if(acc.account_type != "Depreciation") {
+                    ebitda += acc_amount;
+                }
+            }
+        } else {
+            frappe.show_alert({message: __("Summierung fehlgeschlagen: Konto '{0}' ist nicht als Einnahmen oder Ausgaben definiert", [acc.account]), indicator: 'red'});
+        }
     });
-    frm.set_value("total", total);
+    frm.set_value("net_income", net_income);
+    frm.set_value("ebitda", ebitda);
+    frm.set_value("ebit", ebit);
 }
 
 function add_missing_accounts(frm, account_list = []) {

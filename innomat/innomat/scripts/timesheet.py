@@ -16,7 +16,7 @@ Get timehseet lock date
 """
 @frappe.whitelist()
 def get_timesheet_lock_date():
-    return frappe.get_value("Innomat Settings", "Innomat Settings", "lock_timesheets_until") 
+    return frappe.get_value("Innomat Settings", "Innomat Settings", "lock_timesheets_until")
 
 """
 Check if all projects are open. Returns list of closed projects if one ore more projects are closed.
@@ -35,8 +35,8 @@ def check_projects_open(projects):
         return ", ".join(result)
     else:
         return None
-     
-""" 
+
+"""
 Shortcut to create delivery notes from timesheet
 """
 @frappe.whitelist()
@@ -48,12 +48,9 @@ def create_dn(project, item, qty, description, timesheet):
         "customer": pj.customer,
         "project": project,
         "company": pj.company,
-        "currency": currency
+        "currency": currency,
+        "cost_center": pj.cost_center,
     })
-    if project.startswith("A"):
-        new_dn.cost_center = "Frauenfeld - I"
-    else:
-        new_dn.cost_center = "Herisau - I"
     item_dict = {
         'item_code': item,
         'qty': qty,
@@ -67,7 +64,7 @@ def create_dn(project, item, qty, description, timesheet):
     new_dn.insert()
     return new_dn.name
 
-""" 
+"""
 Shortcut to create on call fees from timesheet
 """
 @frappe.whitelist()
@@ -80,12 +77,9 @@ def create_on_call_fee(project, date, timesheet):
         "customer": pj.customer,
         "project": project,
         "company": pj.company,
-        "currency": currency
+        "currency": currency,
+        "cost_center": pj.cost_center,
     })
-    if project.startswith("A"):
-            new_dn.cost_center = "Frauenfeld - I"
-    else:
-        new_dn.cost_center = "Herisau - I"
     item_dict = {
         'item_code': frappe.get_value("Innomat Settings", "Innomat Settings", "on_call_fee_item"),
         'qty': 1,
@@ -120,7 +114,7 @@ def create_travel_notes(timesheet, travel_key):
                 'ts_detail': d.name,
                 'external_reamrks': d.external_remarks
             })
-         
+
     # grouped by project, create delivery notes
     dns = []
     for k, v in travel.items():
@@ -131,12 +125,9 @@ def create_travel_notes(timesheet, travel_key):
             "customer": pj.customer,
             "project": k,
             "company": pj.company,
-            "currency": currency
+            "currency": currency,
+            "cost_center": pj.cost_center,
         })
-        if k.startswith("A"):
-            new_dn.cost_center = "Frauenfeld - I"
-        else:
-            new_dn.cost_center = "Herisau - I"
         for value in v:
             if "wagen" in value['travel_type']:
                 description = "Anfahrt {0}".format(value['date'].strftime("%d.%m.%Y"))
@@ -160,7 +151,7 @@ def create_travel_notes(timesheet, travel_key):
                     'ts_detail': value['ts_detail'],
                     'sales_item_group': "Service"
                 }
-            
+
             row = new_dn.append('items', item_dict)
         row = new_dn.append('sales_item_groups', {'group': 'Service', 'title': 'Service', 'sum_caption': 'Summe Service'})
         new_dn.insert()
@@ -221,9 +212,9 @@ def create_service_report(contact, timesheet, project):
     pdf = get_pdf(html)
     # store pdf and attach to project
     filename = "{0}_{1}.pdf".format(timesheet.name, project.name)
-    save_file(fname=filename, content=pdf, 
+    save_file(fname=filename, content=pdf,
         dt="Project", dn=project.name, is_private=1)
-        
+
     return filename
 
 

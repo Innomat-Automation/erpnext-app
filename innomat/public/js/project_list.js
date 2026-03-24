@@ -91,7 +91,7 @@ function get_end_last_quarter() {
     if ([9, 10, 11].includes(act_month)) {
         var end = new Date(String(fullyear) + "-09-30");
     }
-    
+
     return end;
 }
 
@@ -102,7 +102,7 @@ function create_project_from_template() {
             {'fieldname': 'po_no', 'fieldtype': 'Data', 'label': __('Customer\'s Purchase Order'), 'reqd': 0},
             {'fieldname': 'po_date', 'fieldtype': 'Date', 'label': __('Customer\'s Purchase Date'), 'reqd': 0},
             {'fieldname': 'company', 'fieldtype': 'Link', 'label': __('Company'), 'reqd': 1, 'options': 'Company', 'default': frappe.defaults.get_default("Company")},
-            {'fieldname': 'cost_center', 'fieldtype': 'Link', 'label': __('Cost Center'), 'reqd': 1, 'options': 'Cost Center', 'default': frappe.defaults.get_default("Cost Center")}            
+            {'fieldname': 'cost_center', 'fieldtype': 'Link', 'label': __('Cost Center'), 'reqd': 1, 'options': 'Cost Center', 'default': frappe.defaults.get_default("Cost Center")}
         ],
         function(values){
             frappe.call({
