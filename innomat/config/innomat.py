@@ -135,18 +135,6 @@ def get_data():
                    },
                    {
                        "type": "doctype",
-                       "name": "Timesheet",
-                       "label": _("Timesheet"),
-                       "description": _("Timesheet")
-                   },
-                   {
-                       "type": "doctype",
-                       "name": "Expense Claim",
-                       "label": _("Expense Claim"),
-                       "description": _("Expense Claim")
-                   },
-                   {
-                       "type": "doctype",
                        "name": "Equipment",
                        "label": _("Equipment"),
                        "description": _("Equipment")
@@ -168,6 +156,37 @@ def get_data():
                         "name": "Ressourcenplanung",
                         "doctype": "Task",
                         "is_query_report": True,
+                   }
+            ]
+        },
+        {
+            "label": _("HR"),
+            "icon": "fa fa-hr",
+            "items": [
+                   {
+                       "type": "doctype",
+                       "name": "Timesheet",
+                       "label": _("Timesheet"),
+                       "description": _("Timesheet")
+                   },
+                   {
+                       "type": "doctype",
+                       "name": "Expense Claim",
+                       "label": _("Expense Claim"),
+                       "description": _("Expense Claim")
+                   },
+                   {
+                       "type": "doctype",
+                       "name": "Leave Application",
+                       "label": _("Leave Application"),
+                       "description": _("Leave Application")
+                   },
+                   {
+                        "type": "help",
+                        "label": _("Leave Application Calendar"),
+                        "description": _("Leave Application Calendar View"),
+                        "icon": "fa fa-calendar",
+                        "link": "#List/Leave Application/Calendar/Ferienkalender"
                    }
             ]
         },
@@ -289,6 +308,26 @@ def get_data():
                         "doctype": "Timesheet",
                         "is_query_report": True,
                     }
+            ]
+        },
+               {
+            "label": _("Liks"),
+            "icon": "fa fa-hr",
+            "items": [
+                   {
+                        "type": "help",
+                        "label": _("Wiki"),
+                        "description": _("Wiki"),
+                        "icon": "fa fa-calendar",
+                        "route": "https://wiki.innomat.ch/"
+                   },
+                   {
+                        "type": "help",
+                        "label": _("Transfer"),
+                        "description": _("Transfer"),
+                        "icon": "fa fa-calendar",
+                        "route": "https://transfer.innomat.ch/"
+                   }
             ]
         },
         {

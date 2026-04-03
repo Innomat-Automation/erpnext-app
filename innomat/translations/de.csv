@@ -17,6 +17,8 @@ Module: Innomat,Balance ({0}),Saldo ({0})
 Module: Innomat,Account {0} does not exists,Konto {0} existiert nicht
 Module: Innomat,Group by Account,Gruppieren nach Konto
 Module: Innomat,Innomat Accounting,Innomat Buchhaltung
+Module: Innomat,Leave Application Calendar,Ferienkalender
+
 DocType: Quotation,Is optional,Optional
 DocType: Quotation,BOM Rate,Stücklistenkostenbasis
 DocType: Quotation,Calculation Margin,Kalkulationsmarge
