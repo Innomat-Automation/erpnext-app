@@ -151,7 +151,7 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
                                     LEFT JOIN `tabPayment Entry` ON `tabPayment Entry Reference`.`parent` = `tabPayment Entry`.`name`
                                     WHERE `tabPayment Entry`.`docstatus` = 1
                                       AND `tabPayment Entry Reference`.`reference_doctype` = "Sales Order"
-                                      AND `tabPayment Entry Reference`.`reference_name` = %(sales_order)s";""", {"sales_order": pj.sales_order}, as_dict=True)
+                                      AND `tabPayment Entry Reference`.`reference_name` = %(sales_order)s;""", {"sales_order": pj.sales_order}, as_dict=True)
         if payments and len(payments) > 0:
             for payment in payments:
                 new_sinv.append('advances', {
