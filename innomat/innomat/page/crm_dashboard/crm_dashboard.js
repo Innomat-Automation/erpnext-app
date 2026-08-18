@@ -84,12 +84,13 @@ frappe.crm_dashboard = {
     render: function(data) {
         var me = frappe.crm_dashboard;
         me.entries = {};
-        (["Telefonat", "Besprechung"]).forEach(function(type) {
+        (["Telefon", "Remotebesprechung", "Vor Ort Besprechung"]).forEach(function(type) {
             (data[type] || []).forEach(function(e) { me.entries[e.name] = e; });
         });
         var html = '<div class="crm-dashboard-frame"><div class="row">'
-            + '<div class="col-sm-6 crm-dashboard-column">' + me.render_section(__("Nächste Telefonate"), data["Telefonat"] || []) + '</div>'
-            + '<div class="col-sm-6 crm-dashboard-column">' + me.render_section(__("Nächste Besprechungen"), data["Besprechung"] || []) + '</div>'
+            + '<div class="col-sm-4 crm-dashboard-column">' + me.render_section(__("Nächste Telefon"), data["Telefon"] || []) + '</div>'
+            + '<div class="col-sm-4 crm-dashboard-column">' + me.render_section(__("Nächste Remotebesprechungen"), data["Remotebesprechung"] || []) + '</div>'
+            + '<div class="col-sm-4 crm-dashboard-column">' + me.render_section(__("Nächste Vor Ort Besprechungen"), data["Vor Ort Besprechung"] || []) + '</div>'
             + '</div></div>';
         me.body.html(html);
     },
@@ -127,11 +128,13 @@ frappe.crm_dashboard = {
             title: __("Termin bearbeiten"),
             fields: [
                 { fieldname: 'communication_type', label: __("Art"), fieldtype: 'Select',
-                  options: "Telefonat\nBesprechung", reqd: 1, default: doc.communication_type },
+                  options: "Telefon\nRemotebesprechung\nVor Ort Besprechung", reqd: 1, default: doc.communication_type },
                 { fieldname: 'completed', label: __("Erledigt"), fieldtype: 'Check', default: 0 },
                 { fieldname: 'cb', fieldtype: 'Column Break' },
                 { fieldname: 'date', label: __("Datum"), fieldtype: 'Date', reqd: 1, default: doc.date },
                 { fieldname: 'time', label: __("Zeit"), fieldtype: 'Time', default: doc.time },
+                                { fieldname: 'duration', label: __("Dauer (Stunden)"), fieldtype: 'Float',
+                                    default: doc.duration || 1, min: 0.25, precision: 2 },
                 { fieldname: 'user', label: __("Benutzer"), fieldtype: 'Link', options: 'User', default: doc.user },
                 { fieldname: 'sb', fieldtype: 'Section Break' },
                 { fieldname: 'preparation', label: __("Vorbereitung"), fieldtype: 'Small Text', default: doc.preparation },
@@ -163,7 +166,7 @@ frappe.crm_dashboard = {
                         title: __("Neuer CRM-Eintrag"),
                         fields: [
                                 { fieldname: 'communication_type', label: __("Art"), fieldtype: 'Select',
-                                    options: "Telefonat\nBesprechung", reqd: 1, default: "Telefonat" },
+                                    options: "Telefon\nRemotebesprechung\nVor Ort Besprechung", reqd: 1, default: "Telefon" },
                                 { fieldname: 'lead', label: __("Bestehender Lead"), fieldtype: 'Link',
                                     options: 'Lead' },
                                 { fieldname: 'new_lead_name', label: __("Neuer Lead"), fieldtype: 'Data',
@@ -172,6 +175,8 @@ frappe.crm_dashboard = {
                                 { fieldname: 'date', label: __("Datum"), fieldtype: 'Date', reqd: 1,
                                     default: frappe.datetime.get_today() },
                                 { fieldname: 'time', label: __("Zeit"), fieldtype: 'Time' },
+                                                                { fieldname: 'duration', label: __("Dauer (Stunden)"), fieldtype: 'Float',
+                                                                    default: 1, min: 0.25, precision: 2 },
                                 { fieldname: 'user', label: __("Benutzer"), fieldtype: 'Link', options: 'User',
                                     default: frappe.session.user },
                                 { fieldname: 'sb', fieldtype: 'Section Break' },

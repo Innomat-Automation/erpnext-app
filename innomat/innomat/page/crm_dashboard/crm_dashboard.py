@@ -9,7 +9,7 @@ from frappe import _
 from six import string_types
 from frappe.utils import getdate, nowdate
 
-EDITABLE_FIELDS = ["communication_type", "completed", "date", "time",
+EDITABLE_FIELDS = ["communication_type", "completed", "date", "time", "duration",
                    "user", "preparation", "note", "follow_up"]
 
 
@@ -27,7 +27,7 @@ def get_upcoming(user=None, limit=25):
         values["user"] = user
 
     data = {}
-    for communication_type in ["Telefonat", "Besprechung"]:
+    for communication_type in ["Telefon", "Remotebesprechung", "Vor Ort Besprechung"]:
         values["communication_type"] = communication_type
         data[communication_type] = frappe.db.sql("""
             SELECT
@@ -36,6 +36,7 @@ def get_upcoming(user=None, limit=25):
                 k.`communication_type` AS `communication_type`,
                 k.`date` AS `date`,
                 k.`time` AS `time`,
+                k.`duration` AS `duration`,
                 k.`user` AS `user`,
                 k.`preparation` AS `preparation`,
                 k.`note` AS `note`,
@@ -84,6 +85,21 @@ def complete_past_entries():
     if completed:
         frappe.db.commit()
     return completed
+
+
+def normalize_communication_types():
+    """Rename legacy communication types after the selection change."""
+    frappe.db.sql("""
+        UPDATE `tabLead Kommunikation`
+        SET `communication_type` = 'Telefon'
+        WHERE `communication_type` = 'Telefonat'
+    """)
+    frappe.db.sql("""
+        UPDATE `tabLead Kommunikation`
+        SET `communication_type` = 'Vor Ort Besprechung'
+        WHERE `communication_type` = 'Besprechung'
+    """)
+    frappe.db.commit()
 
 
 @frappe.whitelist()
@@ -172,10 +188,11 @@ def create_entry(values):
 
     communication = {
         "doctype": "Lead Kommunikation",
-        "communication_type": values.get("communication_type") or "Telefonat",
+        "communication_type": values.get("communication_type") or "Telefon",
         "completed": 0,
         "date": values.get("date"),
         "time": values.get("time"),
+        "duration": values.get("duration") or 1.0,
         "user": values.get("user"),
         "preparation": values.get("preparation"),
         "note": values.get("note"),

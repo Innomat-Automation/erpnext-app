@@ -1,0 +1,28 @@
+{
+ "creation": "2026-08-18 21:30:00.000000",
+ "docstatus": 0,
+ "doctype": "Page",
+ "icon": "fa fa-calendar",
+ "idx": 0,
+ "modified": "2026-08-18 21:30:00.000000",
+ "modified_by": "Administrator",
+ "module": "Innomat",
+ "name": "crm_calendar",
+ "owner": "Administrator",
+ "page_name": "crm_calendar",
+ "roles": [
+  {
+   "role": "Sales User"
+  },
+  {
+   "role": "Sales Manager"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "title": "CRM Kalender"
+}

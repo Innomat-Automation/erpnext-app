@@ -198,7 +198,13 @@ def get_data():
                        "type": "page",
                        "name": "crm_dashboard",
                        "label": _("CRM Dashboard"),
-                       "description": _("Nächste Telefonate und Besprechungen")
+                       "description": _("Nächste Telefon-, Remote- und Vor-Ort-Besprechungen")
+                   },
+                   {
+                       "type": "page",
+                       "name": "crm_calendar",
+                       "label": _("CRM Kalender"),
+                       "description": _("Alle Telefon-, Remote- und Vor-Ort-Termine")
                    },
                    {
                        "type": "doctype",

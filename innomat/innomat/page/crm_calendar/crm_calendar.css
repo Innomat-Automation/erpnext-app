@@ -1,0 +1,90 @@
+.crm-calendar {
+    padding: 8px 0 24px;
+    color: #36414c;
+}
+
+.crm-calendar-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    background: #f7f9fa;
+    border: 1px solid #cfd7df;
+    border-radius: 6px;
+}
+
+.crm-calendar-legend-item {
+    color: #4e5d68;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.crm-calendar-swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: 6px;
+    border-radius: 2px;
+    vertical-align: -1px;
+}
+
+.crm-calendar-phone {
+    background: #5e6b75;
+}
+
+.crm-calendar-remote {
+    background: #2490ef;
+}
+
+.crm-calendar-onsite {
+    background: #c58b28;
+}
+
+.crm-calendar-container {
+    padding: 14px;
+    background: #ffffff;
+    border: 1px solid #cfd7df;
+    border-top: 3px solid #5e6b75;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(54, 65, 76, 0.08);
+}
+
+.crm-calendar-container .fc-event {
+    border: 0;
+    border-radius: 3px;
+    padding: 1px 3px;
+    cursor: pointer;
+}
+
+.crm-calendar-container .fc-day-grid-event .fc-content {
+    white-space: normal;
+}
+
+.crm-calendar-container .fc-today {
+    background: #f5f8fa;
+}
+
+.crm-calendar-container .fc-month-view .fc-day-grid-container {
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0;
+}
+
+.crm-calendar-container .fc-month-view .fc-day-grid .fc-row {
+    height: 140px !important;
+    min-height: 140px !important;
+}
+
+.crm-calendar-container .fc-day-grid-event {
+    margin-top: 3px;
+    margin-bottom: 3px;
+    line-height: 1.35;
+}
+
+@media (max-width: 767px) {
+    .crm-calendar-container {
+        padding: 6px;
+    }
+}
