@@ -7,8 +7,9 @@ import frappe
 import json
 from frappe import _
 from six import string_types
+from frappe.utils import getdate, nowdate
 
-EDITABLE_FIELDS = ["communication_type", "status", "completed", "date", "time",
+EDITABLE_FIELDS = ["communication_type", "completed", "date", "time",
                    "user", "preparation", "note", "follow_up"]
 
 
@@ -16,6 +17,7 @@ EDITABLE_FIELDS = ["communication_type", "status", "completed", "date", "time",
 def get_upcoming(user=None, limit=25):
     """Return the open (not completed) communication entries per type."""
     frappe.has_permission("Lead", "read", throw=True)
+    complete_past_entries()
 
     limit = min(int(limit or 25), 100)
     conditions = ""
@@ -32,7 +34,6 @@ def get_upcoming(user=None, limit=25):
                 k.`name` AS `name`,
                 k.`parent` AS `lead`,
                 k.`communication_type` AS `communication_type`,
-                k.`status` AS `status`,
                 k.`date` AS `date`,
                 k.`time` AS `time`,
                 k.`user` AS `user`,
@@ -46,13 +47,43 @@ def get_upcoming(user=None, limit=25):
             WHERE k.`parenttype` = 'Lead'
               AND k.`communication_type` = %(communication_type)s
               AND IFNULL(k.`completed`, 0) = 0
-              AND IFNULL(k.`status`, '') != 'Erledigt'
               {conditions}
             ORDER BY k.`date` ASC, k.`time` ASC
             LIMIT %(limit)s
         """.format(conditions=conditions), values, as_dict=True)
 
     return data
+
+
+def complete_past_entries():
+    """Complete open communication rows dated before today."""
+    rows = frappe.db.sql("""
+        SELECT k.`name`, k.`parent`
+        FROM `tabLead Kommunikation` AS k
+        WHERE k.`parenttype` = 'Lead'
+          AND IFNULL(k.`completed`, 0) = 0
+          AND k.`date` < CURDATE()
+    """, as_dict=True)
+
+    rows_by_lead = {}
+    for row in rows:
+        rows_by_lead.setdefault(row.parent, set()).add(row.name)
+
+    completed = 0
+    for parent, row_names in rows_by_lead.items():
+        lead = frappe.get_doc("Lead", parent)
+        lead.check_permission("write")
+        for communication in lead.verlauf:
+            if communication.name in row_names and not communication.completed:
+                communication.completed = 1
+                completed += 1
+        if lead.contact_date and getdate(lead.contact_date) < getdate(nowdate()):
+            lead.contact_date = None
+        lead.save()
+
+    if completed:
+        frappe.db.commit()
+    return completed
 
 
 @frappe.whitelist()
@@ -83,6 +114,43 @@ def update_entry(name, values):
 
 
 @frappe.whitelist()
+def complete_all(user=None):
+    """Mark all visible open communication rows as completed."""
+    frappe.has_permission("Lead", "read", throw=True)
+
+    user_condition = ""
+    values = {}
+    if user:
+        user_condition = " AND k.`user` = %(user)s"
+        values["user"] = user
+
+    rows = frappe.db.sql("""
+        SELECT k.`name`, k.`parent`
+        FROM `tabLead Kommunikation` AS k
+        WHERE k.`parenttype` = 'Lead'
+          AND IFNULL(k.`completed`, 0) = 0
+          {user_condition}
+    """.format(user_condition=user_condition), values, as_dict=True)
+
+    rows_by_lead = {}
+    for row in rows:
+        rows_by_lead.setdefault(row.parent, set()).add(row.name)
+
+    completed = 0
+    for parent, row_names in rows_by_lead.items():
+        lead = frappe.get_doc("Lead", parent)
+        lead.check_permission("write")
+        for communication in lead.verlauf:
+            if communication.name in row_names and not communication.completed:
+                communication.completed = 1
+                completed += 1
+        lead.save()
+
+    frappe.db.commit()
+    return completed
+
+
+@frappe.whitelist()
 def create_entry(values):
     """Create a communication row on an existing or newly created Lead."""
     if isinstance(values, string_types):
@@ -105,7 +173,6 @@ def create_entry(values):
     communication = {
         "doctype": "Lead Kommunikation",
         "communication_type": values.get("communication_type") or "Telefonat",
-        "status": values.get("status") or "Geplant",
         "completed": 0,
         "date": values.get("date"),
         "time": values.get("time"),
