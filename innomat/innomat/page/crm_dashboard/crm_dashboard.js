@@ -32,10 +32,12 @@ frappe.crm_dashboard = {
         page.add_inner_button(__("Aktualisieren"), function() { me.refresh(); }, 'refresh');
 
         me.body = $('<div class="crm-dashboard"></div>').appendTo(page.main);
-        me.body.on('click', '.crm-entry', function() {
+        me.body.on('click', '.crm-entry', function(e) {
+            if ($(e.target).closest('.crm-open-lead').length) { return; }
             me.edit_entry($(this).attr('data-name'));
         });
         me.body.on('click', '.crm-open-lead', function(e) {
+            e.preventDefault();
             e.stopPropagation();
             frappe.set_route("Form", "Lead", $(this).attr('data-lead'));
         });
@@ -82,8 +84,8 @@ frappe.crm_dashboard = {
                 + '<span class="' + (overdue ? 'text-danger' : 'text-muted') + '">' + when + '</span>'
                 + ' &ndash; <b>' + subject + '</b>'
                 + (e.user ? ' <span class="text-muted">(' + frappe.utils.escape_html(e.user) + ')</span>' : '')
-                + ' <a class="crm-open-lead pull-right" data-lead="' + frappe.utils.escape_html(e.lead) + '">'
-                + __("Lead") + '</a>'
+                + ' <a href="#" class="crm-open-lead pull-right" data-lead="' + frappe.utils.escape_html(e.lead) + '">'
+                + __("Lead öffnen") + '</a>'
                 + (e.note ? '<div class="text-muted small">' + frappe.utils.escape_html(e.note) + '</div>' : '')
                 + '</li>';
         });
