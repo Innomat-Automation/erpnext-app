@@ -4,12 +4,34 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+    "communication_type",
+    "status",
   "date",
   "time",
   "user",
-  "note"
+    "preparation",
+    "note",
+    "follow_up"
  ],
  "fields": [
+    {
+     "default": "Telefonat",
+     "fieldname": "communication_type",
+     "fieldtype": "Select",
+     "in_list_view": 1,
+     "label": "Art",
+     "options": "Telefonat\nBesprechung",
+     "reqd": 1
+    },
+    {
+     "default": "Geplant",
+     "fieldname": "status",
+     "fieldtype": "Select",
+     "in_list_view": 1,
+     "label": "Status",
+     "options": "Geplant\nErledigt",
+     "reqd": 1
+    },
   {
    "fieldname": "date",
    "fieldtype": "Date",
@@ -30,16 +52,25 @@
    "label": "Benutzer",
    "options": "User"
   },
+    {
+     "fieldname": "preparation",
+     "fieldtype": "Small Text",
+     "label": "Vorbereitung"
+    },
   {
    "fieldname": "note",
    "fieldtype": "Small Text",
    "in_list_view": 1,
-   "label": "Notiz",
-   "reqd": 1
+     "label": "Gesprächsnotiz"
+    },
+    {
+     "fieldname": "follow_up",
+     "fieldtype": "Small Text",
+     "label": "Nachbereitung"
   }
  ],
  "istable": 1,
- "modified": "2021-04-23 13:49:13.313362",
+ "modified": "2026-08-18 19:12:54.939482",
  "modified_by": "Administrator",
  "module": "Innomat",
  "name": "Lead Kommunikation",
