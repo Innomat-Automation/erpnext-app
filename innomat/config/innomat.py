@@ -190,6 +190,24 @@ def get_data():
                    }
             ]
         },
+                {
+            "label": _("CRM"),
+            "icon": "fa fa-phone",
+            "items": [
+                   {
+                       "type": "page",
+                       "name": "crm_dashboard",
+                       "label": _("CRM Dashboard"),
+                       "description": _("Nächste Telefonate und Besprechungen")
+                   },
+                   {
+                       "type": "doctype",
+                       "name": "Lead",
+                       "label": _("Lead"),
+                       "description": _("Lead")
+                   }
+            ]
+        },
         {
             "label": _("Accounting"),
             "icon": "fa fa-money",
