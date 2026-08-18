@@ -87,36 +87,36 @@ frappe.crm_dashboard = {
         (["Telefonat", "Besprechung"]).forEach(function(type) {
             (data[type] || []).forEach(function(e) { me.entries[e.name] = e; });
         });
-        var html = '<div class="row">'
-            + '<div class="col-sm-6">' + me.render_section(__("Nächste Telefonate"), data["Telefonat"] || []) + '</div>'
-            + '<div class="col-sm-6">' + me.render_section(__("Nächste Besprechungen"), data["Besprechung"] || []) + '</div>'
-            + '</div>';
+        var html = '<div class="crm-dashboard-frame"><div class="row">'
+            + '<div class="col-sm-6 crm-dashboard-column">' + me.render_section(__("Nächste Telefonate"), data["Telefonat"] || []) + '</div>'
+            + '<div class="col-sm-6 crm-dashboard-column">' + me.render_section(__("Nächste Besprechungen"), data["Besprechung"] || []) + '</div>'
+            + '</div></div>';
         me.body.html(html);
     },
 
     render_section: function(title, entries) {
-        var html = '<h4>' + title + ' <span class="text-muted">(' + entries.length + ')</span></h4>';
+        var html = '<div class="crm-dashboard-section"><h4 class="crm-dashboard-section-title">' + title + ' <span class="text-muted">(' + entries.length + ')</span></h4>';
         if (!entries.length) {
-            return html + '<p class="text-muted">' + __("Keine offenen Einträge") + '</p>';
+            return html + '<p class="text-muted crm-empty-state">' + __("Keine offenen Einträge") + '</p></div>';
         }
-        html += '<ul class="list-unstyled">';
+        html += '<ul class="list-unstyled crm-entry-list">';
         entries.forEach(function(e) {
             var subject = frappe.utils.escape_html(e.lead_name || e.company_name || e.lead || '');
             var when = frappe.datetime.str_to_user(e.date);
             if (e.time) { when += ' ' + e.time.substring(0, 5); }
             var overdue = e.date && e.date < frappe.datetime.get_today();
-            html += '<li class="crm-entry" data-name="' + frappe.utils.escape_html(e.name) + '"'
-                + ' style="cursor:pointer; border:1px solid #d1d8dd; border-radius:4px; padding:8px; margin-bottom:6px;">'
-                + '<span class="' + (overdue ? 'text-danger' : 'text-muted') + '">' + when + '</span>'
-                + ' &ndash; <b>' + subject + '</b>'
+            html += '<li class="crm-entry' + (overdue ? ' crm-entry-overdue' : '') + '" data-name="' + frappe.utils.escape_html(e.name) + '">'
+                + '<div class="crm-entry-header"><span class="crm-entry-date">' + when + '</span>'
+                + ' <b class="crm-entry-subject">' + subject + '</b></div>'
                 + (e.user ? ' <span class="text-muted">(' + frappe.utils.escape_html(e.user) + ')</span>' : '')
                 + ' <a href="#" class="crm-open-lead pull-right" data-lead="' + frappe.utils.escape_html(e.lead) + '">'
                 + __("Lead öffnen") + '</a>'
                 + (e.note ? '<div class="text-muted small">' + frappe.utils.escape_html(e.note) + '</div>' : '')
+                + (e.preparation ? '<div class="crm-entry-preparation"><span class="crm-entry-label">' + __("Vorbereitung") + ':</span> ' + frappe.utils.escape_html(e.preparation) + '</div>' : '')
                 + '</li>';
         });
         html += '</ul>';
-        return html;
+        return html + '</div>';
     },
 
     edit_entry: function(name) {

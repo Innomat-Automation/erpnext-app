@@ -1,0 +1,119 @@
+.crm-dashboard {
+    padding: 8px 0 24px;
+    color: #36414c;
+}
+
+.crm-dashboard-frame {
+    background: #f7f9fa;
+    border: 1px solid #cfd7df;
+    border-top: 3px solid #5e6b75;
+    border-radius: 6px;
+    padding: 18px 10px 10px;
+    box-shadow: 0 1px 3px rgba(54, 65, 76, 0.08);
+}
+
+.crm-dashboard-column + .crm-dashboard-column {
+    border-left: 1px solid #dfe5e9;
+}
+
+.crm-dashboard-section {
+    padding: 0 12px;
+}
+
+.crm-dashboard-section-title {
+    margin: 0 0 14px;
+    color: #36414c;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.crm-dashboard-section-title .text-muted {
+    color: #8a969f;
+    font-size: 13px;
+    font-weight: 400;
+}
+
+.crm-entry-list {
+    margin: 0;
+}
+
+.crm-entry {
+    position: relative;
+    margin-bottom: 8px;
+    padding: 11px 12px 10px;
+    cursor: pointer;
+    background: #ffffff;
+    border: 1px solid #d8e0e5;
+    border-left: 3px solid #8da0ad;
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(54, 65, 76, 0.04);
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.crm-entry:hover {
+    border-color: #9aaab5;
+    border-left-color: #5e6b75;
+    box-shadow: 0 2px 5px rgba(54, 65, 76, 0.1);
+}
+
+.crm-entry-overdue {
+    border-left-color: #d9534f;
+}
+
+.crm-entry-header {
+    padding-right: 92px;
+    line-height: 1.5;
+}
+
+.crm-entry-date {
+    margin-right: 4px;
+    color: #687681;
+    font-size: 12px;
+}
+
+.crm-entry-overdue .crm-entry-date {
+    color: #c43d39;
+}
+
+.crm-entry-subject {
+    color: #36414c;
+}
+
+.crm-open-lead {
+    color: #5e6b75;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.crm-open-lead:hover {
+    color: #36414c;
+}
+
+.crm-entry-preparation {
+    margin-top: 9px;
+    padding-top: 8px;
+    color: #687681;
+    border-top: 1px solid #edf0f2;
+    font-size: 12px;
+    line-height: 1.45;
+    white-space: pre-line;
+}
+
+.crm-entry-label {
+    color: #4e5d68;
+    font-weight: 600;
+}
+
+.crm-empty-state {
+    margin: 0 0 10px;
+    padding: 10px 0;
+}
+
+@media (max-width: 767px) {
+    .crm-dashboard-column + .crm-dashboard-column {
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid #dfe5e9;
+        border-left: 0;
+    }
+}
