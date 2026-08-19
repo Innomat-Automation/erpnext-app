@@ -1,19 +1,19 @@
 .crm-dashboard {
     padding: 8px 0 24px;
-    color: #36414c;
+    color: #263238;
 }
 
 .crm-dashboard-frame {
-    background: #f7f9fa;
-    border: 1px solid #cfd7df;
-    border-top: 3px solid #5e6b75;
+    background: linear-gradient(135deg, #fff8f8 0%, #f5fff8 52%, #fffdf2 100%);
+    border: 1px solid #d7e2dd;
+    border-top: 4px solid #e53935;
     border-radius: 6px;
     padding: 18px 10px 10px;
-    box-shadow: 0 1px 3px rgba(54, 65, 76, 0.08);
+    box-shadow: 0 2px 8px rgba(38, 50, 56, 0.12);
 }
 
 .crm-dashboard-column + .crm-dashboard-column {
-    border-left: 1px solid #dfe5e9;
+    border-left: 1px solid #c8e6c9;
 }
 
 .crm-dashboard-section {
@@ -22,9 +22,17 @@
 
 .crm-dashboard-section-title {
     margin: 0 0 14px;
-    color: #36414c;
+    color: #c62828;
     font-size: 16px;
     font-weight: 600;
+}
+
+.crm-dashboard-column:nth-child(2) .crm-dashboard-section-title {
+    color: #2e7d32;
+}
+
+.crm-dashboard-column:nth-child(3) .crm-dashboard-section-title {
+    color: #ef6c00;
 }
 
 .crm-dashboard-section-title .text-muted {
@@ -43,21 +51,30 @@
     padding: 11px 12px 10px;
     cursor: pointer;
     background: #ffffff;
-    border: 1px solid #d8e0e5;
-    border-left: 3px solid #8da0ad;
+    border: 1px solid #c8e6c9;
+    border-left: 4px solid #43a047;
     border-radius: 4px;
-    box-shadow: 0 1px 2px rgba(54, 65, 76, 0.04);
+    box-shadow: 0 1px 3px rgba(46, 125, 50, 0.12);
     transition: border-color 120ms ease, box-shadow 120ms ease;
 }
 
 .crm-entry:hover {
-    border-color: #9aaab5;
-    border-left-color: #5e6b75;
-    box-shadow: 0 2px 5px rgba(54, 65, 76, 0.1);
+    border-color: #81c784;
+    border-left-color: #1b5e20;
+    box-shadow: 0 3px 8px rgba(46, 125, 50, 0.2);
 }
 
 .crm-entry-overdue {
-    border-left-color: #d9534f;
+    background: #fff5f5;
+    border-color: #ffcdd2;
+    border-left-color: #e53935;
+    box-shadow: 0 1px 3px rgba(198, 40, 40, 0.14);
+}
+
+.crm-entry-overdue:hover {
+    border-color: #ef9a9a;
+    border-left-color: #b71c1c;
+    box-shadow: 0 3px 8px rgba(198, 40, 40, 0.22);
 }
 
 .crm-entry-header {
@@ -76,17 +93,17 @@
 }
 
 .crm-entry-subject {
-    color: #36414c;
+    color: #263238;
 }
 
 .crm-open-lead {
-    color: #5e6b75;
+    color: #2e7d32;
     font-size: 12px;
     font-weight: 600;
 }
 
 .crm-open-lead:hover {
-    color: #36414c;
+    color: #1b5e20;
 }
 
 .crm-entry-preparation {
