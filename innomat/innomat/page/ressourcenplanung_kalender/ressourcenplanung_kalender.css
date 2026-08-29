@@ -1,0 +1,137 @@
+.rpk-layout {
+    display: flex;
+    gap: 16px;
+    padding: 8px 0 24px;
+    align-items: flex-start;
+}
+
+.rpk-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 280px;
+    flex: 0 0 280px;
+}
+
+.rpk-panel {
+    background: #ffffff;
+    border: 1px solid #cfd7df;
+    border-top: 3px solid #5e6b75;
+    border-radius: 6px;
+    padding: 10px 12px;
+    box-shadow: 0 1px 3px rgba(54, 65, 76, 0.08);
+}
+
+.rpk-panel-title {
+    font-weight: 600;
+    font-size: 13px;
+    color: #36414c;
+    margin-bottom: 2px;
+}
+
+.rpk-panel-hint {
+    font-size: 11px;
+    color: #8a969f;
+    margin-bottom: 8px;
+}
+
+.rpk-panel-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.rpk-panel-empty {
+    font-size: 12px;
+    color: #8a969f;
+    padding: 6px 0;
+}
+
+.rpk-task-card {
+    background: #f7f9fa;
+    border: 1px solid #d3d9de;
+    border-left: 3px solid #2490ef;
+    border-radius: 4px;
+    padding: 6px 8px;
+    cursor: grab;
+    font-size: 12px;
+}
+
+.rpk-task-card:active {
+    cursor: grabbing;
+}
+
+.rpk-task-subject {
+    color: #36414c;
+    font-weight: 600;
+}
+
+.rpk-task-project {
+    color: #8a969f;
+    font-size: 11px;
+    margin-top: 2px;
+}
+
+.rpk-calendar-container {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 14px;
+    background: #ffffff;
+    border: 1px solid #cfd7df;
+    border-top: 3px solid #5e6b75;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(54, 65, 76, 0.08);
+}
+
+.rpk-calendar-container .fc-event {
+    border: 0;
+    border-left-width: 3px;
+    border-left-style: solid;
+    border-radius: 3px;
+    padding: 1px 3px;
+    cursor: pointer;
+}
+
+.rpk-calendar-container .fc-day-grid-event .fc-content {
+    white-space: normal;
+}
+
+.rpk-calendar-container .fc-today {
+    background: #f5f8fa;
+}
+
+.rpk-calendar-container .fc-month-view .fc-day-grid .fc-row {
+    min-height: 130px;
+}
+
+.rpk-calendar-container td.fc-day.rpk-drag-over {
+    background: #eaf3fc;
+}
+
+@media (max-width: 900px) {
+    .rpk-layout {
+        flex-direction: column;
+    }
+
+    .rpk-calendar-container {
+        order: -1;
+    }
+
+    .rpk-sidebar {
+        width: 100%;
+        flex: 1 1 auto;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .rpk-panel {
+        flex: 1 1 260px;
+        max-height: 220px;
+    }
+
+    .rpk-panel-list {
+        max-height: 140px;
+    }
+}

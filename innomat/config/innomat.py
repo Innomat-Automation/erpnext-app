@@ -156,6 +156,12 @@ def get_data():
                         "name": "Ressourcenplanung",
                         "doctype": "Task",
                         "is_query_report": True,
+                   },
+                   {
+                        "type": "page",
+                        "name": "ressourcenplanung_kalender",
+                        "label": _("Ressourcenplanung Kalender"),
+                        "description": _("Aufgaben im Kalender planen und verschieben")
                    }
             ]
         },
