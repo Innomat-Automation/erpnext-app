@@ -4,12 +4,33 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+    "communication_type",
+    "completed",
   "date",
   "time",
+  "duration",
   "user",
-  "note"
+    "preparation",
+    "note",
+    "follow_up"
  ],
  "fields": [
+    {
+    "default": "Telefon",
+     "fieldname": "communication_type",
+     "fieldtype": "Select",
+     "in_list_view": 1,
+     "label": "Art",
+    "options": "Telefon\nRemotebesprechung\nVor Ort Besprechung",
+     "reqd": 1
+    },
+    {
+     "default": "0",
+     "fieldname": "completed",
+     "fieldtype": "Check",
+     "in_list_view": 1,
+     "label": "Erledigt"
+    },
   {
    "fieldname": "date",
    "fieldtype": "Date",
@@ -24,22 +45,40 @@
    "label": "Zeit"
   },
   {
+   "default": "1.0",
+   "fieldname": "duration",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Dauer (Stunden)",
+   "min_value": 0.25,
+   "precision": 2
+  },
+  {
    "fieldname": "user",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Benutzer",
    "options": "User"
   },
+    {
+     "fieldname": "preparation",
+     "fieldtype": "Small Text",
+     "label": "Vorbereitung"
+    },
   {
    "fieldname": "note",
    "fieldtype": "Small Text",
    "in_list_view": 1,
-   "label": "Notiz",
-   "reqd": 1
+     "label": "Gesprächsnotiz"
+    },
+    {
+     "fieldname": "follow_up",
+     "fieldtype": "Small Text",
+     "label": "Nachbereitung"
   }
  ],
  "istable": 1,
- "modified": "2021-04-23 13:49:13.313362",
+ "modified": "2026-08-18 21:30:00.000000",
  "modified_by": "Administrator",
  "module": "Innomat",
  "name": "Lead Kommunikation",
