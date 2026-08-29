@@ -87,6 +87,8 @@
 
 .rpk-calendar-container .fc-event {
     border: 0;
+    border-left-width: 3px;
+    border-left-style: solid;
     border-radius: 3px;
     padding: 1px 3px;
     cursor: pointer;
@@ -101,8 +103,7 @@
 }
 
 .rpk-calendar-container .fc-month-view .fc-day-grid .fc-row {
-    height: 130px !important;
-    min-height: 130px !important;
+    min-height: 130px;
 }
 
 .rpk-calendar-container td.fc-day.rpk-drag-over {
@@ -114,6 +115,10 @@
         flex-direction: column;
     }
 
+    .rpk-calendar-container {
+        order: -1;
+    }
+
     .rpk-sidebar {
         width: 100%;
         flex: 1 1 auto;
@@ -123,5 +128,10 @@
 
     .rpk-panel {
         flex: 1 1 260px;
+        max-height: 220px;
+    }
+
+    .rpk-panel-list {
+        max-height: 140px;
     }
 }

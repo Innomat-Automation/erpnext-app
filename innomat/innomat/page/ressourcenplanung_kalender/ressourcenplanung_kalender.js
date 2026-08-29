@@ -74,10 +74,11 @@ frappe.ressourcenplanung_kalender = {
                 month: __("Monat")
             },
             height: 850,
-            eventLimit: true,
+            eventLimit: 3,
             editable: true,
             eventStartEditable: true,
             eventDurationEditable: true,
+            eventOrder: false,
             events: function(start, end, timezone, callback) {
                 me.load_events(start, end, callback);
             },
@@ -132,7 +133,11 @@ frappe.ressourcenplanung_kalender = {
                     callback([]);
                     return;
                 }
-                callback(r.message.map(me.to_event));
+                var rows = r.message.slice().sort(function(a, b) {
+                    if (a.project !== b.project) return (a.project || '') < (b.project || '') ? -1 : 1;
+                    return (a.exp_start_date || '') < (b.exp_start_date || '') ? -1 : 1;
+                });
+                callback(rows.map(me.to_event));
             }
         });
     },
@@ -144,16 +149,30 @@ frappe.ressourcenplanung_kalender = {
         return {
             id: row.name,
             title: display_title,
+            project: row.project || '',
             start: row.exp_start_date,
             end: moment(row.exp_end_date).add(1, 'days').format('YYYY-MM-DD'),
             allDay: true,
             tooltip: title + ' - ' + __(row.status),
-            color: me.color_for(row.status),
+            color: row.color || me.color_for_project(row.project),
+            borderColor: me.color_for_status(row.status),
             textColor: '#ffffff'
         };
     },
 
-    color_for: function(status) {
+    PROJECT_COLORS: ['#2490ef', '#36b37e', '#c58b28', '#8e44ad', '#e24c4c', '#5e6b75', '#0b8793', '#c0392b', '#2e86ab', '#7d5ba6'],
+
+    color_for_project: function(project) {
+        var me = this;
+        if (!project) return '#8a969f';
+        var hash = 0;
+        for (var i = 0; i < project.length; i++) {
+            hash = (hash * 31 + project.charCodeAt(i)) >>> 0;
+        }
+        return me.PROJECT_COLORS[hash % me.PROJECT_COLORS.length];
+    },
+
+    color_for_status: function(status) {
         return {
             "Open": '#2490ef',
             "Working": '#c58b28',
@@ -207,6 +226,8 @@ frappe.ressourcenplanung_kalender = {
                 { fieldname: 'col_break_1', fieldtype: 'Column Break' },
                 { fieldname: 'status', fieldtype: 'Select', label: __("Status"), options: 'Open\nWorking\nPending Review\nOverdue\nCompleted\nCancelled', default: task.status },
                 { fieldname: 'priority', fieldtype: 'Select', label: __("Priorität"), options: 'Low\nMedium\nHigh\nUrgent', default: task.priority },
+                { fieldname: 'completed_by', fieldtype: 'Link', options: 'User', label: __("Zugewiesener Mitarbeiter"), default: task.completed_by },
+                { fieldname: 'color', fieldtype: 'Color', label: __("Farbe"), default: task.color },
                 { fieldname: 'sb_dates', fieldtype: 'Section Break' },
                 { fieldname: 'exp_start_date', fieldtype: 'Date', label: __("Start"), default: task.exp_start_date },
                 { fieldname: 'col_break_2', fieldtype: 'Column Break' },
@@ -227,13 +248,16 @@ frappe.ressourcenplanung_kalender = {
                         me.refresh_all();
                     }
                 });
-            },
-            secondary_action_label: __("In Formular öffnen"),
-            secondary_action: function() {
-                dialog.hide();
-                frappe.set_route("Form", "Task", task.name);
             }
         });
+        // secondary_action would also fire whenever the dialog is dismissed (X, Escape, backdrop),
+        // so "open in form" is added as an independent header button instead of using it.
+        $('<button type="button" class="btn btn-default btn-sm">' + __("In Formular öffnen") + '</button>')
+            .insertBefore(dialog.header.find('.btn-primary'))
+            .on('click', function() {
+                dialog.hide();
+                frappe.set_route("Form", "Task", task.name);
+            });
         dialog.show();
     },
 

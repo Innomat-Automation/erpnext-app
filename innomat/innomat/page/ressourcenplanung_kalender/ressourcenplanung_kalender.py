@@ -29,6 +29,7 @@ def get_scheduled_tasks(user, start, end):
             `tabTask`.`priority` AS `priority`,
             `tabTask`.`exp_start_date` AS `exp_start_date`,
             `tabTask`.`exp_end_date` AS `exp_end_date`,
+            `tabTask`.`color` AS `color`,
             `tabProject`.`project_name` AS `project_name`
         FROM `tabTask`
         LEFT JOIN `tabProject` ON `tabProject`.`name` = `tabTask`.`project`
@@ -38,7 +39,7 @@ def get_scheduled_tasks(user, start, end):
           AND `tabTask`.`exp_end_date` >= %(start)s
           AND `tabTask`.`exp_start_date` <= %(end)s
           AND `tabTask`.`status` IN %(statuses)s
-        ORDER BY `tabTask`.`exp_start_date` ASC
+        ORDER BY `tabTask`.`project` ASC, `tabTask`.`exp_start_date` ASC
     """, {"user": user, "start": start, "end": end, "statuses": OPEN_STATUSES}, as_dict=True)
 
 
@@ -141,7 +142,7 @@ def schedule_task(task, start_date, end_date=None, assign_user=None):
     }
 
 
-EDITABLE_FIELDS = ["subject", "status", "priority", "exp_start_date", "exp_end_date", "description"]
+EDITABLE_FIELDS = ["subject", "status", "priority", "exp_start_date", "exp_end_date", "description", "completed_by", "color"]
 
 
 @frappe.whitelist()
@@ -160,7 +161,8 @@ def get_task_details(task):
         "exp_start_date": doc.exp_start_date,
         "exp_end_date": doc.exp_end_date,
         "description": doc.description,
-        "completed_by": doc.completed_by
+        "completed_by": doc.completed_by,
+        "color": doc.color
     }
 
 
