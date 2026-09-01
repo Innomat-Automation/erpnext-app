@@ -8,13 +8,19 @@ from six import string_types
 
 
 @frappe.whitelist()
-def get_events(start, end, include_completed=0):
+def get_events(start, end, include_completed=0, user=None):
     """Return communication rows for the requested calendar range."""
     frappe.has_permission("Lead", "read", throw=True)
 
-    completed_condition = ""
+    extra_conditions = ""
+    values = {"start": start, "end": end}
+
     if not int(include_completed or 0):
-        completed_condition = " AND IFNULL(k.`completed`, 0) = 0"
+        extra_conditions += " AND IFNULL(k.`completed`, 0) = 0"
+
+    if user:
+        extra_conditions += " AND k.`user` = %(user)s"
+        values["user"] = user
 
     return frappe.db.sql("""
         SELECT
@@ -35,10 +41,10 @@ def get_events(start, end, include_completed=0):
         WHERE k.`parenttype` = 'Lead'
           AND k.`date` >= %(start)s
           AND k.`date` < %(end)s
-          {completed_condition}
+          {extra_conditions}
         ORDER BY k.`date` ASC, k.`time` ASC
-    """.format(completed_condition=completed_condition),
-        {"start": start, "end": end}, as_dict=True)
+    """.format(extra_conditions=extra_conditions),
+        values, as_dict=True)
 
 
 @frappe.whitelist()

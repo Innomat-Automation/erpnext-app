@@ -12,6 +12,7 @@ frappe.crm_calendar = {
     page: null,
     calendar: null,
     include_completed: false,
+    user_field: null,
 
     make: function(wrapper) {
         var me = frappe.crm_calendar;
@@ -19,6 +20,18 @@ frappe.crm_calendar = {
             parent: wrapper,
             title: __("CRM Kalender"),
             single_column: true
+        });
+
+        me.user_field = me.page.add_field({
+            fieldname: 'user',
+            label: __("Benutzer"),
+            fieldtype: 'Link',
+            options: 'User',
+            reqd: 1,
+            default: frappe.session.user,
+            change: function() {
+                me.refresh();
+            }
         });
 
         me.include_completed_field = me.page.add_field({
@@ -82,12 +95,14 @@ frappe.crm_calendar = {
 
     load_events: function(start, end, callback) {
         var me = frappe.crm_calendar;
+        var selected_user = (me.user_field && me.user_field.get_value()) || frappe.session.user;
         frappe.call({
             method: 'innomat.innomat.page.crm_calendar.crm_calendar.get_events',
             args: {
                 start: start.format('YYYY-MM-DD'),
                 end: end.format('YYYY-MM-DD'),
-                include_completed: me.include_completed ? 1 : 0
+                include_completed: me.include_completed ? 1 : 0,
+                user: selected_user || ''
             },
             callback: function(r) {
                 if (r.exc || !r.message) {
@@ -109,6 +124,7 @@ frappe.crm_calendar = {
                         duration_hours: duration,
                         tooltip: title + ' - ' + row.communication_type
                             + ' (' + duration + ' h)'
+                            + (row.user ? '\n' + __("Benutzer") + ': ' + row.user : '')
                             + (row.preparation ? '\n' + __("Vorbereitung") + ': ' + row.preparation : ''),
                         color: me.color_for(row.communication_type),
                         textColor: '#ffffff'
