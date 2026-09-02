@@ -74,7 +74,7 @@ frappe.crm_calendar = {
                 me.save_event_change(event, revertFunc);
             },
             eventResize: function(event, delta, revertFunc) {
-                me.save_event_change(event, revertFunc);
+                me.save_event_change(event, revertFunc, delta);
             },
             eventClick: function(event) {
                 frappe.set_route("Form", "Lead", event.lead);
@@ -134,10 +134,21 @@ frappe.crm_calendar = {
         });
     },
 
-    save_event_change: function(event, revertFunc) {
+    save_event_change: function(event, revertFunc, resize_delta) {
         var me = frappe.crm_calendar;
-        var duration = event.end ? event.end.diff(event.start, 'minutes') / 60 : event.duration_hours;
-        duration = Math.max(duration || 1, 0.25);
+        var duration = event.end ? event.end.diff(event.start, 'minutes') / 60 : null;
+        if (!duration && resize_delta) {
+            duration = parseFloat(event.duration_hours) + resize_delta.asHours();
+        }
+        if (!duration) {
+            duration = parseFloat(event.duration_hours);
+        }
+        if (!duration) {
+            duration = 1;
+        }
+        if (duration < 0.25) {
+            duration = 0.25;
+        }
         frappe.call({
             method: 'innomat.innomat.page.crm_calendar.crm_calendar.update_event',
             args: {
@@ -155,6 +166,7 @@ frappe.crm_calendar = {
                     return;
                 }
                 event.duration_hours = duration;
+                me.refresh();
                 frappe.show_alert({ message: __("Termin aktualisiert"), indicator: 'green' });
             }
         });
