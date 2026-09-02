@@ -130,6 +130,49 @@ def update_entry(name, values):
 
 
 @frappe.whitelist()
+def create_follow_up_entry(name, values):
+    """Create a new communication row for the same Lead and complete the old row."""
+    if isinstance(values, string_types):
+        values = json.loads(values)
+
+    parent = frappe.db.get_value("Lead Kommunikation", name, "parent")
+    if not parent:
+        frappe.throw(_("Eintrag nicht gefunden"))
+
+    if not values.get("date"):
+        frappe.throw(_("Bitte ein Datum für den neuen Termin eingeben"))
+
+    lead = frappe.get_doc("Lead", parent)
+    lead.check_permission("write")
+
+    current_row = None
+    for row in lead.verlauf:
+        if row.name == name:
+            current_row = row
+            break
+
+    if not current_row:
+        frappe.throw(_("Eintrag nicht gefunden"))
+
+    current_row.completed = 1
+    lead.append("verlauf", {
+        "doctype": "Lead Kommunikation",
+        "communication_type": values.get("communication_type") or current_row.communication_type or "Telefon",
+        "completed": 0,
+        "date": values.get("date"),
+        "time": values.get("time"),
+        "duration": values.get("duration") or current_row.duration or 1.0,
+        "user": values.get("user") or current_row.user,
+        "preparation": values.get("preparation"),
+        "note": values.get("note"),
+        "follow_up": values.get("follow_up")
+    })
+    lead.save()
+    frappe.db.commit()
+    return lead.name
+
+
+@frappe.whitelist()
 def complete_all(user=None):
     """Mark all visible open communication rows as completed."""
     frappe.has_permission("Lead", "read", throw=True)
