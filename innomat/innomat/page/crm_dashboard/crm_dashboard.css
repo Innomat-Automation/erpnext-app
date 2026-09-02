@@ -78,7 +78,7 @@
 }
 
 .crm-entry-header {
-    padding-right: 92px;
+    padding-right: 124px;
     line-height: 1.5;
 }
 
@@ -96,13 +96,27 @@
     color: #263238;
 }
 
-.crm-open-lead {
+.crm-entry-actions {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    width: 112px;
+    text-align: right;
+}
+
+.crm-entry-actions a {
+    display: block;
+}
+
+.crm-open-lead,
+.crm-create-follow-up {
     color: #2e7d32;
     font-size: 12px;
     font-weight: 600;
 }
 
-.crm-open-lead:hover {
+.crm-open-lead:hover,
+.crm-create-follow-up:hover {
     color: #1b5e20;
 }
 

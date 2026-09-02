@@ -12,6 +12,7 @@ frappe.crm_calendar = {
     page: null,
     calendar: null,
     include_completed: false,
+    user_field: null,
 
     make: function(wrapper) {
         var me = frappe.crm_calendar;
@@ -19,6 +20,18 @@ frappe.crm_calendar = {
             parent: wrapper,
             title: __("CRM Kalender"),
             single_column: true
+        });
+
+        me.user_field = me.page.add_field({
+            fieldname: 'user',
+            label: __("Benutzer"),
+            fieldtype: 'Link',
+            options: 'User',
+            reqd: 1,
+            default: frappe.session.user,
+            change: function() {
+                me.refresh();
+            }
         });
 
         me.include_completed_field = me.page.add_field({
@@ -61,9 +74,20 @@ frappe.crm_calendar = {
                 me.save_event_change(event, revertFunc);
             },
             eventResize: function(event, delta, revertFunc) {
-                me.save_event_change(event, revertFunc);
+                me.save_event_change(event, revertFunc, delta);
             },
             eventClick: function(event) {
+                var route = frappe.get_route();
+                if (typeof cur_frm !== 'undefined'
+                    && route[0] === 'Form'
+                    && route[1] === 'Lead'
+                    && route[2] === event.lead
+                        && cur_frm.doctype === 'Lead'
+                        && cur_frm.docname === event.lead) {
+                    cur_frm.reload_doc();
+                    return;
+                }
+                frappe.model.remove_from_locals('Lead', event.lead);
                 frappe.set_route("Form", "Lead", event.lead);
             },
             eventRender: function(event, element) {
@@ -82,12 +106,14 @@ frappe.crm_calendar = {
 
     load_events: function(start, end, callback) {
         var me = frappe.crm_calendar;
+        var selected_user = (me.user_field && me.user_field.get_value()) || frappe.session.user;
         frappe.call({
             method: 'innomat.innomat.page.crm_calendar.crm_calendar.get_events',
             args: {
                 start: start.format('YYYY-MM-DD'),
                 end: end.format('YYYY-MM-DD'),
-                include_completed: me.include_completed ? 1 : 0
+                include_completed: me.include_completed ? 1 : 0,
+                user: selected_user || ''
             },
             callback: function(r) {
                 if (r.exc || !r.message) {
@@ -109,6 +135,7 @@ frappe.crm_calendar = {
                         duration_hours: duration,
                         tooltip: title + ' - ' + row.communication_type
                             + ' (' + duration + ' h)'
+                            + (row.user ? '\n' + __("Benutzer") + ': ' + row.user : '')
                             + (row.preparation ? '\n' + __("Vorbereitung") + ': ' + row.preparation : ''),
                         color: me.color_for(row.communication_type),
                         textColor: '#ffffff'
@@ -118,10 +145,21 @@ frappe.crm_calendar = {
         });
     },
 
-    save_event_change: function(event, revertFunc) {
+    save_event_change: function(event, revertFunc, resize_delta) {
         var me = frappe.crm_calendar;
-        var duration = event.end ? event.end.diff(event.start, 'minutes') / 60 : event.duration_hours;
-        duration = Math.max(duration || 1, 0.25);
+        var duration = event.end ? event.end.diff(event.start, 'minutes') / 60 : null;
+        if (!duration && resize_delta) {
+            duration = parseFloat(event.duration_hours) + resize_delta.asHours();
+        }
+        if (!duration) {
+            duration = parseFloat(event.duration_hours);
+        }
+        if (!duration) {
+            duration = 1;
+        }
+        if (duration < 0.25) {
+            duration = 0.25;
+        }
         frappe.call({
             method: 'innomat.innomat.page.crm_calendar.crm_calendar.update_event',
             args: {
@@ -139,6 +177,7 @@ frappe.crm_calendar = {
                     return;
                 }
                 event.duration_hours = duration;
+                me.refresh();
                 frappe.show_alert({ message: __("Termin aktualisiert"), indicator: 'green' });
             }
         });
