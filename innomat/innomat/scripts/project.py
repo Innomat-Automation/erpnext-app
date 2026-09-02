@@ -13,6 +13,10 @@ from erpnext.setup.utils import get_exchange_rate
 # Artikel, von dem wir den ILV-Satz nehmen, wenn in einem Artikel keiner hinterlegt ist
 FALLBACK_ITEM_FOR_ILV_RATE = 'ENG-SW'
 
+# Aktivitätstyp für Reisezeit und Name der zugehörigen Sales Item Group
+TRAVEL_ACTIVITY_TYPE = 'Reisetätigkeit'
+TRAVEL_ITEM_GROUP = 'Reisezeit'
+
 """
 Find related draft documents from delivery notes and expense claims
 """
@@ -93,33 +97,34 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
             new_sinv.additional_discount_percentage_akonto = sales_order.additional_discount_percentage
             new_sinv.additional_discount_amount_akonto = sales_order.discount_amount
 
-        # Time logs: Use cost center from Timesheet Detail
-        # Rationale: We periodically make bookings to ensure all salary is debited to the "right" cost centers according to timesheets, so when we bill hours, we can directly credit the cost center given in timesheets.
-        for t in time_logs:
-            description = "{0} ({1})".format(t['from_time'].strftime("%d.%m.%Y"), t['employee_name'])
-            if t.activity_type == "Reisetätigkeit":
-                description += "<br>Reisetätigkeit"
-            if t['external_remarks']:
-                description += "<br>" + t['external_remarks'].replace("\n","<br>")
-            row = new_sinv.append('items', {
-                'item_code': t['invoicing_item'],
-                'qty': t['hours'],
-                'uom': 'h',
-                'description': description,
-                'against_timesheet': t['timesheet'],
-                'ts_detail': t['ts_detail'],
-                'sales_item_group': sales_item_group,
-                'cost_center': t['cost_center'],
-                'sales_order': pj.sales_order
+        # collected sales item groups in the order in which they occur in the items table
+        item_groups = []
+
+        def add_item_group(group, title=None, sum_caption=None, new_page=0):
+            for g in item_groups:
+                if g['group'] == group:
+                    return
+            item_groups.append({
+                'group': group,
+                'title': title or group,
+                'sum_caption': sum_caption or 'Summe {0}'.format(title or group),
+                'new_page': new_page
             })
-        # insert sales item groups
-        row = new_sinv.append('sales_item_groups', {
-            'group': sales_item_group,
-            'title': sales_item_group,
-            'sum_caption': 'Summe {0}'.format(sales_item_group)})
-        # append open delivery note items if there are any
+
+        # append open delivery note items if there are any (before the time logs)
+        dn_group_cache = {}
         for d in delivery_notes:
             dn_pos = frappe.get_doc("Delivery Note Item", d['dn_detail'])
+            group = dn_pos.sales_item_group or sales_item_group
+            # take over group definition (title, caption) from the delivery note
+            if d['name'] not in dn_group_cache:
+                dn_doc = frappe.get_doc("Delivery Note", d['name'])
+                dn_group_cache[d['name']] = {g.group: g for g in (dn_doc.sales_item_groups or [])}
+            dn_group = dn_group_cache[d['name']].get(group)
+            if dn_group:
+                add_item_group(dn_group.group, dn_group.title, dn_group.sum_caption, dn_group.new_page)
+            else:
+                add_item_group(group)
             row = new_sinv.append('items', {
                     'item_code': dn_pos.item_code,
                     'qty': dn_pos.qty,
@@ -127,7 +132,7 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
                     'description': dn_pos.description,
                     'delivery_note': d.name,
                     'dn_detail': dn_pos.name,
-                    'sales_item_group': dn_pos.sales_item_group,
+                    'sales_item_group': group,
                     'rate': dn_pos.rate,
                     # In SINV-Item for materials, we use the project cost center.
                     # This is correct iff we ensure that material used from "wrong" stock location/department (other department than that of the project) gets transferred to the project's location before it is destocked,
@@ -136,6 +141,34 @@ def create_sinv_from_project(project, from_date=None, to_date=None, sales_item_g
                     'cost_center': new_sinv.cost_center,
                     'sales_order': pj.sales_order
             })
+        # Time logs (sorted by date of the timesheet entry): Use cost center from Timesheet Detail
+        # Rationale: We periodically make bookings to ensure all salary is debited to the "right" cost centers according to timesheets, so when we bill hours, we can directly credit the cost center given in timesheets.
+        for t in time_logs:
+            description = "{0} ({1})".format(t['from_time'].strftime("%d.%m.%Y"), t['employee_name'])
+            if t['activity_type'] == TRAVEL_ACTIVITY_TYPE:
+                description += "<br>{0}".format(TRAVEL_ACTIVITY_TYPE)
+            if t['external_remarks']:
+                description += "<br>" + t['external_remarks'].replace("\n","<br>")
+            # travel time goes into its own group, all other hours are grouped by task
+            if t['activity_type'] == TRAVEL_ACTIVITY_TYPE:
+                group = TRAVEL_ITEM_GROUP
+            else:
+                group = t['task_subject'] or sales_item_group
+            add_item_group(group)
+            row = new_sinv.append('items', {
+                'item_code': t['invoicing_item'],
+                'qty': t['hours'],
+                'uom': 'h',
+                'description': description,
+                'against_timesheet': t['timesheet'],
+                'ts_detail': t['ts_detail'],
+                'sales_item_group': group,
+                'cost_center': t['cost_center'],
+                'sales_order': pj.sales_order
+            })
+        # insert sales item groups
+        for g in item_groups:
+            new_sinv.append('sales_item_groups', g)
         # insert taxes
         tax_template = frappe.get_doc("Sales Taxes and Charges Template", new_sinv.taxes_and_charges)
         for t in tax_template.taxes:
@@ -282,7 +315,9 @@ def get_uninvoiced_service_time_records(project, from_date=None, to_date=None):
            `tabTimesheet`.`name` AS `timesheet`,
            `tabTimesheet Detail`.`name` AS `ts_detail`,
            `tabTimesheet Detail`.`external_remarks` AS `external_remarks`,
-           `tabTimesheet Detail`.`cost_center` AS `cost_center`
+           `tabTimesheet Detail`.`cost_center` AS `cost_center`,
+           `tabTask`.`name` AS `task`,
+           `tabTask`.`subject` AS `task_subject`
          FROM `tabTimesheet Detail`
          LEFT JOIN `tabTimesheet` ON `tabTimesheet Detail`.`parent` = `tabTimesheet`.`name`
          LEFT JOIN `tabTask` ON `tabTimesheet Detail`.`task` = `tabTask`.`name`
@@ -294,7 +329,8 @@ def get_uninvoiced_service_time_records(project, from_date=None, to_date=None):
            AND `tabTimesheet Detail`.`by_effort` = 1
            AND `tabTimesheet Detail`.`do_not_invoice` = 0
            /* AND `tabTimesheet Detail`.`activity_type` != "Reisetätigkeit" (on effort will be invoiced) */
-           AND `tabSales Invoice Item`.`ts_detail` IS NULL;
+           AND `tabSales Invoice Item`.`ts_detail` IS NULL
+         ORDER BY `tabTimesheet Detail`.`from_time` ASC;
     """.format(time_conditions=time_conditions)
     time_logs = frappe.db.sql(sql_query, {"project": project, "from_date": from_date, "to_date": to_date}, as_dict=True)
     return time_logs
