@@ -77,6 +77,17 @@ frappe.crm_calendar = {
                 me.save_event_change(event, revertFunc, delta);
             },
             eventClick: function(event) {
+                var route = frappe.get_route();
+                if (typeof cur_frm !== 'undefined'
+                    && route[0] === 'Form'
+                    && route[1] === 'Lead'
+                    && route[2] === event.lead
+                        && cur_frm.doctype === 'Lead'
+                        && cur_frm.docname === event.lead) {
+                    cur_frm.reload_doc();
+                    return;
+                }
+                frappe.model.remove_from_locals('Lead', event.lead);
                 frappe.set_route("Form", "Lead", event.lead);
             },
             eventRender: function(event, element) {
