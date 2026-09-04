@@ -30,7 +30,6 @@ frappe.crm_dashboard = {
 
         page.set_primary_action(__("Neuer Eintrag"), function() { me.new_entry(); }, 'add');
         page.add_inner_button(__("Aktualisieren"), function() { me.refresh(); }, 'refresh');
-        page.add_inner_button(__("Alle erledigen"), function() { me.complete_all(); }, 'check');
 
         me.body = $('<div class="crm-dashboard"></div>').appendTo(page.main);
         me.body.on('click', '.crm-entry', function(e) {
@@ -59,31 +58,6 @@ frappe.crm_dashboard = {
                 me.render(r.message);
             }
         });
-    },
-
-    complete_all: function() {
-        var me = frappe.crm_dashboard;
-        var user = me.user_field ? me.user_field.get_value() : null;
-        frappe.confirm(
-            user ? __("Alle offenen Einträge dieses Benutzers als erledigt markieren?")
-                : __("Alle offenen Einträge als erledigt markieren?"),
-            function() {
-                frappe.call({
-                    method: 'innomat.innomat.page.crm_dashboard.crm_dashboard.complete_all',
-                    args: { user: user },
-                    freeze: true,
-                    callback: function(r) {
-                        if (!r.exc) {
-                            frappe.show_alert({
-                                message: __("{0} Einträge erledigt", [r.message || 0]),
-                                indicator: 'green'
-                            });
-                            me.refresh();
-                        }
-                    }
-                });
-            }
-        );
     },
 
     render: function(data) {
