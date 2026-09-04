@@ -150,8 +150,7 @@ doc_events = {
 # }
 scheduler_events = {
     "daily": [
-        "innomat.innomat.scripts.project.update_project_costs",
-        "innomat.innomat.page.crm_dashboard.crm_dashboard.complete_past_entries"
+        "innomat.innomat.scripts.project.update_project_costs"
     ]
 }
 
