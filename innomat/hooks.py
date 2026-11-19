@@ -125,6 +125,14 @@ doc_events = {
     },
     "Purchase Invoice": {
         "before_save": "innomat.innomat.utils.apply_cost_center"
+    },
+    # these handlers are no-ops: resolving them imports
+    # innomat.innomat.scripts.bom, which overrides BOM.get_valuation_rate
+    # (prefer item master valuation rate) before the method runs
+    "BOM": {
+        "validate": "innomat.innomat.scripts.bom.ensure_bom_overrides",
+        "update_cost": "innomat.innomat.scripts.bom.ensure_bom_overrides",
+        "get_bom_material_detail": "innomat.innomat.scripts.bom.ensure_bom_overrides"
     }
  }
 
@@ -165,6 +173,11 @@ scheduler_events = {
 # override_whitelisted_methods = {
 # 	"frappe.desk.doctype.event.event.get_events": "innomat.event.get_events"
 # }
+# BOM Update Tool: enqueue the innomat wrapper so that the background job
+# runs with the BOM valuation rate override applied (see scripts/bom.py)
+override_whitelisted_methods = {
+    "erpnext.manufacturing.doctype.bom_update_tool.bom_update_tool.enqueue_update_cost": "innomat.innomat.scripts.bom.enqueue_update_cost"
+}
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
@@ -184,3 +197,12 @@ jenv = {
         "get_project_kpis:innomat.innomat_reporting.kpi.get_project_kpis"
     ]
 }
+
+# Server-side overrides
+# ---------------------
+# Frappe v12 has no override_doctype_class hook. The BOM override (prefer the
+# item master valuation rate, see scripts/bom.py) is applied on import of that
+# module: here for processes that load hooks freshly, and via the BOM
+# doc_events above for workers that serve hooks from the cache.
+from innomat.innomat.scripts.bom import apply_bom_overrides
+apply_bom_overrides()

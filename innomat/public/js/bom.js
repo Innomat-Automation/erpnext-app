@@ -24,8 +24,111 @@ frappe.ui.form.on('BOM', {
             }
         }
         cur_frm.set_value("total_hours", total_hours);
+    },
+    update_cost(frm) {
+        // override of the standard "Update Cost" handler
+        if (frm.doc.docstatus === 1) {
+            // submitted BOMs: rate/amount are not allowed to change after
+            // submission, so they can only be persisted server-side.
+            // Show a read-only preview (old vs. new rates) first; nothing is
+            // written until the user confirms. Cancelling keeps the old data.
+            return frappe.call({
+                'method': "innomat.innomat.scripts.bom.preview_update_cost",
+                'args': {'bom': frm.doc.name},
+                'freeze': true,
+                'callback': function(r) {
+                    if (r.exc || !r.message) { return; }
+                    show_update_cost_preview(frm, r.message);
+                }
+            });
+        }
+        // draft BOMs: only fetch the new rates (save: false) so the user can
+        // review them; mark the form as changed so it can be saved manually
+        // (the standard handler leaves the form "clean" and unsaveable)
+        return frappe.call({
+            'doc': frm.doc,
+            'method': "update_cost",
+            'freeze': true,
+            'args': {
+                'update_parent': true,
+                'from_child_bom': false,
+                'save': false
+            },
+            'callback': function(r) {
+                if (!r.exc) {
+                    frm.refresh();                      // rebind synced doc with new rates
+                    erpnext.bom.update_cost(frm.doc);   // recalculate amounts/totals client-side
+                    frm.dirty();                        // enable manual save
+                }
+            }
+        });
     }
 });
+
+function show_update_cost_preview(frm, rows) {
+    var currency = frm.doc.currency;
+    var old_total = 0;
+    var new_total = 0;
+    var changed = 0;
+    var body = "";
+    for (var i = 0; i < rows.length; i++) {
+        var row = rows[i];
+        var old_amount = flt(row.old_rate) * flt(row.qty);
+        var new_amount = flt(row.new_rate) * flt(row.qty);
+        old_total += old_amount;
+        new_total += new_amount;
+        var is_changed = Math.abs(flt(row.new_rate) - flt(row.old_rate)) > 0.005;
+        if (is_changed) { changed++; }
+        body += "<tr" + (is_changed ? " style='font-weight: bold;'" : "") + ">"
+            + "<td>" + frappe.utils.escape_html(row.item_code || "") + "</td>"
+            + "<td class='text-right'>" + flt(row.qty) + " " + frappe.utils.escape_html(row.uom || "") + "</td>"
+            + "<td class='text-right'>" + format_currency(row.old_rate, currency) + "</td>"
+            + "<td class='text-right'>" + format_currency(row.new_rate, currency) + "</td>"
+            + "</tr>";
+    }
+    var html = "<table class='table table-bordered small'>"
+        + "<thead><tr>"
+        + "<th>" + __("Item") + "</th>"
+        + "<th class='text-right'>" + __("Qty") + "</th>"
+        + "<th class='text-right'>" + __("Current Rate") + "</th>"
+        + "<th class='text-right'>" + __("New Rate") + "</th>"
+        + "</tr></thead><tbody>" + body + "</tbody>"
+        + "<tfoot><tr style='font-weight: bold;'>"
+        + "<td colspan='2'>" + __("Raw Material Cost") + "</td>"
+        + "<td class='text-right'>" + format_currency(old_total, currency) + "</td>"
+        + "<td class='text-right'>" + format_currency(new_total, currency) + "</td>"
+        + "</tr></tfoot></table>";
+    if (changed === 0) {
+        html = "<p>" + __("No price changes") + "</p>" + html;
+    }
+    var d = new frappe.ui.Dialog({
+        'title': __("Update Cost"),
+        'fields': [
+            {'fieldname': 'preview', 'fieldtype': 'HTML'}
+        ],
+        'primary_action_label': __("Save"),
+        primary_action: function() {
+            d.hide();
+            frappe.call({
+                'doc': frm.doc,
+                'method': "update_cost",
+                'freeze': true,
+                'args': {
+                    'update_parent': true,
+                    'from_child_bom': false,
+                    'save': true
+                },
+                'callback': function(r) {
+                    if (!r.exc) {
+                        frm.reload_doc();
+                    }
+                }
+            });
+        }
+    });
+    d.fields_dict.preview.$wrapper.html(html);
+    d.show();
+}
 
 
 frappe.ui.form.on('BOM Item', {
