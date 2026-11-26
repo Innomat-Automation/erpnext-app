@@ -344,6 +344,7 @@ def get_uninvoiced_delivery_notes(project):
          LEFT JOIN `tabSales Invoice Item` ON `tabDelivery Note Item`.`name` = `tabSales Invoice Item`.`dn_detail`
          WHERE
            `tabDelivery Note`.`docstatus` = 1
+           AND `tabDelivery Note`.`status` != 'Closed'
            AND `tabDelivery Note`.`project` = %(project)s
            AND `tabSales Invoice Item`.`dn_detail` IS NULL;
     """
